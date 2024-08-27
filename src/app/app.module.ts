@@ -8,6 +8,8 @@ import { ManifestModule } from 'src/manifest/manifest.module';
 import { CacheModule } from 'src/cache';
 import { TicketModule } from 'src/ticket';
 
+import '../utils/dayjs-extension';
+
 @Module({
   imports: [
     AppConfigModule,

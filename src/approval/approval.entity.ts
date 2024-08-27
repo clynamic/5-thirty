@@ -19,6 +19,6 @@ export class ApprovalEntity extends CacheLink {
   @Column({ type: 'int' })
   userId: number;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'datetime' })
   createdAt: Date;
 }

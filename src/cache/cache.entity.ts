@@ -2,9 +2,9 @@ import {
   Entity,
   Column,
   UpdateDateColumn,
-  PrimaryGeneratedColumn,
   JoinColumn,
   OneToOne,
+  PrimaryColumn,
 } from 'typeorm';
 
 export interface CacheValue {
@@ -19,10 +19,10 @@ export class CacheEntity {
     }
   }
 
-  @PrimaryGeneratedColumn('increment')
-  id: number;
+  @PrimaryColumn({ type: 'text' })
+  id: string;
 
-  @UpdateDateColumn({ type: 'date' })
+  @UpdateDateColumn({ type: 'datetime' })
   refreshedAt: Date;
 
   @Column({ type: 'json' })

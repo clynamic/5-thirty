@@ -3,8 +3,6 @@ import { ManifestEntity } from './manifest.entity';
 import { Between, Repository } from 'typeorm';
 import { DateRange } from 'src/utils';
 import dayjs from 'dayjs';
-import minMax from 'dayjs/plugin/minMax';
-dayjs.extend(minMax);
 
 export type OrderBoundary = Date | ManifestEntity;
 
@@ -41,7 +39,6 @@ export class ManifestService {
 
   async listOrdersByRange(type: string, range: DateRange): Promise<Order[]> {
     const manifests = await this.listByRange(type, range);
-
     return ManifestService.computeOrders(manifests, range);
   }
 
@@ -49,7 +46,6 @@ export class ManifestService {
     if (boundary instanceof Date) {
       return boundary;
     }
-
     return side === 'start' ? boundary.startDate : boundary.endDate;
   }
 
@@ -130,7 +126,7 @@ export class ManifestService {
     manifests: ManifestEntity[],
     dateRange: DateRange,
   ): Order[] {
-    manifests.sort((a, b) => dayjs(a.startDate).diff(dayjs(b.startDate)));
+    manifests.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 
     const orders: Order[] = [];
     let boundary: OrderBoundary = dateRange.start;
@@ -145,14 +141,16 @@ export class ManifestService {
           lower: boundary,
           upper: manifest,
         });
-
         boundary = manifest;
       } else if (this.isBoundaryBefore(boundary, manifest, 'end', 'end')) {
         boundary = manifest;
       }
     }
 
-    if (this.isBoundaryBefore(boundary, dateRange.end, 'end', 'start')) {
+    if (
+      orders.length === 0 ||
+      (orders.length > 0 && orders[orders.length - 1].upper !== dateRange.end)
+    ) {
       orders.push({
         lower: boundary,
         upper: dateRange.end,

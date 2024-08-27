@@ -3,28 +3,27 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { ApprovalService } from './approval.service';
 import { ManifestEntity, ManifestService } from 'src/manifest';
 import {
+  checkIdContiguity,
   convertKeysToCamelCase,
-  findHighestDate,
   findHighestId,
   findLowestDate,
   findLowestId,
+  LoopGuard,
   getCurrentMonthRange,
   getDateRangeString,
-  getRangeString,
+  getIdRangeString,
   rateLimit,
 } from 'src/utils';
-import { postApprovals } from 'src/api/e621';
-import { ConfigService } from '@nestjs/config';
-import { AppConfigKeys } from 'src/app/config.module';
-import { encodeCredentials } from 'src/auth/auth.utils';
-import { UserCredentials } from 'src/auth';
+import { Approval, postApprovals } from 'src/api/e621';
 import { ApprovalEntity } from './approval.entity';
 import { CacheEntity } from 'src/cache';
+import dayjs from 'dayjs';
+import { AxiosAuthService } from 'src/auth';
 
 @Injectable()
 export class ApprovalWorker {
   constructor(
-    private readonly configService: ConfigService,
+    private readonly axiosAuthService: AxiosAuthService,
     private readonly approvalService: ApprovalService,
     private readonly manifestService: ManifestService,
   ) {}
@@ -32,7 +31,7 @@ export class ApprovalWorker {
   private readonly logger = new Logger(ApprovalWorker.name);
   private isRunning = false;
 
-  private manifestType = 'approvals';
+  private itemType = 'approvals';
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async onSync() {
@@ -41,48 +40,32 @@ export class ApprovalWorker {
       return;
     }
 
-    if (1 === 1) {
-      return;
-    }
-
-    this.logger.log('ApprovalWorker is running');
+    this.logger.log('Running...');
     this.isRunning = true;
 
     try {
-      const credentials: UserCredentials = {
-        username: this.configService.get<string>(
-          AppConfigKeys.E621_GLOBAL_USERNAME,
-        ),
-        password: this.configService.get<string>(
-          AppConfigKeys.E621_GLOBAL_API_KEY,
-        ),
-      };
+      const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
       const currentMonthRange = getCurrentMonthRange();
-
-      const manifests = await this.manifestService.listByRange(
-        this.manifestType,
-        currentMonthRange,
-      );
-
-      this.logger.log(
-        `Found ${manifests.length} manifests: ${JSON.stringify(manifests)}`,
-      );
+      const currentDate = dayjs().utc().startOf('hour');
 
       const orders = await this.manifestService.listOrdersByRange(
-        this.manifestType,
+        this.itemType,
         currentMonthRange,
       );
 
       this.logger.log(
-        `Found ${orders.length} orders: ${JSON.stringify(orders)}`,
+        `Found ${orders.length} orders: ${JSON.stringify(orders, null, 2)}`,
       );
 
       for (const order of orders) {
         const limit = 320;
+        let results: Approval[] = [];
 
         let upperId: number | undefined;
         let lowerId: number | undefined;
+
+        const loopGuard = new LoopGuard();
 
         while (true) {
           const dateRange = {
@@ -103,7 +86,7 @@ export class ApprovalWorker {
           }
 
           this.logger.log(
-            `Fetching approvals for ${getDateRangeString(dateRange)} with ids ${getRangeString(
+            `Fetching approvals for ${getDateRangeString(dateRange)} with ids ${getIdRangeString(
               lowerId,
               upperId,
             )}`,
@@ -111,34 +94,33 @@ export class ApprovalWorker {
 
           const result = await rateLimit(
             postApprovals(
-              {
+              loopGuard.iter({
                 page: 1,
                 limit,
                 'search[created_at]': getDateRangeString(dateRange),
-                'search[id]': getRangeString(lowerId, upperId),
-              },
-              {
-                headers: {
-                  Authorization: encodeCredentials(credentials),
-                },
-              },
+                'search[id]': getIdRangeString(lowerId, upperId),
+              }),
+              axiosConfig,
             ),
           );
 
-          if (result.length > 0) {
-            this.logger.log(
-              `Found ${result.length} approvals with id range ${getRangeString(
-                findLowestId(result).id,
-                findHighestId(result).id,
-              )}`,
-            );
+          this.logger.log(
+            `Found ${result.length} approvals with id range ${getIdRangeString(
+              findLowestId(result)?.id,
+              findHighestId(result)?.id,
+            )}`,
+          );
 
+          results = results.concat(result);
+
+          if (result.length > 0) {
             const stored = await this.approvalService.create(
               result.map(
                 (approval) =>
                   new ApprovalEntity({
                     ...convertKeysToCamelCase(approval),
                     cache: new CacheEntity({
+                      id: `/${this.itemType}/${approval.id}`,
                       value: approval,
                     }),
                   }),
@@ -146,49 +128,59 @@ export class ApprovalWorker {
             );
 
             if (order.upper instanceof ManifestEntity) {
-              order.upper.lowerId = findLowestId(stored).id;
-              order.upper.startDate = findLowestDate(stored).createdAt;
+              // extend upper downwards
+              order.upper.lowerId =
+                findLowestId(stored)?.id ?? order.upper.lowerId;
+              order.upper.startDate =
+                findLowestDate(stored)?.createdAt ?? order.upper.startDate;
+
+              this.manifestService.save(order.upper);
             } else {
+              // create new manifest
               order.upper = new ManifestEntity({
-                type: this.manifestType,
-                lowerId: findLowestId(stored).id,
-                upperId: findHighestId(stored).id,
-                startDate: findLowestDate(stored).createdAt,
-                endDate: findHighestDate(stored).createdAt,
-                completedEnd: true,
+                type: this.itemType,
+                lowerId: findLowestId(stored)!.id,
+                upperId: findHighestId(stored)!.id,
+                startDate: findLowestDate(stored)!.createdAt,
+                endDate: dayjs.min(dayjs(order.upper), currentDate).toDate(),
+                completedEnd: dayjs(order.upper).isBefore(currentDate),
               });
+
+              this.manifestService.save(order.upper);
             }
-
-            this.manifestService.save(order.upper);
           } else {
-            this.logger.log('No approvals found');
-
             if (order.upper instanceof ManifestEntity) {
               if (order.lower instanceof ManifestEntity) {
-                // merge
-                this.logger.log('Merging manifests');
+                // merge manifests
                 order.upper.lowerId = order.lower.lowerId;
                 order.upper.startDate = order.lower.startDate;
-                order.lower.completedEnd = true;
-                this.manifestService.save(order.lower);
+                order.upper.completedStart = order.lower.completedStart;
+
+                this.manifestService.save(order.upper);
+                this.manifestService.delete(order.lower);
               } else {
                 // extend upper downwards
-                this.logger.log('Extending upper downwards');
+                order.upper.lowerId =
+                  findLowestId(result)?.id ?? order.upper.lowerId;
                 order.upper.startDate = order.lower;
                 order.upper.completedStart = true;
+
                 this.manifestService.save(order.upper);
               }
             } else if (order.lower instanceof ManifestEntity) {
               // extend lower upwards
-              this.logger.log('Extending lower upwards');
-              order.lower.endDate = order.upper;
-              order.lower.completedEnd = true;
+              order.lower.endDate = dayjs
+                .min(dayjs(order.upper), currentDate)
+                .toDate();
+              order.lower.completedEnd = dayjs(order.lower.endDate).isBefore(
+                currentDate,
+              );
               this.manifestService.save(order.lower);
             } else {
-              // abort
-              // with no data, we can't create a manifest.
-              this.logger.log('No data to create manifest, aborting');
+              // abort without data
             }
+
+            checkIdContiguity(results);
 
             break;
           }
@@ -198,6 +190,7 @@ export class ApprovalWorker {
       this.logger.error(
         `An error occurred while running ${ApprovalWorker.name}`,
         error,
+        error.stack,
       );
     } finally {
       this.isRunning = false;

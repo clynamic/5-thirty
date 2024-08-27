@@ -10,7 +10,7 @@ export class CacheService {
     private readonly cacheItemRepository: Repository<CacheEntity>,
   ) {}
 
-  async get(id: number): Promise<CacheValue> {
+  async get(id: string): Promise<CacheValue> {
     return (
       await this.cacheItemRepository.findOneOrFail({
         where: { id },
@@ -18,7 +18,7 @@ export class CacheService {
     ).value;
   }
 
-  async put(value: CacheValue): Promise<number> {
+  async put(value: CacheValue): Promise<string> {
     return (await this.cacheItemRepository.save({ value })).id;
   }
 }

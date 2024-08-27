@@ -3,28 +3,26 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { TicketService } from './ticket.service';
 import { ManifestEntity, ManifestService } from 'src/manifest';
 import {
+  checkIdContiguity,
   convertKeysToCamelCase,
-  findHighestDate,
   findHighestId,
-  findLowestDate,
   findLowestId,
+  LoopGuard,
   getCurrentMonthRange,
   getDateRangeString,
-  getRangeString,
+  getIdRangeString,
   rateLimit,
 } from 'src/utils';
 import { Ticket, tickets } from 'src/api/e621';
-import { ConfigService } from '@nestjs/config';
-import { AppConfigKeys } from 'src/app/config.module';
-import { encodeCredentials } from 'src/auth/auth.utils';
-import { UserCredentials } from 'src/auth';
+import { AxiosAuthService } from 'src/auth';
 import { TicketEntity } from './ticket.entity';
 import { CacheEntity } from 'src/cache';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class TicketWorker {
   constructor(
-    private readonly configService: ConfigService,
+    private readonly axiosAuthService: AxiosAuthService,
     private readonly ticketService: TicketService,
     private readonly manifestService: ManifestService,
   ) {}
@@ -32,7 +30,7 @@ export class TicketWorker {
   private readonly logger = new Logger(TicketWorker.name);
   private isRunning = false;
 
-  private manifestType = 'tickets';
+  private itemType = 'tickets';
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async onSync() {
@@ -41,84 +39,58 @@ export class TicketWorker {
       return;
     }
 
-    this.logger.log('TicketWorker is running');
+    this.logger.log('Running...');
     this.isRunning = true;
 
     try {
-      const credentials: UserCredentials = {
-        username: this.configService.get<string>(
-          AppConfigKeys.E621_GLOBAL_USERNAME,
-        ),
-        password: this.configService.get<string>(
-          AppConfigKeys.E621_GLOBAL_API_KEY,
-        ),
-      };
+      const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
       const currentMonthRange = getCurrentMonthRange();
-
-      const manifests = await this.manifestService.listByRange(
-        this.manifestType,
-        currentMonthRange,
-      );
-
-      this.logger.log(
-        `Found ${manifests.length} manifests: ${JSON.stringify(manifests)}`,
-      );
+      const currentDate = dayjs().utc().startOf('hour');
 
       const orders = ManifestService.splitLongOrders(
         await this.manifestService.listOrdersByRange(
-          this.manifestType,
+          this.itemType,
           currentMonthRange,
         ),
         14,
       );
 
-      this.logger.log(
-        `Found ${orders.length} orders: ${JSON.stringify(orders)}`,
-      );
-
-      if (1 === 1) return;
-
       for (const order of orders) {
-        const limit = 320;
         let page = 1;
-
         let results: Ticket[] = [];
 
+        const loopGuard = new LoopGuard();
+
+        const dateRange = {
+          start: ManifestService.getBoundaryDate(order.lower, 'end'),
+          end: ManifestService.getBoundaryDate(order.upper, 'start'),
+        };
+
+        this.logger.log(
+          `Fetching tickets for ${getDateRangeString(dateRange)}`,
+        );
+
         while (true) {
-          const dateRange = {
-            start: ManifestService.getBoundaryDate(order.lower, 'end'),
-            end: ManifestService.getBoundaryDate(order.upper, 'start'),
-          };
-
-          this.logger.log(
-            `Fetching tickets for ${getDateRangeString(dateRange)}`,
-          );
-
           const result = await rateLimit(
             tickets(
-              {
+              loopGuard.iter({
                 page,
-                limit,
+                limit: 320,
                 'search[created_at]': getDateRangeString(dateRange),
-                // 'search[id]': getRangeString(lowerId, upperId),
-              },
-              {
-                headers: {
-                  Authorization: encodeCredentials(credentials),
-                },
-              },
+              }),
+              axiosConfig,
             ),
           );
 
+          if (result.length === 0) break;
+
           this.logger.log(
-            `Found ${result.length} tickets with id range ${getRangeString(
+            `Found ${result.length} tickets with id range ${getIdRangeString(
               findLowestId(result)?.id,
               findHighestId(result)?.id,
             )} for ${getDateRangeString(dateRange)}`,
           );
-
-          if (result.length === 0) break;
 
           results = results.concat(result);
           page += 1;
@@ -126,12 +98,15 @@ export class TicketWorker {
 
         if (results.length === 0) continue;
 
+        checkIdContiguity(results);
+
         const stored = await this.ticketService.create(
           results.map(
             (ticket) =>
               new TicketEntity({
                 ...convertKeysToCamelCase(ticket),
                 cache: new CacheEntity({
+                  id: `/${this.itemType}/${ticket.id}`,
                   value: ticket,
                 }),
               }),
@@ -149,7 +124,8 @@ export class TicketWorker {
             this.manifestService.delete(order.lower);
           } else {
             // extend upper downwards
-            order.upper.lowerId = findLowestId(stored).id;
+            order.upper.lowerId =
+              findLowestId(stored)?.id ?? order.upper.lowerId;
             order.upper.startDate = order.lower;
             order.upper.completedStart = true;
 
@@ -158,20 +134,28 @@ export class TicketWorker {
         } else {
           if (order.lower instanceof ManifestEntity) {
             // extend lower upwards
-            order.lower.upperId = findHighestId(stored).id;
-            order.lower.endDate = order.upper;
-            order.lower.completedEnd = true;
+            order.lower.upperId =
+              findHighestId(stored)?.id ?? order.lower.upperId;
+            order.lower.endDate = dayjs
+              .min(dayjs(order.upper), currentDate)
+              .toDate();
+            order.lower.completedEnd = dayjs(order.lower.endDate).isBefore(
+              currentDate,
+            );
 
             this.manifestService.save(order.lower);
           } else {
+            if (stored.length === 0) continue;
+
             // create new manifest
             order.upper = new ManifestEntity({
-              type: this.manifestType,
-              lowerId: findLowestId(stored).id,
-              upperId: findHighestId(stored).id,
-              startDate: findLowestDate(stored).createdAt,
-              endDate: findHighestDate(stored).createdAt,
-              completedEnd: true,
+              type: this.itemType,
+              lowerId: findLowestId(stored)!.id,
+              upperId: findHighestId(stored)!.id,
+              startDate: order.lower,
+              completedStart: true,
+              endDate: dayjs.min(dayjs(order.upper), currentDate).toDate(),
+              completedEnd: dayjs(order.upper).isBefore(currentDate),
             });
 
             this.manifestService.save(order.upper);

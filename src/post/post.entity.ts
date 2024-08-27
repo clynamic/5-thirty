@@ -7,10 +7,10 @@ export class PostEntity extends CacheLink {
   @PrimaryColumn({ type: 'int' })
   id: number;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'datetime' })
   createdAt: Date;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'datetime' })
   updatedAt: Date;
 
   @Column({ type: 'text' })

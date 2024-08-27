@@ -15,13 +15,13 @@ export class ManifestEntity {
   @Column({ type: 'text' })
   type: string;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'datetime' })
   startDate: Date;
 
   @Column({ type: 'boolean', default: false })
   completedStart: boolean;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'datetime' })
   endDate: Date;
 
   @Column({ type: 'boolean', default: false })

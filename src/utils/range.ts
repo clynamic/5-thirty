@@ -1,12 +1,27 @@
 import dayjs from 'dayjs';
 
-export const getRangeString = (
-  start?: string | number,
-  end?: string | number,
-  inclusive = false,
-): string => {
-  const grt = inclusive ? '>=' : '>';
-  const lss = inclusive ? '<=' : '<';
+export interface DateRange {
+  start: Date;
+  end: Date;
+}
+
+export const getCurrentMonthRange = (): DateRange => {
+  const now = dayjs().utc();
+  const firstDay = now.startOf('month').format('YYYY-MM-DD');
+  const lastDay = now.endOf('month').format('YYYY-MM-DD');
+
+  return {
+    start: new Date(firstDay),
+    end: new Date(lastDay),
+  };
+};
+
+export const getDateRangeString = (range: DateRange): string => {
+  const start = dayjs(range.start).format('YYYY-MM-DD');
+  const end = dayjs(range.end).format('YYYY-MM-DD');
+
+  const grt = '>=';
+  const lss = '<=';
 
   if (start && !end) {
     return `${grt}${start}`;
@@ -19,48 +34,43 @@ export const getRangeString = (
   }
 };
 
-export interface DateRange {
-  start: Date;
-  end: Date;
-}
-
-export const getCurrentMonthRange = (): DateRange => {
-  const now = dayjs();
-  const firstDay = now.startOf('month').format('YYYY-MM-DD');
-  const lastDay = now.endOf('month').format('YYYY-MM-DD');
-
-  return {
-    start: new Date(firstDay),
-    end: new Date(lastDay),
-  };
-};
-
-export const getDateRangeString = (range: DateRange): string =>
-  getRangeString(
-    dayjs(range.start).format('YYYY-MM-DD'),
-    dayjs(range.end).format('YYYY-MM-DD'),
-    true,
-  );
-
 export interface WithId {
   id: number;
 }
 
-export const findLowestId = (items: WithId[] | undefined) => {
-  if (items == null || items.length === 0) return undefined;
+export const getIdRangeString = (
+  start: number | undefined,
+  end: number | undefined,
+): string => {
+  if (start && !end) {
+    return `>${start}`;
+  } else if (!start && end) {
+    return `<${end}`;
+  } else if (start && end) {
+    return `${start}...${end}`;
+  }
+  return '';
+};
+
+export const findLowestId = <T extends WithId>(
+  items: T[] | undefined,
+): T | undefined => {
+  if (items === undefined || items.length === 0) return undefined;
   return items.reduce((prev, current) =>
     prev.id < current.id ? prev : current,
   );
 };
 
-export const findHighestId = (items: WithId[] | undefined) => {
-  if (items == null || items.length === 0) return undefined;
+export const findHighestId = <T extends WithId>(
+  items: T[] | undefined,
+): T | undefined => {
+  if (items === undefined || items.length === 0) return undefined;
   return items.reduce((prev, current) =>
     prev.id > current.id ? prev : current,
   );
 };
 
-export const findIdBounds = (items: WithId[] | undefined) => {
+export const findIdBounds = <T extends WithId>(items: T[] | undefined) => {
   return {
     lowest: findLowestId(items),
     highest: findHighestId(items),
@@ -71,16 +81,46 @@ export interface WithCreationDate {
   createdAt: Date;
 }
 
-export const findLowestDate = (items: WithCreationDate[] | undefined) => {
-  if (items == null || items.length === 0) return undefined;
+export const findLowestDate = <T extends WithCreationDate>(
+  items: T[] | undefined,
+): T | undefined => {
+  if (items === undefined || items.length === 0) return undefined;
   return items.reduce((prev, current) =>
     dayjs(prev.createdAt).isBefore(current.createdAt) ? prev : current,
   );
 };
 
-export const findHighestDate = (items: WithCreationDate[] | undefined) => {
-  if (items == null || items.length === 0) return undefined;
+export const findHighestDate = <T extends WithCreationDate>(
+  items: T[] | undefined,
+): T | undefined => {
+  if (items === undefined || items.length === 0) return undefined;
   return items.reduce((prev, current) =>
     dayjs(prev.createdAt).isAfter(current.createdAt) ? prev : current,
   );
+};
+
+export class NonContiguousIdError extends Error {
+  constructor(
+    public readonly range: WithId['id'][],
+    public readonly index: number,
+  ) {
+    super(
+      `Illegal ID gap between ${range[index - 1]} and ${range[index]} in ${range}`,
+    );
+  }
+}
+
+export const checkIdContiguity = <T extends WithId>(items: T[] | undefined) => {
+  if (items === undefined || items.length < 2) return;
+
+  const sorted = items.slice().sort((a, b) => a.id - b.id);
+
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i].id - sorted[i - 1].id !== 1) {
+      throw new NonContiguousIdError(
+        sorted.map((item) => item.id),
+        i,
+      );
+    }
+  }
 };

@@ -44,10 +44,10 @@ export class TicketEntity extends CacheLink {
   @Column({ type: 'text', enum: TicketStatus })
   status: TicketStatus;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'datetime' })
   createdAt: Date;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'datetime' })
   updatedAt: Date;
 }
 
