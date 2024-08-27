@@ -1,0 +1,1584 @@
+openapi: 3.0.3
+info:
+  title: e621 API
+  version: 1.0.0
+  description: An API for accessing user information and other resources on e621 and e926.
+servers:
+  - url: https://e621.net
+    description: Production server for e621
+  - url: https://e926.net
+    description: SFW server for e926
+
+paths:
+  /posts.json:
+    get:
+      operationId: getPosts
+      tags:
+        - posts
+      summary: Get a list of posts
+      description: Returns a list of posts filtered by tags.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: The page number for pagination
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          description: The number of posts to retrieve per page
+          schema:
+            type: integer
+        - name: tags
+          in: query
+          required: false
+          description: Filter posts by tags
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of posts matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        '400':
+          description: Invalid request parameters
+        '500':
+          description: Server error
+  /posts/{id}.json:
+    get:
+      operationId: getPost
+      tags:
+        - posts
+      summary: Get a post by ID
+      description: Returns detailed information about a specific post identified by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique ID of the post to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response containing post details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '404':
+          description: Post not found
+        '500':
+          description: Server error
+  /users.json:
+    get:
+      operationId: getUsers
+      tags:
+        - users
+      summary: Get a list of users
+      description: Returns a list of users based on search criteria.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: The page number to retrieve
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          description: The number of users to retrieve per page
+          schema:
+            type: integer
+        - name: search[id]
+          in: query
+          required: false
+          description: Filter by user ID
+          schema:
+            type: string
+        - name: search[name]
+          in: query
+          required: false
+          description: Filter by username
+          schema:
+            type: string
+        - name: search[about]
+          in: query
+          required: false
+          description: Filter by user's "About" section
+          schema:
+            type: string
+        - name: search[avatar_id]
+          in: query
+          required: false
+          description: Filter by avatar ID
+          schema:
+            type: integer
+        - name: search[level]
+          in: query
+          required: false
+          description: Filter by user's access level
+          schema:
+            type: integer
+        - name: search[min_level]
+          in: query
+          required: false
+          description: Filter by minimum access level
+          schema:
+            type: integer
+        - name: search[max_level]
+          in: query
+          required: false
+          description: Filter by maximum access level
+          schema:
+            type: integer
+        - name: search[can_upload_free]
+          in: query
+          required: false
+          description: Filter by upload permissions
+          schema:
+            type: boolean
+        - name: search[can_approve_posts]
+          in: query
+          required: false
+          description: Filter by post approval permissions
+          schema:
+            type: boolean
+        - name: search[order]
+          in: query
+          required: false
+          description: Order the results by a specific field
+          schema:
+            type: string
+            enum: [date, name, post_upload_count, note_count, post_update_count]
+      responses:
+        '200':
+          description: A list of users matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request parameters
+        '500':
+          description: Server error
+  /users/{id}.json:
+    get:
+      operationId: getUser
+      tags:
+        - users
+      summary: Get user information by ID or username
+      description: Returns detailed information about a user identified by their ID or username.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID or username of the user to retrieve
+          schema:
+            type: string
+            description: Can be either the user's ID (integer) or username (string)
+      responses:
+        '200':
+          description: Successful response containing user details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+        '500':
+          description: Server error
+  /tickets.json:
+    get:
+      operationId: getTickets
+      tags:
+        - tickets
+      summary: Get a list of tickets
+      description: Returns a list of tickets based on search criteria.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: The page number to retrieve
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          description: The number of tickets to retrieve per page
+          schema:
+            type: integer
+        - name: search[created_at]
+          in: query
+          required: false
+          description: Filter by the creation date of the ticket
+          schema:
+            type: string
+        - name: search[updated_at]
+          in: query
+          required: false
+          description: Filter by the last update date of the ticket
+          schema:
+            type: string
+        - name: search[id]
+          in: query
+          required: false
+          description: Filter by ticket ID
+          schema:
+            type: string
+        - name: search[creator_name]
+          in: query
+          required: false
+          description: Filter by the creator's username
+          schema:
+            type: string
+        - name: search[accused_name]
+          in: query
+          required: false
+          description: Filter by the accused user's username
+          schema:
+            type: string
+        - name: search[claimant_name]
+          in: query
+          required: false
+          description: Filter by the claimant's username
+          schema:
+            type: string
+        - name: search[reason]
+          in: query
+          required: false
+          description: Filter by the reason for the ticket
+          schema:
+            type: string
+        - name: search[qtype]
+          in: query
+          required: false
+          description: Filter by the type of the ticket (e.g., user, comment, post)
+          schema:
+            type: string
+            enum: [user, comment, forum, blip, wiki, pool, set, post, dmail]
+        - name: search[status]
+          in: query
+          required: false
+          description: Filter by the status of the ticket
+          schema:
+            type: string
+            enum:
+              [pending, pending_unclaimed, pending_claimed, approved, partial]
+      responses:
+        '200':
+          description: A list of tickets matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ticket'
+        '400':
+          description: Invalid request parameters
+        '500':
+          description: Server error
+  /tickets/{id}.json:
+    get:
+      operationId: getTicket
+      tags:
+        - tickets
+      summary: Get a ticket by ID
+      description: Returns detailed information about a specific ticket identified by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique ID of the ticket to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response containing ticket details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '404':
+          description: Ticket not found
+        '500':
+          description: Server error
+  /user_feedbacks.json:
+    get:
+      operationId: getUserFeedbacks
+      tags:
+        - user_feedbacks
+      summary: Get a list of user feedbacks
+      description: Returns a list of user feedbacks based on search criteria.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: The page number to retrieve
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          description: The number of feedbacks to retrieve per page
+          schema:
+            type: integer
+        - name: search[category]
+          in: query
+          required: false
+          description: Filter by feedback category
+          schema:
+            type: string
+            enum: [negative, positive, neutral]
+        - name: search[deleted]
+          in: query
+          required: false
+          description: Filter by deletion status of the feedback
+          schema:
+            type: string
+            enum: [included, excluded, only]
+        - name: search[created_at]
+          in: query
+          required: false
+          description: Filter by the creation date of the feedback
+          schema:
+            type: string
+        - name: search[updated_at]
+          in: query
+          required: false
+          description: Filter by the last update date of the feedback
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of user feedbacks matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserFeedback'
+        '400':
+          description: Invalid request parameters
+        '500':
+          description: Server error
+
+  /user_feedbacks/{id}.json:
+    get:
+      operationId: getUserFeedback
+      tags:
+        - user_feedbacks
+      summary: Get a user feedback by ID
+      description: Returns detailed information about a specific user feedback identified by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique ID of the user feedback to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response containing user feedback details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserFeedback'
+        '404':
+          description: User feedback not found
+        '500':
+          description: Server error
+
+  /post_approvals.json:
+    get:
+      operationId: getPostApprovals
+      tags:
+        - approvals
+      summary: Get a list of post approvals
+      description: Returns a list of post approvals based on search criteria.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: The page number to retrieve
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          description: The number of approvals to retrieve per page
+          schema:
+            type: integer
+        - name: search[user_name]
+          in: query
+          required: false
+          description: Filter approvals by approver username
+          schema:
+            type: integer
+        - name: search[post_tags_match]
+          in: query
+          required: false
+          description: Filter approvals by matching post tagss
+          schema:
+            type: integer
+        - name: search[created_at]
+          in: query
+          required: false
+          description: Filter by the creation date of the approval
+          schema:
+            type: string
+        - name: search[updated_at]
+          in: query
+          required: false
+          description: Filter by the last update date of the approval
+          schema:
+            type: string
+        - name: search[id]
+          in: query
+          required: false
+          description: Filter by approval ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of approvals matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Approval'
+        '400':
+          description: Invalid request parameters
+        '500':
+          description: Server error
+
+  /uploads.json:
+    get:
+      operationId: getUploads
+      tags:
+        - uploads
+      summary: Get a list of uploads
+      description: Returns a list of uploads based on search criteria.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: The page number to retrieve
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          description: The number of uploads to retrieve per page
+          schema:
+            type: integer
+        - name: search[uploader_name]
+          in: query
+          required: false
+          description: Filter uploads by uploader's username
+          schema:
+            type: string
+        - name: search[post_tags_match]
+          in: query
+          required: false
+          description: Filter uploads by post tags
+          schema:
+            type: string
+        - name: search[source_matches]
+          in: query
+          required: false
+          description: Filter uploads by source
+          schema:
+            type: string
+        - name: search[status]
+          in: query
+          required: false
+          description: Filter uploads by status
+          schema:
+            type: string
+            enum: [completed, processing, pending, duplicate, error]
+        - name: search[created_at]
+          in: query
+          required: false
+          description: Filter by the creation date of the upload
+          schema:
+            type: string
+        - name: search[updated_at]
+          in: query
+          required: false
+          description: Filter by the last update date of the upload
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of uploads matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Upload'
+        '400':
+          description: Invalid request parameters
+        '500':
+          description: Server error
+
+  /uploads/{id}.json:
+    get:
+      operationId: getUpload
+      tags:
+        - uploads
+      summary: Get an upload by ID
+      description: Returns detailed information about a specific upload identified by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique ID of the upload to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response containing upload details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+        '404':
+          description: Upload not found
+        '500':
+          description: Server error
+
+  /post_flags.json:
+    get:
+      operationId: getPostFlags
+      tags:
+        - post_flags
+      summary: Get a list of post flags
+      description: Returns a list of post flags based on search criteria.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: The page number to retrieve
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          description: The number of post flags to retrieve per page
+          schema:
+            type: integer
+        - name: search[reason_matches]
+          in: query
+          required: false
+          description: Filter post flags by matching reason text
+          schema:
+            type: string
+        - name: search[post_tags_match]
+          in: query
+          required: false
+          description: Filter post flags by matching post tags
+          schema:
+            type: string
+        - name: search[post_id]
+          in: query
+          required: false
+          description: Filter post flags by post ID
+          schema:
+            type: integer
+        - name: search[type]
+          in: query
+          required: false
+          description: Filter post flags by type (e.g., flag or deletion)
+          schema:
+            type: string
+            enum: [flag, deletion]
+        - name: search[is_resolved]
+          in: query
+          required: false
+          description: Filter post flags by resolution status
+          schema:
+            type: boolean
+        - name: search[creator_name]
+          in: query
+          required: false
+          description: Filter post flags by the creator's username
+          schema:
+            type: string
+        - name: search[created_at]
+          in: query
+          required: false
+          description: Filter by the creation date of the post flag
+          schema:
+            type: string
+        - name: search[updated_at]
+          in: query
+          required: false
+          description: Filter by the last update date of the post flag
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of post flags matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostFlag'
+        '400':
+          description: Invalid request parameters
+        '500':
+          description: Server error
+
+  /post_flags/{id}.json:
+    get:
+      operationId: getPostFlag
+      tags:
+        - post_flags
+      summary: Get a post flag by ID
+      description: Returns detailed information about a specific post flag identified by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique ID of the post flag to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response containing post flag details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostFlag'
+        '404':
+          description: Post flag not found
+        '500':
+          description: Server error
+
+  /post_versions.json:
+    get:
+      operationId: getPostVersions
+      tags:
+        - post_versions
+      summary: Get a list of post versions
+      description: Returns a list of post versions based on search criteria.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: The page number for pagination
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          description: The number of post versions to retrieve per page
+          schema:
+            type: integer
+        - name: search[updater_name]
+          in: query
+          required: false
+          description: Filter post versions by the updater's username
+          schema:
+            type: string
+        - name: search[post_id]
+          in: query
+          required: false
+          description: Filter post versions by post ID
+          schema:
+            type: integer
+        - name: search[reason]
+          in: query
+          required: false
+          description: Filter post versions by the reason for the update
+          schema:
+            type: string
+        - name: search[description]
+          in: query
+          required: false
+          description: Filter post versions by description
+          schema:
+            type: string
+        - name: search[description_changed]
+          in: query
+          required: false
+          description: Filter post versions by whether the description was changed
+          schema:
+            type: boolean
+        - name: search[rating_changed]
+          in: query
+          required: false
+          description: Filter post versions by whether the rating was changed
+          schema:
+            type: string
+            enum: [any, s, q, e]
+        - name: search[rating]
+          in: query
+          required: false
+          description: Filter post versions by rating
+          schema:
+            type: string
+            enum: [s, q, e]
+        - name: search[parent_id]
+          in: query
+          required: false
+          description: Filter post versions by parent post ID
+          schema:
+            type: integer
+        - name: search[parent_id_changed]
+          in: query
+          required: false
+          description: Filter post versions by whether the parent ID was changed
+          schema:
+            type: boolean
+        - name: search[tags]
+          in: query
+          required: false
+          description: Filter post versions by tags
+          schema:
+            type: string
+        - name: search[tags_added]
+          in: query
+          required: false
+          description: Filter post versions by tags added
+          schema:
+            type: string
+        - name: search[tags_removed]
+          in: query
+          required: false
+          description: Filter post versions by tags removed
+          schema:
+            type: string
+        - name: search[locked_tags]
+          in: query
+          required: false
+          description: Filter post versions by locked tags
+          schema:
+            type: string
+        - name: search[locked_tags_added]
+          in: query
+          required: false
+          description: Filter post versions by locked tags added
+          schema:
+            type: string
+        - name: search[locked_tags_removed]
+          in: query
+          required: false
+          description: Filter post versions by locked tags removed
+          schema:
+            type: string
+        - name: search[source_changed]
+          in: query
+          required: false
+          description: Filter post versions by whether the source was changed
+          schema:
+            type: boolean
+        - name: search[uploads]
+          in: query
+          required: false
+          description: Filter post versions by uploads status
+          schema:
+            type: string
+            enum: [only, included, excluded]
+        - name: search[created_at]
+          in: query
+          required: false
+          description: Filter post versions by creation date
+          schema:
+            type: string
+        - name: search[updated_at]
+          in: query
+          required: false
+          description: Filter post versions by last update date
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of post versions matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostVersion'
+        '400':
+          description: Invalid request parameters
+        '500':
+          description: Server error
+
+components:
+  schemas:
+    Post:
+      type: object
+      required:
+        - id
+        - created_at
+        - updated_at
+        - file
+        - preview
+        - sample
+        - score
+        - tags
+        - locked_tags
+        - change_seq
+        - flags
+        - rating
+        - fav_count
+        - sources
+        - pools
+        - relationships
+        - uploader_id
+        - description
+        - comment_count
+        - has_notes
+      properties:
+        id:
+          type: integer
+          description: The unique ID of the post
+        created_at:
+          type: string
+          format: date-time
+          description: The time when the post was created
+        updated_at:
+          type: string
+          format: date-time
+          description: The last time the post was updated
+        file:
+          $ref: '#/components/schemas/File'
+        preview:
+          $ref: '#/components/schemas/Preview'
+        sample:
+          $ref: '#/components/schemas/Sample'
+        score:
+          $ref: '#/components/schemas/Score'
+        tags:
+          $ref: '#/components/schemas/Tags'
+        locked_tags:
+          type: array
+          items:
+            type: string
+          description: An array of tags that are locked
+        change_seq:
+          type: integer
+          description: The sequence number of changes to the post
+        flags:
+          $ref: '#/components/schemas/Flags'
+        rating:
+          type: string
+          description: The rating of the post (e.g., safe, questionable, explicit)
+          enum: [s, q, e]
+        fav_count:
+          type: integer
+          description: The number of times the post has been favorited
+        sources:
+          type: array
+          items:
+            type: string
+          description: An array of sources for the post
+        pools:
+          type: array
+          items:
+            type: integer
+          description: An array of pool IDs associated with the post
+        relationships:
+          $ref: '#/components/schemas/Relationships'
+        approver_id:
+          type: integer
+          nullable: true
+          description: The ID of the user who approved the post, if applicable
+        uploader_id:
+          type: integer
+          description: The ID of the user who uploaded the post
+        description:
+          type: string
+          description: The description of the post
+        comment_count:
+          type: integer
+          description: The number of comments on the post
+        is_favorited:
+          type: boolean
+          description: Whether the post is favorited by the current user
+        has_notes:
+          type: boolean
+          description: Whether the post has any notes attached
+        duration:
+          type: number
+          nullable: true
+          description: The duration of the post, if applicable
+
+    File:
+      type: object
+      required:
+        - width
+        - height
+        - ext
+        - size
+        - md5
+        - url
+      properties:
+        width:
+          type: integer
+          description: The width of the file in pixels
+        height:
+          type: integer
+          description: The height of the file in pixels
+        ext:
+          type: string
+          description: The file extension (e.g., jpg, png, webm)
+          enum: [jpg, png, webm]
+        size:
+          type: integer
+          description: The size of the file in bytes
+        md5:
+          type: string
+          description: The MD5 hash of the file
+        url:
+          type: string
+          description: The URL of the file
+
+    Preview:
+      type: object
+      required:
+        - width
+        - height
+        - url
+      properties:
+        width:
+          type: integer
+          description: The width of the preview in pixels
+        height:
+          type: integer
+          description: The height of the preview in pixels
+        url:
+          type: string
+          description: The URL of the preview image
+
+    Sample:
+      type: object
+      required:
+        - has
+        - height
+        - width
+        - url
+      properties:
+        has:
+          type: boolean
+          description: Whether the sample exists
+        height:
+          type: integer
+          description: The height of the sample image in pixels
+        width:
+          type: integer
+          description: The width of the sample image in pixels
+        url:
+          type: string
+          description: The URL of the sample image
+        alternates:
+          type: object
+          description: Alternate versions of the sample, such as different resolutions
+          additionalProperties:
+            type: object
+            properties:
+              type:
+                type: string
+                description: The type of the alternate file (e.g., 720p, original)
+              height:
+                type: integer
+                description: The height of the alternate version in pixels
+              width:
+                type: integer
+                description: The width of the alternate version in pixels
+              urls:
+                type: array
+                items:
+                  type: string
+                description: The URLs for the alternate version
+
+    Score:
+      type: object
+      required:
+        - up
+        - down
+        - total
+      properties:
+        up:
+          type: integer
+          description: The number of upvotes on the post
+        down:
+          type: integer
+          description: The number of downvotes on the post
+        total:
+          type: integer
+          description: The total score (upvotes minus downvotes)
+
+    Tags:
+      type: object
+      required:
+        - general
+        - artist
+        - copyright
+        - character
+        - species
+        - invalid
+        - meta
+        - lore
+      properties:
+        general:
+          type: array
+          items:
+            type: string
+          description: An array of general tags
+        artist:
+          type: array
+          items:
+            type: string
+          description: An array of artist tags
+        copyright:
+          type: array
+          items:
+            type: string
+          description: An array of copyright tags
+        character:
+          type: array
+          items:
+            type: string
+          description: An array of character tags
+        species:
+          type: array
+          items:
+            type: string
+          description: An array of species tags
+        invalid:
+          type: array
+          items:
+            type: string
+          description: An array of invalid tags
+        meta:
+          type: array
+          items:
+            type: string
+          description: An array of meta tags
+        lore:
+          type: array
+          items:
+            type: string
+          description: An array of lore tags
+
+    Flags:
+      type: object
+      required:
+        - pending
+        - flagged
+        - note_locked
+        - status_locked
+        - rating_locked
+        - deleted
+      properties:
+        pending:
+          type: boolean
+          description: Whether the post is pending approval
+        flagged:
+          type: boolean
+          description: Whether the post is flagged
+        note_locked:
+          type: boolean
+          description: Whether notes on the post are locked
+        status_locked:
+          type: boolean
+          description: Whether the status of the post is locked
+        rating_locked:
+          type: boolean
+          description: Whether the rating of the post is locked
+        deleted:
+          type: boolean
+          description: Whether the post is deleted
+
+    Relationships:
+      type: object
+      required:
+        - has_children
+        - has_active_children
+        - children
+      properties:
+        parent_id:
+          type: integer
+          nullable: true
+          description: The ID of the parent post, if applicable
+        has_children:
+          type: boolean
+          description: Whether the post has any child posts
+        has_active_children:
+          type: boolean
+          description: Whether the post has any active child posts
+        children:
+          type: array
+          items:
+            type: integer
+          description: An array of child post IDs
+    User:
+      type: object
+      description: A detailed representation of a user.
+      required:
+        - id
+        - name
+        - created_at
+        - level
+        - base_upload_limit
+        - post_upload_count
+        - post_update_count
+        - note_update_count
+        - is_banned
+        - can_approve_posts
+        - can_upload_free
+        - level_string
+      properties:
+        wiki_page_version_count:
+          type: integer
+          description: Number of wiki page versions created by the user
+        artist_version_count:
+          type: integer
+          description: Number of artist versions created by the user
+        pool_version_count:
+          type: integer
+          description: Number of pool versions created by the user
+        forum_post_count:
+          type: integer
+          description: Number of forum posts created by the user
+        comment_count:
+          type: integer
+          description: Number of comments made by the user
+        flag_count:
+          type: integer
+          description: Number of flags made by the user
+        favorite_count:
+          type: integer
+          description: Number of favorites added by the user
+        positive_feedback_count:
+          type: integer
+          description: Number of positive feedbacks received by the user
+        neutral_feedback_count:
+          type: integer
+          description: Number of neutral feedbacks received by the user
+        negative_feedback_count:
+          type: integer
+          description: Number of negative feedbacks received by the user
+        upload_limit:
+          type: integer
+          description: The user's current upload limit
+        profile_about:
+          type: string
+          description: The user's "About" profile section
+        profile_artinfo:
+          type: string
+          description: The user's art information profile section
+        id:
+          type: integer
+          description: The unique ID of the user
+        created_at:
+          type: string
+          format: date-time
+          description: The timestamp when the user account was created
+        name:
+          type: string
+          description: The username of the user
+        level:
+          type: integer
+          description: The user's access level (numerical)
+        base_upload_limit:
+          type: integer
+          description: The base upload limit for the user
+        post_upload_count:
+          type: integer
+          description: Number of posts uploaded by the user
+        post_update_count:
+          type: integer
+          description: Number of post updates made by the user
+        note_update_count:
+          type: integer
+          description: Number of note updates made by the user
+        is_banned:
+          type: boolean
+          description: Whether the user is banned
+        can_approve_posts:
+          type: boolean
+          description: Whether the user can approve posts
+        can_upload_free:
+          type: boolean
+          description: Whether the user can upload without restrictions
+        level_string:
+          type: string
+          description: The user's access level (textual description)
+        avatar_id:
+          type: integer
+          description: The ID of the user's avatar image
+    Ticket:
+      type: object
+      description: A ticket object representing a user complaint or moderation issue.
+      required:
+        - id
+        - creator_id
+        - reason
+        - disp_id
+        - qtype
+        - status
+        - created_at
+        - updated_at
+        - response
+        - handler_id
+      properties:
+        id:
+          type: integer
+          description: The unique ID of the ticket
+        creator_id:
+          type: integer
+          description: The ID of the user who created the ticket
+        reason:
+          type: string
+          description: The reason for the ticket
+        disp_id:
+          type: integer
+          description: The post ID associated with the ticket
+        qtype:
+          type: string
+          enum: [user, comment, forum, blip, wiki, pool, set, post, dmail]
+          description: The type of ticket (e.g., comment, user, post)
+        status:
+          type: string
+          enum: [pending, approved, partial]
+          description: The current status of the ticket
+        created_at:
+          type: string
+          format: date-time
+          description: The time when the ticket was created
+        updated_at:
+          type: string
+          format: date-time
+          description: The last time the ticket was updated
+        response:
+          type: string
+          description: The response to the ticket
+        handler_id:
+          type: integer
+          description: The ID of the user handling the ticket
+        claimant_id:
+          type: integer
+          nullable: true
+          description: The ID of the claimant user
+        report_reason:
+          type: string
+          nullable: true
+          description: The post report reason for the ticket
+        accused_id:
+          type: integer
+          nullable: true
+          description: The ID of the accused user
+    UserFeedback:
+      type: object
+      description: A user feedback object representing a piece of feedback left by a user.
+      required:
+        - id
+        - user_id
+        - creator_id
+        - created_at
+        - body
+        - category
+        - updated_at
+        - updater_id
+        - is_deleted
+      properties:
+        id:
+          type: integer
+          description: The unique ID of the user feedback
+        user_id:
+          type: integer
+          description: The ID of the user who received the feedback
+        creator_id:
+          type: integer
+          description: The ID of the user who created the feedback
+        created_at:
+          type: string
+          format: date-time
+          description: The time when the feedback was created
+        body:
+          type: string
+          description: The body of the feedback, containing the details
+        category:
+          type: string
+          enum: [negative, positive, neutral]
+          description: The category of the feedback (e.g., negative, positive, neutral)
+        updated_at:
+          type: string
+          format: date-time
+          description: The last time the feedback was updated
+        updater_id:
+          type: integer
+          description: The ID of the user who last updated the feedback
+        is_deleted:
+          type: boolean
+          description: Whether the feedback is deleted
+    Approval:
+      type: object
+      description: A post approval object representing a user's approval of a post.
+      required:
+        - id
+        - user_id
+        - post_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: The unique ID of the approval
+        user_id:
+          type: integer
+          description: The ID of the user who approved the post
+        post_id:
+          type: integer
+          description: The ID of the approved post
+        created_at:
+          type: string
+          format: date-time
+          description: The timestamp when the approval was created
+        updated_at:
+          type: string
+          format: date-time
+          description: The timestamp when the approval was last updated
+    Upload:
+      type: object
+      description: An upload object representing a user's uploaded content.
+      required:
+        - id
+        - source
+        - rating
+        - uploader_id
+        - status
+        - created_at
+        - updated_at
+        - file_ext
+        - file_size
+        - image_width
+        - image_height
+        - uploader_name
+      properties:
+        id:
+          type: integer
+          description: The unique ID of the upload
+        source:
+          type: string
+          description: The source URL of the upload, if provided
+        rating:
+          type: string
+          description: The rating of the upload (e.g., safe, questionable, explicit)
+          enum: [s, q, e]
+        uploader_id:
+          type: integer
+          description: The ID of the user who uploaded the content
+        tag_string:
+          type: string
+          description: The tags associated with the upload
+        status:
+          type: string
+          description: The current status of the upload
+          enum: [completed, processing, pending, duplicate, error]
+        backtrace:
+          type: string
+          nullable: true
+          description: Any backtrace or error details if applicable
+        post_id:
+          type: integer
+          nullable: true
+          description: The ID of the post generated by this upload, if applicable
+        md5_confirmation:
+          type: string
+          nullable: true
+          description: The MD5 confirmation hash for the upload, if applicable
+        created_at:
+          type: string
+          format: date-time
+          description: The timestamp when the upload was created
+        updated_at:
+          type: string
+          format: date-time
+          description: The timestamp when the upload was last updated
+        parent_id:
+          type: integer
+          nullable: true
+          description: The ID of the parent post, if applicable
+        md5:
+          type: string
+          description: The MD5 hash of the file
+        file_ext:
+          type: string
+          description: The file extension (e.g., jpg, png, webm)
+        file_size:
+          type: integer
+          description: The size of the file in bytes
+        image_width:
+          type: integer
+          description: The width of the uploaded image in pixels
+        image_height:
+          type: integer
+          description: The height of the uploaded image in pixels
+        description:
+          type: string
+          description: A description of the uploaded content
+        uploader_name:
+          type: string
+          description: The username of the uploader
+    PostFlag:
+      type: object
+      description: A post flag object representing a user's flag or deletion request on a post.
+      required:
+        - id
+        - created_at
+        - post_id
+        - reason
+        - creator_id
+        - is_resolved
+        - updated_at
+        - is_deletion
+        - type
+      properties:
+        id:
+          type: integer
+          description: The unique ID of the post flag
+        created_at:
+          type: string
+          format: date-time
+          description: The timestamp when the post flag was created
+        post_id:
+          type: integer
+          description: The ID of the post that the flag is related to
+        reason:
+          type: string
+          description: The reason for the flag or deletion request
+        creator_id:
+          type: integer
+          description: The ID of the user who created the flag or deletion request
+        is_resolved:
+          type: boolean
+          description: Whether the flag has been resolved
+        updated_at:
+          type: string
+          format: date-time
+          description: The timestamp when the post flag was last updated
+        is_deletion:
+          type: boolean
+          description: Whether the flag is a deletion request
+        type:
+          type: string
+          description: The type of the flag (e.g., flag or deletion)
+          enum: [flag, deletion]
+    PostVersion:
+      type: object
+      description: A version of a post, representing changes made to the post.
+      required:
+        - id
+        - post_id
+        - tags
+        - updater_id
+        - updated_at
+        - rating
+        - parent_id
+        - source
+        - description
+        - version
+        - updater_name
+      properties:
+        id:
+          type: integer
+          description: The unique ID of the post version
+        post_id:
+          type: integer
+          description: The ID of the associated post
+        tags:
+          type: string
+          description: The tags associated with the post version
+        updater_id:
+          type: integer
+          description: The ID of the user who updated the post
+        updated_at:
+          type: string
+          format: date-time
+          description: The timestamp when the post version was updated
+        rating:
+          type: string
+          description: The rating of the post (e.g., safe, questionable, explicit)
+          enum: [s, q, e]
+        parent_id:
+          type: integer
+          nullable: true
+          description: The ID of the parent post, if applicable
+        source:
+          type: string
+          description: The source URL associated with the post version
+        description:
+          type: string
+          description: The description of the post version
+        reason:
+          type: string
+          nullable: true
+          description: The reason for the update, if applicable
+        locked_tags:
+          type: string
+          nullable: true
+          description: The locked tags associated with the post version
+        added_tags:
+          type: array
+          items:
+            type: string
+          description: An array of tags added in this version
+        removed_tags:
+          type: array
+          items:
+            type: string
+          description: An array of tags removed in this version
+        added_locked_tags:
+          type: array
+          items:
+            type: string
+          description: An array of locked tags added in this version
+        removed_locked_tags:
+          type: array
+          items:
+            type: string
+          description: An array of locked tags removed in this version
+        rating_changed:
+          type: boolean
+          description: Whether the rating was changed in this version
+        parent_changed:
+          type: boolean
+          description: Whether the parent ID was changed in this version
+        source_changed:
+          type: boolean
+          description: Whether the source was changed in this version
+        description_changed:
+          type: boolean
+          description: Whether the description was changed in this version
+        version:
+          type: integer
+          description: The version number of the post
+        updater_name:
+          type: string
+          description: The username of the user who updated the post version
+        obsolete_added_tags:
+          type: string
+          nullable: true
+          description: Obsolete tags added in this version
+        obsolete_removed_tags:
+          type: string
+          nullable: true
+          description: Obsolete tags removed in this version
+        unchanged_tags:
+          type: string
+          description: The tags that remained unchanged in this version

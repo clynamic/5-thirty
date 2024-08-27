@@ -1,0 +1,13 @@
+root = true
+
+[*]
+indent_style = space
+indent_size = 2
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+end_of_line = auto
+
+[*.{js,ts,jsx,tsx,flutter,dart}]
+quote_type = single
+trailing_comma = always
