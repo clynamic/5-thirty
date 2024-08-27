@@ -32,7 +32,7 @@ export class TicketWorker {
 
   private itemType = 'tickets';
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async onSync() {
     if (this.isRunning) {
       this.logger.warn('Task already running, skipping...');

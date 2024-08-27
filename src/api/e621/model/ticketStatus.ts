@@ -9,11 +9,8 @@
 /**
  * The current status of the ticket
  */
-export type TicketStatus = (typeof TicketStatus)[keyof typeof TicketStatus];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const TicketStatus = {
-  pending: 'pending',
-  approved: 'approved',
-  partial: 'partial',
-} as const;
+export enum TicketStatus {
+  pending = 'pending',
+  approved = 'approved',
+  partial = 'partial',
+}

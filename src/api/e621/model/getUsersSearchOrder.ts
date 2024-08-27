@@ -6,14 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type GetUsersSearchOrder =
-  (typeof GetUsersSearchOrder)[keyof typeof GetUsersSearchOrder];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const GetUsersSearchOrder = {
-  date: 'date',
-  name: 'name',
-  post_upload_count: 'post_upload_count',
-  note_count: 'note_count',
-  post_update_count: 'post_update_count',
-} as const;
+export enum GetUsersSearchOrder {
+  date = 'date',
+  name = 'name',
+  post_upload_count = 'post_upload_count',
+  note_count = 'note_count',
+  post_update_count = 'post_update_count',
+}

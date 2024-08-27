@@ -9,17 +9,14 @@
 /**
  * The type of ticket (e.g., comment, user, post)
  */
-export type TicketQtype = (typeof TicketQtype)[keyof typeof TicketQtype];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const TicketQtype = {
-  user: 'user',
-  comment: 'comment',
-  forum: 'forum',
-  blip: 'blip',
-  wiki: 'wiki',
-  pool: 'pool',
-  set: 'set',
-  post: 'post',
-  dmail: 'dmail',
-} as const;
+export enum TicketQtype {
+  user = 'user',
+  comment = 'comment',
+  forum = 'forum',
+  blip = 'blip',
+  wiki = 'wiki',
+  pool = 'pool',
+  set = 'set',
+  post = 'post',
+  dmail = 'dmail',
+}

@@ -6,18 +6,14 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type GetTicketsSearchQtype =
-  (typeof GetTicketsSearchQtype)[keyof typeof GetTicketsSearchQtype];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const GetTicketsSearchQtype = {
-  user: 'user',
-  comment: 'comment',
-  forum: 'forum',
-  blip: 'blip',
-  wiki: 'wiki',
-  pool: 'pool',
-  set: 'set',
-  post: 'post',
-  dmail: 'dmail',
-} as const;
+export enum GetTicketsSearchQtype {
+  user = 'user',
+  comment = 'comment',
+  forum = 'forum',
+  blip = 'blip',
+  wiki = 'wiki',
+  pool = 'pool',
+  set = 'set',
+  post = 'post',
+  dmail = 'dmail',
+}

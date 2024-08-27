@@ -9,11 +9,8 @@
 /**
  * The rating of the upload (e.g., safe, questionable, explicit)
  */
-export type UploadRating = (typeof UploadRating)[keyof typeof UploadRating];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const UploadRating = {
-  s: 's',
-  q: 'q',
-  e: 'e',
-} as const;
+export enum UploadRating {
+  s = 's',
+  q = 'q',
+  e = 'e',
+}

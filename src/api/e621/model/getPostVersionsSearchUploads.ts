@@ -6,12 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type GetPostVersionsSearchUploads =
-  (typeof GetPostVersionsSearchUploads)[keyof typeof GetPostVersionsSearchUploads];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const GetPostVersionsSearchUploads = {
-  only: 'only',
-  included: 'included',
-  excluded: 'excluded',
-} as const;
+export enum GetPostVersionsSearchUploads {
+  only = 'only',
+  included = 'included',
+  excluded = 'excluded',
+}

@@ -6,14 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type GetUploadsSearchStatus =
-  (typeof GetUploadsSearchStatus)[keyof typeof GetUploadsSearchStatus];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const GetUploadsSearchStatus = {
-  completed: 'completed',
-  processing: 'processing',
-  pending: 'pending',
-  duplicate: 'duplicate',
-  error: 'error',
-} as const;
+export enum GetUploadsSearchStatus {
+  completed = 'completed',
+  processing = 'processing',
+  pending = 'pending',
+  duplicate = 'duplicate',
+  error = 'error',
+}

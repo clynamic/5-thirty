@@ -9,12 +9,8 @@
 /**
  * The rating of the post (e.g., safe, questionable, explicit)
  */
-export type PostVersionRating =
-  (typeof PostVersionRating)[keyof typeof PostVersionRating];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const PostVersionRating = {
-  s: 's',
-  q: 'q',
-  e: 'e',
-} as const;
+export enum PostVersionRating {
+  s = 's',
+  q = 'q',
+  e = 'e',
+}

@@ -6,14 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type GetTicketsSearchStatus =
-  (typeof GetTicketsSearchStatus)[keyof typeof GetTicketsSearchStatus];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const GetTicketsSearchStatus = {
-  pending: 'pending',
-  pending_unclaimed: 'pending_unclaimed',
-  pending_claimed: 'pending_claimed',
-  approved: 'approved',
-  partial: 'partial',
-} as const;
+export enum GetTicketsSearchStatus {
+  pending = 'pending',
+  pending_unclaimed = 'pending_unclaimed',
+  pending_claimed = 'pending_claimed',
+  approved = 'approved',
+  partial = 'partial',
+}

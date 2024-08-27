@@ -6,12 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type GetUserFeedbacksSearchDeleted =
-  (typeof GetUserFeedbacksSearchDeleted)[keyof typeof GetUserFeedbacksSearchDeleted];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const GetUserFeedbacksSearchDeleted = {
-  included: 'included',
-  excluded: 'excluded',
-  only: 'only',
-} as const;
+export enum GetUserFeedbacksSearchDeleted {
+  included = 'included',
+  excluded = 'excluded',
+  only = 'only',
+}

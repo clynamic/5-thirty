@@ -11,4 +11,4 @@ import { ManifestModule } from 'src/manifest';
   controllers: [ApprovalController],
   providers: [ApprovalService, ApprovalWorker],
 })
-export class ApprovalsModule {}
+export class ApprovalModule {}

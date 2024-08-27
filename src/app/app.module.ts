@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ApprovalsModule } from 'src/approval';
+import { ApprovalModule } from 'src/approval';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppConfigModule } from './config.module';
 import { DatabaseModule } from './database.module';
@@ -18,7 +18,7 @@ import '../utils/dayjs-extension';
     AuthModule,
     CacheModule,
     ManifestModule,
-    ApprovalsModule,
+    ApprovalModule,
     TicketModule,
   ],
   controllers: [],

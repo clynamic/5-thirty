@@ -33,7 +33,8 @@ export class ApprovalController {
   @ApiResponse({
     status: 200,
     description: 'List of approvals',
-    type: Array<Approval>,
+    type: Approval,
+    isArray: true,
   })
   async list(@Query() query: ApprovalQuery): Promise<Approval[]> {
     return this.approvalsService.list(query);

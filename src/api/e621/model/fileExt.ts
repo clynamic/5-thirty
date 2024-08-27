@@ -9,11 +9,8 @@
 /**
  * The file extension (e.g., jpg, png, webm)
  */
-export type FileExt = (typeof FileExt)[keyof typeof FileExt];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const FileExt = {
-  jpg: 'jpg',
-  png: 'png',
-  webm: 'webm',
-} as const;
+export enum FileExt {
+  jpg = 'jpg',
+  png = 'png',
+  webm = 'webm',
+}

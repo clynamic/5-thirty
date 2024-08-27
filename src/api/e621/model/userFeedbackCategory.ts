@@ -9,12 +9,8 @@
 /**
  * The category of the feedback (e.g., negative, positive, neutral)
  */
-export type UserFeedbackCategory =
-  (typeof UserFeedbackCategory)[keyof typeof UserFeedbackCategory];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const UserFeedbackCategory = {
-  negative: 'negative',
-  positive: 'positive',
-  neutral: 'neutral',
-} as const;
+export enum UserFeedbackCategory {
+  negative = 'negative',
+  positive = 'positive',
+  neutral = 'neutral',
+}

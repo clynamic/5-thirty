@@ -16,6 +16,7 @@ export default defineConfig({
       prettier: true,
       override: {
         useDates: true,
+        useNativeEnums: true,
         mutator: {
           path: '../http/axios.ts',
           name: 'makeRequest',

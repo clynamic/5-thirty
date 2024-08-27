@@ -9,13 +9,10 @@
 /**
  * The current status of the upload
  */
-export type UploadStatus = (typeof UploadStatus)[keyof typeof UploadStatus];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const UploadStatus = {
-  completed: 'completed',
-  processing: 'processing',
-  pending: 'pending',
-  duplicate: 'duplicate',
-  error: 'error',
-} as const;
+export enum UploadStatus {
+  completed = 'completed',
+  processing = 'processing',
+  pending = 'pending',
+  duplicate = 'duplicate',
+  error = 'error',
+}

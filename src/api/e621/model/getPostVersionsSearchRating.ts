@@ -6,12 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type GetPostVersionsSearchRating =
-  (typeof GetPostVersionsSearchRating)[keyof typeof GetPostVersionsSearchRating];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const GetPostVersionsSearchRating = {
-  s: 's',
-  q: 'q',
-  e: 'e',
-} as const;
+export enum GetPostVersionsSearchRating {
+  s = 's',
+  q = 'q',
+  e = 'e',
+}
