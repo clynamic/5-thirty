@@ -1,6 +1,6 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { ManifestEntity } from './manifest.entity';
-import { Between, Repository } from 'typeorm';
+import { Between, LessThan, MoreThan, Repository } from 'typeorm';
 import { DateRange } from 'src/utils';
 import dayjs from 'dayjs';
 
@@ -29,11 +29,21 @@ export class ManifestService {
 
   async listByRange(type: string, range: DateRange): Promise<ManifestEntity[]> {
     return this.manifestRepository.find({
-      where: {
-        type,
-        startDate: Between(range.start, range.end),
-        endDate: Between(range.start, range.end),
-      },
+      where: [
+        {
+          type,
+          startDate: Between(range.start, range.end),
+        },
+        {
+          type,
+          endDate: Between(range.start, range.end),
+        },
+        {
+          type,
+          startDate: LessThan(range.start),
+          endDate: MoreThan(range.end),
+        },
+      ],
     });
   }
 
@@ -168,10 +178,10 @@ export class ManifestService {
 
     for (const order of orders) {
       const lowerDate = dayjs(
-        ManifestService.getBoundaryDate(order.lower, 'start'),
+        ManifestService.getBoundaryDate(order.lower, 'end'),
       );
       const upperDate = dayjs(
-        ManifestService.getBoundaryDate(order.upper, 'end'),
+        ManifestService.getBoundaryDate(order.upper, 'start'),
       );
 
       let currentStart = lowerDate;
