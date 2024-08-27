@@ -3,16 +3,16 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { ApprovalService } from './approval.service';
 import { ManifestEntity, ManifestService } from 'src/manifest';
 import {
-  checkIdContiguity,
+  findContiguityGaps,
   convertKeysToCamelCase,
   findHighestId,
   findLowestDate,
   findLowestId,
   LoopGuard,
-  getCurrentMonthRange,
   getDateRangeString,
   getIdRangeString,
   rateLimit,
+  getTwoMonthsRange,
 } from 'src/utils';
 import { Approval, postApprovals } from 'src/api/e621';
 import { ApprovalEntity } from './approval.entity';
@@ -46,16 +46,12 @@ export class ApprovalWorker {
     try {
       const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
-      const currentMonthRange = getCurrentMonthRange();
+      const recentlyRange = getTwoMonthsRange();
       const currentDate = dayjs().utc().startOf('hour');
 
       const orders = await this.manifestService.listOrdersByRange(
         this.itemType,
-        currentMonthRange,
-      );
-
-      this.logger.log(
-        `Found ${orders.length} orders: ${JSON.stringify(orders, null, 2)}`,
+        recentlyRange,
       );
 
       for (const order of orders) {
@@ -180,7 +176,12 @@ export class ApprovalWorker {
               // abort without data
             }
 
-            checkIdContiguity(results);
+            const gaps = findContiguityGaps(results);
+            if (gaps.size > 0) {
+              this.logger.warn(
+                `Found ${gaps.size} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
+              );
+            }
 
             break;
           }
@@ -193,6 +194,7 @@ export class ApprovalWorker {
         error.stack,
       );
     } finally {
+      this.logger.log('Finished');
       this.isRunning = false;
     }
   }

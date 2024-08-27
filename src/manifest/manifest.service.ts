@@ -207,4 +207,53 @@ export class ManifestService {
 
     return splitOrders;
   }
+
+  async mergeManifests(type: string, range: DateRange): Promise<void> {
+    const manifests = await this.listByRange(type, range);
+
+    manifests.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+
+    for (let i = 0; i < manifests.length; i++) {
+      const manifestA = manifests[i];
+
+      while (i + 1 < manifests.length) {
+        const manifestB = manifests[i + 1];
+
+        if (dayjs(manifestB.endDate).isBefore(manifestA.endDate)) {
+          await this.delete(manifestB);
+          i++;
+        } else if (dayjs(manifestB.startDate).isBefore(manifestA.endDate)) {
+          const newEndDate = dayjs(manifestA.endDate).isAfter(manifestB.endDate)
+            ? manifestA.endDate
+            : manifestB.endDate;
+          const newCompletedEnd =
+            newEndDate === manifestA.endDate
+              ? manifestA.completedEnd
+              : manifestB.completedEnd;
+
+          manifestA.endDate = newEndDate;
+          manifestA.completedEnd = newCompletedEnd;
+
+          await this.delete(manifestB);
+          i++;
+        } else if (
+          dayjs(manifestB.startDate).isSame(
+            dayjs(manifestA.endDate).add(1, 'day'),
+          ) &&
+          manifestA.completedEnd &&
+          manifestB.completedStart
+        ) {
+          manifestA.endDate = manifestB.endDate;
+          manifestA.completedEnd = manifestB.completedEnd;
+
+          await this.delete(manifestB);
+          i++;
+        } else {
+          break;
+        }
+      }
+
+      await this.save(manifestA);
+    }
+  }
 }

@@ -3,15 +3,15 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { TicketService } from './ticket.service';
 import { ManifestEntity, ManifestService } from 'src/manifest';
 import {
-  checkIdContiguity,
+  findContiguityGaps,
   convertKeysToCamelCase,
   findHighestId,
   findLowestId,
   LoopGuard,
-  getCurrentMonthRange,
   getDateRangeString,
   getIdRangeString,
   rateLimit,
+  getTwoMonthsRange,
 } from 'src/utils';
 import { Ticket, tickets } from 'src/api/e621';
 import { AxiosAuthService } from 'src/auth';
@@ -45,13 +45,13 @@ export class TicketWorker {
     try {
       const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
-      const currentMonthRange = getCurrentMonthRange();
+      const recentlyRange = getTwoMonthsRange();
       const currentDate = dayjs().utc().startOf('hour');
 
       const orders = ManifestService.splitLongOrders(
         await this.manifestService.listOrdersByRange(
           this.itemType,
-          currentMonthRange,
+          recentlyRange,
         ),
         14,
       );
@@ -98,7 +98,12 @@ export class TicketWorker {
 
         if (results.length === 0) continue;
 
-        checkIdContiguity(results);
+        const gaps = findContiguityGaps(results);
+        if (gaps.size > 0) {
+          this.logger.warn(
+            `Found ${gaps.size} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
+          );
+        }
 
         const stored = await this.ticketService.create(
           results.map(
@@ -162,6 +167,8 @@ export class TicketWorker {
           }
         }
       }
+
+      await this.manifestService.mergeManifests(this.itemType, recentlyRange);
     } catch (error) {
       this.logger.error(
         `An error occurred while running ${TicketWorker.name}`,
@@ -169,6 +176,7 @@ export class TicketWorker {
         error.stack,
       );
     } finally {
+      this.logger.log('Finished');
       this.isRunning = false;
     }
   }

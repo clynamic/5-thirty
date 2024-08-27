@@ -16,6 +16,20 @@ export const getCurrentMonthRange = (): DateRange => {
   };
 };
 
+export const getTwoMonthsRange = (): DateRange => {
+  const now = dayjs().utc();
+  const firstDay = now
+    .subtract(1, 'month')
+    .startOf('month')
+    .format('YYYY-MM-DD');
+  const lastDay = now.endOf('month').format('YYYY-MM-DD');
+
+  return {
+    start: new Date(firstDay),
+    end: new Date(lastDay),
+  };
+};
+
 export const getDateRangeString = (range: DateRange): string => {
   const start = dayjs(range.start).format('YYYY-MM-DD');
   const end = dayjs(range.end).format('YYYY-MM-DD');
@@ -99,28 +113,21 @@ export const findHighestDate = <T extends WithCreationDate>(
   );
 };
 
-export class NonContiguousIdError extends Error {
-  constructor(
-    public readonly range: WithId['id'][],
-    public readonly index: number,
-  ) {
-    super(
-      `Illegal ID gap between ${range[index - 1]} and ${range[index]} in ${range}`,
-    );
-  }
-}
+export const findContiguityGaps = <T extends WithId>(
+  items: T[] | undefined,
+): Map<number, number> => {
+  const idGapMap = new Map<number, number>();
 
-export const checkIdContiguity = <T extends WithId>(items: T[] | undefined) => {
-  if (items === undefined || items.length < 2) return;
+  if (items === undefined || items.length < 2) return idGapMap;
 
   const sorted = items.slice().sort((a, b) => a.id - b.id);
 
   for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i].id - sorted[i - 1].id !== 1) {
-      throw new NonContiguousIdError(
-        sorted.map((item) => item.id),
-        i,
-      );
+    const gap = sorted[i].id - sorted[i - 1].id - 1;
+    if (gap > 0) {
+      idGapMap.set(sorted[i - 1].id, gap);
     }
   }
+
+  return idGapMap;
 };
