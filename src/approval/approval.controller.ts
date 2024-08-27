@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApprovalService } from './approval.service';
 import { Approval, ApprovalQuery } from './approval.dto';
 
@@ -8,12 +8,12 @@ import { Approval, ApprovalQuery } from './approval.dto';
 export class ApprovalController {
   constructor(private readonly approvalsService: ApprovalService) {}
 
-  /**
-   * Get approval by ID
-   * @param id the approval ID
-   * @returns the approval
-   */
   @Get(':id')
+  @ApiOperation({
+    summary: 'Get approval',
+    description: 'Get approval by ID',
+    operationId: 'getApproval',
+  })
   @ApiResponse({
     status: 200,
     description: 'Approval found',
@@ -24,12 +24,12 @@ export class ApprovalController {
     return this.approvalsService.get(id);
   }
 
-  /**
-   * List approvals
-   * @param query the query parameters
-   * @returns a list of approvals
-   */
   @Get()
+  @ApiOperation({
+    summary: 'List approvals',
+    description: 'List approvals with optional filtering',
+    operationId: 'getApprovals',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of approvals',

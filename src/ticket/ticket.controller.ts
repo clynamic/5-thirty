@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TicketService } from './ticket.service';
 import { Ticket } from './ticket.dto';
 import { TicketQuery } from './ticket.entity';
@@ -9,12 +9,12 @@ import { TicketQuery } from './ticket.entity';
 export class TicketController {
   constructor(private readonly ticketService: TicketService) {}
 
-  /**
-   * Get ticket by ID
-   * @param id the ticket ID
-   * @returns the ticket
-   */
   @Get(':id')
+  @ApiOperation({
+    summary: 'Get ticket',
+    description: 'Get ticket by ID',
+    operationId: 'getTicket',
+  })
   @ApiResponse({
     status: 200,
     description: 'Ticket found',
@@ -25,10 +25,12 @@ export class TicketController {
     return this.ticketService.get(id);
   }
 
-  /**
-   * List tickets
-   */
   @Get()
+  @ApiOperation({
+    summary: 'List tickets',
+    description: 'List tickets with optional filtering',
+    operationId: 'getTickets',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of tickets',
