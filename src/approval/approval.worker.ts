@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ApprovalService } from './approval.service';
-import { ManifestEntity, ManifestService } from 'src/manifest';
+import { ManifestEntity, ManifestService, ManifestType } from 'src/manifest';
 import {
   findContiguityGaps,
   convertKeysToCamelCase,
@@ -31,8 +31,6 @@ export class ApprovalWorker {
   private readonly logger = new Logger(ApprovalWorker.name);
   private isRunning = false;
 
-  private itemType = 'approvals';
-
   @Cron(CronExpression.EVERY_5_MINUTES)
   async onSync() {
     if (this.isRunning) {
@@ -50,7 +48,7 @@ export class ApprovalWorker {
       const currentDate = dayjs().utc().startOf('hour');
 
       const orders = await this.manifestService.listOrdersByRange(
-        this.itemType,
+        ManifestType.approvals,
         recentlyRange,
       );
 
@@ -116,7 +114,7 @@ export class ApprovalWorker {
                   new ApprovalEntity({
                     ...convertKeysToCamelCase(approval),
                     cache: new CacheEntity({
-                      id: `/${this.itemType}/${approval.id}`,
+                      id: `/${ManifestType.approvals}/${approval.id}`,
                       value: approval,
                     }),
                   }),
@@ -134,7 +132,7 @@ export class ApprovalWorker {
             } else {
               // create new manifest
               order.upper = new ManifestEntity({
-                type: this.itemType,
+                type: ManifestType.approvals,
                 lowerId: findLowestId(stored)!.id,
                 upperId: findHighestId(stored)!.id,
                 startDate: findLowestDate(stored)!.createdAt,

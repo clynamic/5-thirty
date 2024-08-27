@@ -1,6 +1,11 @@
 import { DateRange } from 'src/utils';
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
+export enum ManifestType {
+  approvals = 'approvals',
+  tickets = 'tickets',
+}
+
 @Entity('manifests')
 export class ManifestEntity {
   constructor(partial?: Partial<ManifestEntity>) {
@@ -12,8 +17,8 @@ export class ManifestEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ type: 'text' })
-  type: string;
+  @Column({ type: 'text', enum: ManifestType })
+  type: ManifestType;
 
   @Column({ type: 'datetime' })
   startDate: Date;
@@ -43,4 +48,13 @@ export class ManifestEntity {
 
   @Column({ type: 'int' })
   upperId: number;
+}
+
+export type OrderBoundary = Date | ManifestEntity;
+
+export type OrderSide = 'start' | 'end';
+
+export interface Order {
+  lower: OrderBoundary;
+  upper: OrderBoundary;
 }

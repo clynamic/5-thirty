@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { TicketService } from './ticket.service';
-import { ManifestEntity, ManifestService } from 'src/manifest';
+import { ManifestEntity, ManifestService, ManifestType } from 'src/manifest';
 import {
   findContiguityGaps,
   convertKeysToCamelCase,
@@ -30,8 +30,6 @@ export class TicketWorker {
   private readonly logger = new Logger(TicketWorker.name);
   private isRunning = false;
 
-  private itemType = 'tickets';
-
   @Cron(CronExpression.EVERY_5_MINUTES)
   async onSync() {
     if (this.isRunning) {
@@ -50,7 +48,7 @@ export class TicketWorker {
 
       const orders = ManifestService.splitLongOrders(
         await this.manifestService.listOrdersByRange(
-          this.itemType,
+          ManifestType.tickets,
           recentlyRange,
         ),
         14,
@@ -111,7 +109,7 @@ export class TicketWorker {
               new TicketEntity({
                 ...convertKeysToCamelCase(ticket),
                 cache: new CacheEntity({
-                  id: `/${this.itemType}/${ticket.id}`,
+                  id: `/${ManifestType.tickets}/${ticket.id}`,
                   value: ticket,
                 }),
               }),
@@ -154,7 +152,7 @@ export class TicketWorker {
 
             // create new manifest
             order.upper = new ManifestEntity({
-              type: this.itemType,
+              type: ManifestType.tickets,
               lowerId: findLowestId(stored)!.id,
               upperId: findHighestId(stored)!.id,
               startDate: order.lower,
@@ -168,7 +166,10 @@ export class TicketWorker {
         }
       }
 
-      await this.manifestService.mergeManifests(this.itemType, recentlyRange);
+      await this.manifestService.mergeManifests(
+        ManifestType.tickets,
+        recentlyRange,
+      );
     } catch (error) {
       this.logger.error(
         `An error occurred while running ${TicketWorker.name}`,

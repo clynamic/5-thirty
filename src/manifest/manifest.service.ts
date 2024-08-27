@@ -1,17 +1,14 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { ManifestEntity } from './manifest.entity';
+import {
+  ManifestEntity,
+  ManifestType,
+  Order,
+  OrderBoundary,
+  OrderSide,
+} from './manifest.entity';
 import { Between, LessThan, MoreThan, Repository } from 'typeorm';
 import { DateRange } from 'src/utils';
 import dayjs from 'dayjs';
-
-export type OrderBoundary = Date | ManifestEntity;
-
-export type OrderSide = 'start' | 'end';
-
-export interface Order {
-  lower: OrderBoundary;
-  upper: OrderBoundary;
-}
 
 export class ManifestService {
   constructor(
@@ -27,7 +24,10 @@ export class ManifestService {
     await this.manifestRepository.delete(manifest.id);
   }
 
-  async listByRange(type: string, range: DateRange): Promise<ManifestEntity[]> {
+  async listByRange(
+    type: ManifestType,
+    range: DateRange,
+  ): Promise<ManifestEntity[]> {
     return this.manifestRepository.find({
       where: [
         {
@@ -47,7 +47,10 @@ export class ManifestService {
     });
   }
 
-  async listOrdersByRange(type: string, range: DateRange): Promise<Order[]> {
+  async listOrdersByRange(
+    type: ManifestType,
+    range: DateRange,
+  ): Promise<Order[]> {
     const manifests = await this.listByRange(type, range);
     return ManifestService.computeOrders(manifests, range);
   }
@@ -218,7 +221,7 @@ export class ManifestService {
     return splitOrders;
   }
 
-  async mergeManifests(type: string, range: DateRange): Promise<void> {
+  async mergeManifests(type: ManifestType, range: DateRange): Promise<void> {
     const manifests = await this.listByRange(type, range);
 
     manifests.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
