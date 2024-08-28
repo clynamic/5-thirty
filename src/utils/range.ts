@@ -1,19 +1,15 @@
 import dayjs from 'dayjs';
-
-export interface DateRange {
-  start: Date;
-  end: Date;
-}
+import { DateRange, PartialDateRange } from './date-range.dto';
 
 export const getCurrentMonthRange = (): DateRange => {
   const now = dayjs().utc();
   const firstDay = now.startOf('month').format('YYYY-MM-DD');
   const lastDay = now.endOf('month').format('YYYY-MM-DD');
 
-  return {
-    start: new Date(firstDay),
-    end: new Date(lastDay),
-  };
+  return new DateRange({
+    startDate: new Date(firstDay),
+    endDate: new Date(lastDay),
+  });
 };
 
 export const getTwoMonthsRange = (): DateRange => {
@@ -24,15 +20,15 @@ export const getTwoMonthsRange = (): DateRange => {
     .format('YYYY-MM-DD');
   const lastDay = now.endOf('month').format('YYYY-MM-DD');
 
-  return {
-    start: new Date(firstDay),
-    end: new Date(lastDay),
-  };
+  return new DateRange({
+    startDate: new Date(firstDay),
+    endDate: new Date(lastDay),
+  });
 };
 
-export const getDateRangeString = (range: DateRange): string => {
-  const start = dayjs(range.start).format('YYYY-MM-DD');
-  const end = dayjs(range.end).format('YYYY-MM-DD');
+export const getDateRangeString = (range: PartialDateRange): string => {
+  const start = dayjs(range.startDate).format('YYYY-MM-DD');
+  const end = dayjs(range.endDate).format('YYYY-MM-DD');
 
   const grt = '>=';
   const lss = '<=';

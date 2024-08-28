@@ -1,12 +1,12 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { TicketService } from './ticket.service';
-import { Ticket } from './ticket.dto';
-import { TicketQuery } from './ticket.entity';
+import { TicketService } from '../ticket.service';
+import { Ticket } from './ticket-query.dto';
+import { TicketQuery } from '../ticket.entity';
 
 @ApiTags('Tickets')
-@Controller('tickets')
-export class TicketController {
+@Controller('tickets/query')
+export class TicketQueryController {
   constructor(private readonly ticketService: TicketService) {}
 
   @Get(':id')

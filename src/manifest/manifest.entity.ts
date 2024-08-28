@@ -1,4 +1,4 @@
-import { DateRange } from 'src/utils';
+import { DateRange, PartialDateRange } from 'src/utils';
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 export enum ManifestType {
@@ -33,10 +33,10 @@ export class ManifestEntity {
   completedEnd: boolean;
 
   get range(): DateRange {
-    return {
-      start: this.startDate,
-      end: this.endDate,
-    };
+    return new DateRange({
+      startDate: this.startDate,
+      endDate: this.endDate,
+    });
   }
 
   get completed(): boolean {

@@ -13,6 +13,7 @@ import {
   getIdRangeString,
   rateLimit,
   getTwoMonthsRange,
+  DateRange,
 } from 'src/utils';
 import { Approval, postApprovals } from 'src/api/e621';
 import { ApprovalEntity } from './approval.entity';
@@ -62,10 +63,10 @@ export class ApprovalWorker {
         const loopGuard = new LoopGuard();
 
         while (true) {
-          const dateRange = {
-            start: ManifestService.getBoundaryDate(order.lower, 'end'),
-            end: ManifestService.getBoundaryDate(order.upper, 'start'),
-          };
+          const dateRange = new DateRange({
+            startDate: ManifestService.getBoundaryDate(order.lower, 'end'),
+            endDate: ManifestService.getBoundaryDate(order.upper, 'start'),
+          });
 
           if (order.lower instanceof ManifestEntity) {
             lowerId = order.lower.upperId;
@@ -80,7 +81,7 @@ export class ApprovalWorker {
           }
 
           this.logger.log(
-            `Fetching approvals for ${getDateRangeString(dateRange)} with ids ${getIdRangeString(
+            `Fetching approvals for ${dateRange.toRangeString()} with ids ${getIdRangeString(
               lowerId,
               upperId,
             )}`,
@@ -91,7 +92,7 @@ export class ApprovalWorker {
               loopGuard.iter({
                 page: 1,
                 limit,
-                'search[created_at]': getDateRangeString(dateRange),
+                'search[created_at]': dateRange.toRangeString(),
                 'search[id]': getIdRangeString(lowerId, upperId),
               }),
               axiosConfig,

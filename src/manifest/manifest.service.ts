@@ -32,16 +32,16 @@ export class ManifestService {
       where: [
         {
           type,
-          startDate: Between(range.start, range.end),
+          startDate: Between(range.startDate, range.endDate),
         },
         {
           type,
-          endDate: Between(range.start, range.end),
+          endDate: Between(range.startDate, range.endDate),
         },
         {
           type,
-          startDate: LessThan(range.start),
-          endDate: MoreThan(range.end),
+          startDate: LessThan(range.startDate),
+          endDate: MoreThan(range.endDate),
         },
       ],
     });
@@ -142,7 +142,7 @@ export class ManifestService {
     manifests.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 
     const orders: Order[] = [];
-    let boundary: OrderBoundary = dateRange.start;
+    let boundary: OrderBoundary = dateRange.startDate;
 
     for (let i = 0; i < manifests.length; i++) {
       const manifest = manifests[i];
@@ -162,11 +162,12 @@ export class ManifestService {
 
     if (
       orders.length === 0 ||
-      (orders.length > 0 && orders[orders.length - 1].upper !== dateRange.end)
+      (orders.length > 0 &&
+        orders[orders.length - 1].upper !== dateRange.endDate)
     ) {
       orders.push({
         lower: boundary,
-        upper: dateRange.end,
+        upper: dateRange.endDate,
       });
     }
 

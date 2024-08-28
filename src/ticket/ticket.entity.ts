@@ -1,5 +1,6 @@
 import { TicketQtype, TicketStatus } from 'src/api/e621';
 import { CacheLink } from 'src/cache';
+import { PartialDateRange } from 'src/utils';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('tickets')
@@ -51,13 +52,4 @@ export class TicketEntity extends CacheLink {
   updatedAt: Date;
 }
 
-export class TicketQuery {
-  /**
-   * Start date for the query
-   */
-  start?: Date;
-  /**
-   * End date for the query
-   */
-  end?: Date;
-}
+export class TicketQuery extends PartialDateRange {}

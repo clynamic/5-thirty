@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { TicketEntity, TicketQuery } from './ticket.entity';
 
 @Injectable()
@@ -16,13 +16,9 @@ export class TicketService {
 
   async list(query?: TicketQuery): Promise<TicketEntity[]> {
     return this.ticketRepository.find({
-      where: query?.start
-        ? query.end
-          ? { createdAt: Between(query.start, query.end) }
-          : { createdAt: MoreThanOrEqual(query.start) }
-        : query?.end
-          ? { createdAt: LessThanOrEqual(query.end) }
-          : {},
+      where: {
+        createdAt: query?.toFindOperator(),
+      },
     });
   }
 

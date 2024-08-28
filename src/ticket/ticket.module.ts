@@ -4,11 +4,15 @@ import { TicketEntity } from './ticket.entity';
 import { TicketService } from './ticket.service';
 import { ManifestModule } from 'src/manifest';
 import { TicketWorker } from './ticket.worker';
-import { TicketController } from './ticket.controller';
+import { TicketMetricModule } from './metric';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TicketEntity]), ManifestModule],
-  controllers: [TicketController],
+  imports: [
+    TypeOrmModule.forFeature([TicketEntity]),
+    ManifestModule,
+    TicketMetricModule,
+  ],
+  controllers: [],
   providers: [TicketService, TicketWorker],
 })
 export class TicketModule {}

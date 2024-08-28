@@ -12,6 +12,7 @@ import {
   getIdRangeString,
   rateLimit,
   getTwoMonthsRange,
+  DateRange,
 } from 'src/utils';
 import { Ticket, tickets } from 'src/api/e621';
 import { AxiosAuthService } from 'src/auth';
@@ -60,14 +61,12 @@ export class TicketWorker {
 
         const loopGuard = new LoopGuard();
 
-        const dateRange = {
-          start: ManifestService.getBoundaryDate(order.lower, 'end'),
-          end: ManifestService.getBoundaryDate(order.upper, 'start'),
-        };
+        const dateRange = new DateRange({
+          startDate: ManifestService.getBoundaryDate(order.lower, 'end'),
+          endDate: ManifestService.getBoundaryDate(order.upper, 'start'),
+        });
 
-        this.logger.log(
-          `Fetching tickets for ${getDateRangeString(dateRange)}`,
-        );
+        this.logger.log(`Fetching tickets for ${dateRange.toRangeString()}`);
 
         while (true) {
           const result = await rateLimit(
@@ -75,7 +74,7 @@ export class TicketWorker {
               loopGuard.iter({
                 page,
                 limit: 320,
-                'search[created_at]': getDateRangeString(dateRange),
+                'search[created_at]': dateRange.toRangeString(),
               }),
               axiosConfig,
             ),
