@@ -1,4 +1,4 @@
-import { DateRange, PartialDateRange } from 'src/utils';
+import { DateRange } from 'src/utils';
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 export enum ManifestType {
