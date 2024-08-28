@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TicketEntity, TicketQuery } from './ticket.entity';
+import { TicketEntity } from './ticket.entity';
+import { PartialDateRange } from 'src/utils';
 
 @Injectable()
 export class TicketService {
@@ -14,7 +15,7 @@ export class TicketService {
     return this.ticketRepository.findOne({ where: { id } });
   }
 
-  async list(query?: TicketQuery): Promise<TicketEntity[]> {
+  async list(query?: PartialDateRange): Promise<TicketEntity[]> {
     return this.ticketRepository.find({
       where: {
         createdAt: query?.toFindOperator(),

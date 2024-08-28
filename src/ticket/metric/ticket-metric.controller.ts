@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TicketMetricService } from './ticket-metric.service';
 import {
@@ -9,6 +9,7 @@ import {
   ModSummary,
   ReporterSummary,
 } from './ticket-metric.dto';
+import { PartialDateRange } from 'src/utils';
 
 @ApiTags('Tickets')
 @Controller('tickets/metrics')
@@ -26,8 +27,10 @@ export class TicketMetricController {
     status: 200,
     type: TicketStatusSummary,
   })
-  async statusSummary(): Promise<TicketStatusSummary> {
-    return this.ticketMetricService.statusSummary();
+  async statusSummary(
+    @Query() params: PartialDateRange,
+  ): Promise<TicketStatusSummary> {
+    return this.ticketMetricService.statusSummary(params);
   }
 
   @Get('type/summary')
@@ -40,8 +43,10 @@ export class TicketMetricController {
     status: 200,
     type: TicketTypeSummary,
   })
-  async typeSummary(): Promise<TicketTypeSummary> {
-    return this.ticketMetricService.typeSummary();
+  async typeSummary(
+    @Query() params: PartialDateRange,
+  ): Promise<TicketTypeSummary> {
+    return this.ticketMetricService.typeSummary(params);
   }
 
   @Get('open/series')
@@ -54,8 +59,10 @@ export class TicketMetricController {
     status: 200,
     type: TicketOpenSeries,
   })
-  async openSeries(): Promise<TicketOpenSeries> {
-    return this.ticketMetricService.openSeries();
+  async openSeries(
+    @Query() params: PartialDateRange,
+  ): Promise<TicketOpenSeries> {
+    return this.ticketMetricService.openSeries(params);
   }
 
   @Get('closed/series')
@@ -68,36 +75,41 @@ export class TicketMetricController {
     status: 200,
     type: TicketClosedSeries,
   })
-  async closedSeries(): Promise<TicketClosedSeries> {
-    return this.ticketMetricService.closedSeries();
+  async closedSeries(
+    @Query() params: PartialDateRange,
+  ): Promise<TicketClosedSeries> {
+    return this.ticketMetricService.closedSeries(params);
   }
 
   @Get('mod/summary')
   @ApiOperation({
     summary: 'Moderator summary',
     description:
-      'Get a summary of moderator activity (claimed and handled tickets) for a given date range',
+      'Get a summary of the top 20 moderators (claimed and handled tickets) for a given date range',
     operationId: 'getModSummary',
   })
   @ApiResponse({
     status: 200,
     type: [ModSummary],
   })
-  async modSummary(): Promise<ModSummary[]> {
-    return this.ticketMetricService.modSummary();
+  async modSummary(@Query() params: PartialDateRange): Promise<ModSummary[]> {
+    return this.ticketMetricService.modSummary(params);
   }
 
   @Get('reporter/summary')
   @ApiOperation({
     summary: 'Reporter summary',
-    description: 'Get a summary of reporter activity for a given date range',
+    description:
+      'Get a summary of the top 20 reporters (submitted tickets) for a given date range',
     operationId: 'getReporterSummary',
   })
   @ApiResponse({
     status: 200,
     type: [ReporterSummary],
   })
-  async reporterSummary(): Promise<ReporterSummary[]> {
-    return this.ticketMetricService.reporterSummary();
+  async reporterSummary(
+    @Query() params: PartialDateRange,
+  ): Promise<ReporterSummary[]> {
+    return this.ticketMetricService.reporterSummary(params);
   }
 }

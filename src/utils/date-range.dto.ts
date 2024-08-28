@@ -3,8 +3,13 @@ import {
   Between,
   MoreThanOrEqual,
   LessThanOrEqual,
+  FindOptionsWhere,
 } from 'typeorm';
-import { getCurrentMonthRange, getDateRangeString } from './range';
+import {
+  getCurrentMonthRange,
+  getDateRangeString,
+  WithCreationDate,
+} from './range';
 
 export class PartialDateRange {
   constructor(partial?: Partial<PartialDateRange>) {
@@ -27,6 +32,10 @@ export class PartialDateRange {
         : undefined;
   }
 
+  toCreatedAtRange(): FindOptionsWhere<WithCreationDate> | undefined {
+    return { createdAt: this.toFindOperator() };
+  }
+
   toRangeString(): string {
     return getDateRangeString(this);
   }
@@ -45,6 +54,17 @@ export class PartialDateRange {
 export class DateRange extends PartialDateRange {
   constructor(partial?: Partial<DateRange>) {
     super(partial);
+  }
+
+  static orCurrentMonth(range?: PartialDateRange): DateRange {
+    return new DateRange({
+      ...range,
+      ...(!range?.startDate && !range?.endDate && getCurrentMonthRange()),
+    });
+  }
+
+  toCreatedAtRange(): FindOptionsWhere<WithCreationDate> {
+    return { createdAt: this.toFindOperator() };
   }
 
   startDate: Date;

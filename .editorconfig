@@ -8,6 +8,7 @@ trim_trailing_whitespace = true
 insert_final_newline = true
 end_of_line = auto
 
-[*.{js,ts,jsx,tsx,flutter,dart}]
+[*.{js,ts,jsx,tsx}]
 quote_type = single
 trailing_comma = always
+indent_size = 2

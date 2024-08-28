@@ -1,22 +1,18 @@
 import { PartialDateRange } from 'src/utils';
 
 export class TicketStatusSummary {
-  constructor(partial?: Partial<TicketStatusSummary>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+  constructor(value: TicketStatusSummary) {
+    Object.assign(this, value);
   }
+
   range: PartialDateRange;
   pending: number;
   approved: number;
   partial: number;
 }
-
 export class TicketTypeSummary {
-  constructor(partial?: Partial<TicketTypeSummary>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+  constructor(value: TicketTypeSummary) {
+    Object.assign(this, value);
   }
 
   range: PartialDateRange;
@@ -32,10 +28,8 @@ export class TicketTypeSummary {
 }
 
 export class TicketOpenPoint {
-  constructor(partial?: Partial<TicketOpenPoint>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+  constructor(value: TicketOpenPoint) {
+    Object.assign(this, value);
   }
 
   date: Date;
@@ -43,10 +37,8 @@ export class TicketOpenPoint {
 }
 
 export class TicketOpenSeries {
-  constructor(partial?: Partial<TicketOpenSeries>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+  constructor(value: TicketOpenSeries) {
+    Object.assign(this, value);
   }
 
   range: PartialDateRange;
@@ -54,10 +46,8 @@ export class TicketOpenSeries {
 }
 
 export class TicketClosedPoint {
-  constructor(partial?: Partial<TicketClosedPoint>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+  constructor(value: TicketClosedPoint) {
+    Object.assign(this, value);
   }
 
   date: Date;
@@ -65,10 +55,8 @@ export class TicketClosedPoint {
 }
 
 export class TicketClosedSeries {
-  constructor(partial?: Partial<TicketClosedSeries>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+  constructor(value: TicketClosedSeries) {
+    Object.assign(this, value);
   }
 
   range: PartialDateRange;
@@ -76,10 +64,8 @@ export class TicketClosedSeries {
 }
 
 export class ModSummary {
-  constructor(partial?: Partial<ModSummary>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+  constructor(value: ModSummary) {
+    Object.assign(this, value);
   }
 
   userId: string;
@@ -90,10 +76,8 @@ export class ModSummary {
 }
 
 export class ReporterSummary {
-  constructor(partial?: Partial<ReporterSummary>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+  constructor(value: ReporterSummary) {
+    Object.assign(this, value);
   }
 
   userId: string;

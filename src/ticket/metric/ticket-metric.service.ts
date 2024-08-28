@@ -9,11 +9,11 @@ import {
   TicketClosedSeries,
   TicketOpenPoint,
   TicketOpenSeries,
-  TicketStatusSummary as TicketStatusSummary,
+  TicketStatusSummary,
   TicketTypeSummary,
 } from './ticket-metric.dto';
 import { TicketQtype, TicketStatus } from 'src/api/e621';
-import { PartialDateRange } from 'src/utils';
+import { DateRange, PartialDateRange } from 'src/utils';
 import dayjs from 'dayjs';
 
 @Injectable()
@@ -23,18 +23,20 @@ export class TicketMetricService {
     private readonly ticketRepository: Repository<TicketEntity>,
   ) {}
 
-  async statusSummary(
-    params: PartialDateRange = PartialDateRange.currentMonth(),
-  ): Promise<TicketStatusSummary> {
-    const rangeWhere = { createdAt: params.toFindOperator() };
+  async statusSummary(params?: PartialDateRange): Promise<TicketStatusSummary> {
+    params = DateRange.orCurrentMonth(params);
 
     return new TicketStatusSummary({
+      range: params,
       ...Object.fromEntries(
         await Promise.all(
           Object.values(TicketStatus).map(async (status) => [
             status,
             await this.ticketRepository.count({
-              where: { ...rangeWhere, status },
+              where: {
+                ...params.toCreatedAtRange(),
+                status,
+              },
             }),
           ]),
         ),
@@ -42,10 +44,8 @@ export class TicketMetricService {
     });
   }
 
-  async typeSummary(
-    params: PartialDateRange = PartialDateRange.currentMonth(),
-  ): Promise<TicketTypeSummary> {
-    const rangeWhere = { createdAt: params.toFindOperator() };
+  async typeSummary(params?: PartialDateRange): Promise<TicketTypeSummary> {
+    params = DateRange.orCurrentMonth(params);
 
     return new TicketTypeSummary({
       range: params,
@@ -54,7 +54,7 @@ export class TicketMetricService {
           Object.entries(TicketQtype).map(async ([, type]) => [
             type,
             await this.ticketRepository.count({
-              where: { ...rangeWhere, qtype: type },
+              where: { ...params.toCreatedAtRange(), qtype: type },
             }),
           ]),
         ),
@@ -62,13 +62,10 @@ export class TicketMetricService {
     });
   }
 
-  async openSeries(
-    params: PartialDateRange = PartialDateRange.currentMonth(),
-  ): Promise<TicketOpenSeries> {
-    const rangeWhere = { createdAt: params.toFindOperator() };
-
+  async openSeries(params?: PartialDateRange): Promise<TicketOpenSeries> {
+    params = DateRange.orCurrentMonth(params);
     const tickets = await this.ticketRepository.find({
-      where: rangeWhere,
+      where: params.toCreatedAtRange(),
     });
 
     const openTicketCounts: Record<string, number> = {};
@@ -109,16 +106,13 @@ export class TicketMetricService {
     });
   }
 
-  async closedSeries(
-    params: PartialDateRange = PartialDateRange.currentMonth(),
-  ): Promise<TicketClosedSeries> {
-    const rangeWhere = {
-      updatedAt: params.toFindOperator(),
-      status: TicketStatus.approved,
-    };
-
+  async closedSeries(params?: PartialDateRange): Promise<TicketClosedSeries> {
+    params = DateRange.orCurrentMonth(params);
     const tickets = await this.ticketRepository.find({
-      where: rangeWhere,
+      where: {
+        ...params.toCreatedAtRange(),
+        status: TicketStatus.approved,
+      },
     });
 
     const closedTicketCounts: Record<string, number> = {};
@@ -145,16 +139,13 @@ export class TicketMetricService {
     });
   }
 
-  async modSummary(
-    params: PartialDateRange = PartialDateRange.currentMonth(),
-  ): Promise<ModSummary[]> {
-    const rangeWhere = { createdAt: params.toFindOperator() };
-
+  async modSummary(params?: PartialDateRange): Promise<ModSummary[]> {
+    params = DateRange.orCurrentMonth(params);
     const tickets = await this.ticketRepository.find({
-      where: rangeWhere,
+      where: params.toCreatedAtRange(),
     });
 
-    const modSummaryMap: Record<string, { claimed: number; handled: number }> =
+    const modSummaryMap: Record<number, { claimed: number; handled: number }> =
       {};
 
     tickets.forEach((ticket) => {
@@ -190,16 +181,13 @@ export class TicketMetricService {
     return result;
   }
 
-  async reporterSummary(
-    params: PartialDateRange = PartialDateRange.currentMonth(),
-  ): Promise<ReporterSummary[]> {
-    const rangeWhere = { createdAt: params.toFindOperator() };
-
+  async reporterSummary(params?: PartialDateRange): Promise<ReporterSummary[]> {
+    params = DateRange.orCurrentMonth(params);
     const tickets = await this.ticketRepository.find({
-      where: rangeWhere,
+      where: params.toCreatedAtRange(),
     });
 
-    const reporterSummaryMap: Record<string, number> = {};
+    const reporterSummaryMap: Record<number, number> = {};
 
     tickets.forEach((ticket) => {
       reporterSummaryMap[ticket.creatorId] =

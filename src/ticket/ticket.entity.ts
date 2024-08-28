@@ -51,5 +51,3 @@ export class TicketEntity extends CacheLink {
   @Column({ type: 'datetime' })
   updatedAt: Date;
 }
-
-export class TicketQuery extends PartialDateRange {}

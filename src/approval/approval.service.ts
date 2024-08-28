@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThanOrEqual, LessThanOrEqual, Between, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ApprovalEntity } from './approval.entity';
-import { ApprovalQuery } from './approval.dto';
+import { PartialDateRange } from 'src/utils';
 
 @Injectable()
 export class ApprovalService {
@@ -15,15 +15,11 @@ export class ApprovalService {
     return this.approvalRepository.findOne({ where: { id } });
   }
 
-  async list(query?: ApprovalQuery): Promise<ApprovalEntity[]> {
+  async list(query?: PartialDateRange): Promise<ApprovalEntity[]> {
     return this.approvalRepository.find({
-      where: query?.start
-        ? query.end
-          ? { createdAt: Between(query.start, query.end) }
-          : { createdAt: MoreThanOrEqual(query.start) }
-        : query?.end
-          ? { createdAt: LessThanOrEqual(query.end) }
-          : {},
+      where: {
+        createdAt: query?.toFindOperator(),
+      },
     });
   }
 
