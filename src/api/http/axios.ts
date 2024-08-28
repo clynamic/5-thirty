@@ -1,11 +1,10 @@
+import { Logger } from '@nestjs/common';
 import Axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
+import pack from '../../../package.json';
 import { dateDeserializeInterceptor } from './date';
 import { miscFixInterceptors } from './misc';
 import { objectUnpackInterceptor } from './unpack';
-
-import pack from '../../../package.json';
-import { Logger } from '@nestjs/common';
 
 const logger = new Logger('Axios');
 

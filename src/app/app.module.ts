@@ -1,14 +1,15 @@
+import '../utils/dayjs-extension';
+
 import { Module } from '@nestjs/common';
-import { ApprovalModule } from 'src/approval';
 import { ScheduleModule } from '@nestjs/schedule';
-import { AppConfigModule } from './config.module';
-import { DatabaseModule } from './database.module';
+import { ApprovalModule } from 'src/approval';
 import { AuthModule } from 'src/auth';
-import { ManifestModule } from 'src/manifest/manifest.module';
 import { CacheModule } from 'src/cache';
+import { ManifestModule } from 'src/manifest/manifest.module';
 import { TicketModule } from 'src/ticket';
 
-import '../utils/dayjs-extension';
+import { AppConfigModule } from './config.module';
+import { DatabaseModule } from './database.module';
 
 @Module({
   imports: [

@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as crypto from 'crypto';
-import { UserCredentials } from './auth.dto';
 import { ConfigService } from '@nestjs/config';
-import { User, user } from 'src/api/e621';
+import { JwtService } from '@nestjs/jwt';
 import axios from 'axios';
+import * as crypto from 'crypto';
+import { User, user } from 'src/api/e621';
+
+import { UserCredentials } from './auth.dto';
 import { encodeCredentials, readJwtSecret } from './auth.utils';
 
 export interface EncodedJwt {

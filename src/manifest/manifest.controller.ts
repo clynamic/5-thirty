@@ -1,7 +1,8 @@
 import { Controller, UseGuards } from '@nestjs/common';
-import { ManifestService } from './manifest.service';
 import { ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth';
+
+import { ManifestService } from './manifest.service';
 
 @ApiTags('Manifest')
 @Controller('manifests')

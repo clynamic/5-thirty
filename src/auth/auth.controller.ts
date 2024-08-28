@@ -1,7 +1,8 @@
-import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { UserCredentials } from './auth.dto';
+import { Body, Controller, Post, UnauthorizedException } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+
+import { UserCredentials } from './auth.dto';
+import { AuthService } from './auth.service';
 
 @ApiTags('Auth')
 @Controller('login')

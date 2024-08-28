@@ -1,7 +1,8 @@
-import { randomBytes } from 'crypto';
 import { ConfigService } from '@nestjs/config';
-import { AppConfigKeys } from 'src/app';
+import { randomBytes } from 'crypto';
 import fs from 'fs';
+import { AppConfigKeys } from 'src/app';
+
 import { UserCredentials } from './auth.dto';
 
 export const readJwtSecret = (config: ConfigService) => {

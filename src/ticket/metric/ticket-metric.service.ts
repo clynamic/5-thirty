@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import dayjs from 'dayjs';
+import { TicketQtype, TicketStatus } from 'src/api/e621';
 import { TicketEntity } from 'src/ticket';
+import { DateRange, PartialDateRange } from 'src/utils';
+import { Repository } from 'typeorm';
+
 import {
   ModSummary,
   ReporterSummary,
@@ -12,9 +16,6 @@ import {
   TicketStatusSummary,
   TicketTypeSummary,
 } from './ticket-metric.dto';
-import { TicketQtype, TicketStatus } from 'src/api/e621';
-import { DateRange, PartialDateRange } from 'src/utils';
-import dayjs from 'dayjs';
 
 @Injectable()
 export class TicketMetricService {

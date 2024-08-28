@@ -5,8 +5,8 @@
  * An API for accessing user information and other resources on e621 and e926.
  * OpenAPI spec version: 1.0.0
  */
-import type { GetPostVersionsSearchRatingChanged } from './getPostVersionsSearchRatingChanged';
 import type { GetPostVersionsSearchRating } from './getPostVersionsSearchRating';
+import type { GetPostVersionsSearchRatingChanged } from './getPostVersionsSearchRatingChanged';
 import type { GetPostVersionsSearchUploads } from './getPostVersionsSearchUploads';
 
 export type GetPostVersionsParams = {

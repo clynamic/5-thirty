@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AppConfigKeys } from 'src/app';
-import { encodeCredentials } from './auth.utils';
 import { AxiosRequestConfig } from 'axios';
+import { AppConfigKeys } from 'src/app';
+
+import { encodeCredentials } from './auth.utils';
 
 @Injectable()
 export class AxiosAuthService {

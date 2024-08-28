@@ -1,10 +1,10 @@
 import {
-  Entity,
   Column,
-  UpdateDateColumn,
+  Entity,
   JoinColumn,
   OneToOne,
   PrimaryColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 export interface CacheValue {

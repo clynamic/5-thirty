@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ManifestModule } from 'src/manifest';
+
+import { TicketMetricModule } from './metric';
 import { TicketEntity } from './ticket.entity';
 import { TicketService } from './ticket.service';
-import { ManifestModule } from 'src/manifest';
 import { TicketWorker } from './ticket.worker';
-import { TicketMetricModule } from './metric';
 
 @Module({
   imports: [

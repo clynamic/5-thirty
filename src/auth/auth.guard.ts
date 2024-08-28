@@ -1,13 +1,14 @@
 import {
-  Injectable,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Injectable,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { getUserLevelFromString, UserLevel } from './auth.level';
-import { AuthGuard } from '@nestjs/passport';
 import { SetMetadata } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { AuthGuard } from '@nestjs/passport';
+
+import { getUserLevelFromString, UserLevel } from './auth.level';
 
 export const AuthLevel = (level: UserLevel) => SetMetadata('level', level);
 

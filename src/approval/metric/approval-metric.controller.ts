@@ -1,18 +1,19 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import {
-  ApiTags,
+  ApiBearerAuth,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
+  ApiTags,
 } from '@nestjs/swagger';
-import { ApprovalMetricService } from './approval-metric.service';
+import { AuthLevel, RolesGuard, UserLevel } from 'src/auth';
+import { PartialDateRange } from 'src/utils';
+
 import {
-  ApprovalCountSummary,
   ApprovalCountSeries,
+  ApprovalCountSummary,
   JanitorSummary,
 } from './approval-metric.dto';
-import { PartialDateRange } from 'src/utils';
-import { RolesGuard, AuthLevel, UserLevel } from 'src/auth';
+import { ApprovalMetricService } from './approval-metric.service';
 
 @ApiTags('Approvals')
 @UseGuards(RolesGuard)

@@ -1,15 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import dayjs from 'dayjs';
+import { DateRange, PartialDateRange } from 'src/utils';
 import { Repository } from 'typeorm';
+
 import { ApprovalEntity } from '../approval.entity';
 import {
-  ApprovalCountSeries,
   ApprovalCountPoint,
+  ApprovalCountSeries,
   ApprovalCountSummary,
   JanitorSummary,
 } from './approval-metric.dto';
-import { DateRange, PartialDateRange } from 'src/utils';
-import dayjs from 'dayjs';
 
 @Injectable()
 export class ApprovalMetricService {

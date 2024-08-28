@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { TicketEntity } from './ticket.entity';
 import { PartialDateRange } from 'src/utils';
+import { Repository } from 'typeorm';
+
+import { TicketEntity } from './ticket.entity';
 
 @Injectable()
 export class TicketService {

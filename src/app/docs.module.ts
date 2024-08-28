@@ -1,6 +1,7 @@
-import { Module, INestApplication } from '@nestjs/common';
+import { INestApplication, Module } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { name, version, description } from '../../package.json';
+
+import { description, name, version } from '../../package.json';
 
 @Module({})
 export class DocsModule {

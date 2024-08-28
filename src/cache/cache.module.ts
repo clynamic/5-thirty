@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CacheService } from './cache.service';
+
 import { CacheEntity } from './cache.entity';
+import { CacheService } from './cache.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([CacheEntity])],

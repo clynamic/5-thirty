@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+
 import { DateRange, PartialDateRange } from './date-range.dto';
 
 export const getCurrentMonthRange = (): DateRange => {

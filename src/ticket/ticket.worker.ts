@@ -1,24 +1,25 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { TicketService } from './ticket.service';
-import { ManifestEntity, ManifestService, ManifestType } from 'src/manifest';
-import {
-  findContiguityGaps,
-  convertKeysToCamelCase,
-  findHighestId,
-  findLowestId,
-  LoopGuard,
-  getDateRangeString,
-  getIdRangeString,
-  rateLimit,
-  getTwoMonthsRange,
-  DateRange,
-} from 'src/utils';
+import dayjs from 'dayjs';
 import { Ticket, tickets } from 'src/api/e621';
 import { AxiosAuthService } from 'src/auth';
-import { TicketEntity } from './ticket.entity';
 import { CacheEntity } from 'src/cache';
-import dayjs from 'dayjs';
+import { ManifestEntity, ManifestService, ManifestType } from 'src/manifest';
+import {
+  convertKeysToCamelCase,
+  DateRange,
+  findContiguityGaps,
+  findHighestId,
+  findLowestId,
+  getDateRangeString,
+  getIdRangeString,
+  getTwoMonthsRange,
+  LoopGuard,
+  rateLimit,
+} from 'src/utils';
+
+import { TicketEntity } from './ticket.entity';
+import { TicketService } from './ticket.service';
 
 @Injectable()
 export class TicketWorker {

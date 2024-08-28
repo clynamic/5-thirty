@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ApprovalEntity } from './approval.entity';
 import { PartialDateRange } from 'src/utils';
+import { Repository } from 'typeorm';
+
+import { ApprovalEntity } from './approval.entity';
 
 @Injectable()
 export class ApprovalService {
