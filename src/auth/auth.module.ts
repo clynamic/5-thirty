@@ -3,9 +3,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './auth.guard';
+import { JwtAuthGuard, RolesGuard } from './auth.guard';
 import { readJwtSecret } from './auth.utils';
 import { AxiosAuthService } from './axios-auth.service';
+import { JwtStrategy } from './auth.stragety';
 
 @Global()
 @Module({
@@ -19,7 +20,13 @@ import { AxiosAuthService } from './axios-auth.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AxiosAuthService, JwtAuthGuard],
-  exports: [JwtModule, AxiosAuthService],
+  providers: [
+    AuthService,
+    AxiosAuthService,
+    JwtStrategy,
+    JwtAuthGuard,
+    RolesGuard,
+  ],
+  exports: [JwtModule, AxiosAuthService, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}

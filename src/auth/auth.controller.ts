@@ -15,8 +15,8 @@ export class AuthController {
     operationId: 'login',
   })
   async login(@Body() credentials: UserCredentials): Promise<string> {
-    const valid = await this.authService.checkCredentials(credentials);
-    if (!valid) throw new UnauthorizedException('Invalid credentials');
-    return await this.authService.createToken(credentials);
+    const user = await this.authService.getUserForCredentials(credentials);
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+    return await this.authService.createToken(credentials, user);
   }
 }

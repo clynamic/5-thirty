@@ -1,5 +1,10 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { TicketMetricService } from './ticket-metric.service';
 import {
   TicketStatusSummary,
@@ -10,9 +15,13 @@ import {
   ReporterSummary,
 } from './ticket-metric.dto';
 import { PartialDateRange } from 'src/utils';
+import { UserLevel, RolesGuard, AuthLevel } from 'src/auth';
 
 @ApiTags('Tickets')
 @Controller('tickets/metrics')
+@UseGuards(RolesGuard)
+@AuthLevel(UserLevel.Janitor)
+@ApiBearerAuth()
 export class TicketMetricController {
   constructor(private readonly ticketMetricService: TicketMetricService) {}
 

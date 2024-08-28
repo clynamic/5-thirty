@@ -1,5 +1,10 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { ApprovalMetricService } from './approval-metric.service';
 import {
   ApprovalCountSummary,
@@ -7,8 +12,12 @@ import {
   JanitorSummary,
 } from './approval-metric.dto';
 import { PartialDateRange } from 'src/utils';
+import { RolesGuard, AuthLevel, UserLevel } from 'src/auth';
 
 @ApiTags('Approvals')
+@UseGuards(RolesGuard)
+@AuthLevel(UserLevel.Janitor)
+@ApiBearerAuth()
 @Controller('approvals/metrics')
 export class ApprovalMetricController {
   constructor(private readonly approvalMetricService: ApprovalMetricService) {}

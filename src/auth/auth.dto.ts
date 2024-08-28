@@ -6,6 +6,6 @@ export class UserCredentials {
   username: string;
 
   @IsString()
-  @Matches(/^[A-z\d]{24,32}$/)
+  @Matches(/^[a-zA-Z0-9]{24,32}$/)
   password: string;
 }

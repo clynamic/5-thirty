@@ -11,6 +11,9 @@ export const readJwtSecret = (config: ConfigService) => {
 
   try {
     secret = fs.readFileSync(file, 'utf-8');
+    if (!secret || secret.length !== 64) {
+      throw new Error('Invalid secret');
+    }
   } catch {
     secret = randomBytes(32).toString('hex');
     fs.writeFileSync(file, secret);

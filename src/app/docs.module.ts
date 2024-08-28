@@ -9,9 +9,12 @@ export class DocsModule {
       .setTitle(name)
       .setDescription(description)
       .setVersion(version)
+      .addBearerAuth()
       .build();
 
     const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
-    SwaggerModule.setup('', app, swaggerDocument);
+    SwaggerModule.setup('', app, swaggerDocument, {
+      jsonDocumentUrl: '/swagger.json',
+    });
   }
 }
