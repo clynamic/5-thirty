@@ -1,4 +1,5 @@
 import { AxiosResponse } from 'axios';
+import dayjs from 'dayjs';
 
 // year-month-day or full ISO 8601
 const dateStringFormat = new RegExp(
@@ -13,7 +14,7 @@ const deserializeDates = <T>(body: T): T => {
     return body;
 
   if (typeof body === 'string') {
-    if (isDateString(body)) return new Date(body) as unknown as T;
+    if (isDateString(body)) return dayjs(body).toDate() as unknown as T;
     return body;
   }
 

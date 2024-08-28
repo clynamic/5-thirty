@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import dayjs from 'dayjs';
 import { TicketQtype, TicketStatus } from 'src/api/e621';
-import { TicketEntity } from 'src/ticket';
 import { DateRange, PartialDateRange } from 'src/utils';
 import { Repository } from 'typeorm';
 
+import { TicketEntity } from '../ticket.entity';
 import {
   ModSummary,
   ReporterSummary,

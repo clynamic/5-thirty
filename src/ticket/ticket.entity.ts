@@ -1,5 +1,6 @@
-import { TicketQtype, TicketStatus } from 'src/api/e621';
-import { CacheLink } from 'src/cache';
+import { Ticket, TicketQtype, TicketStatus } from 'src/api/e621';
+import { CacheEntity, CacheLink } from 'src/cache';
+import { ManifestType } from 'src/manifest';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('tickets')
@@ -49,4 +50,13 @@ export class TicketEntity extends CacheLink {
 
   @Column({ type: 'datetime' })
   updatedAt: Date;
+}
+
+export class TicketCacheEntity extends CacheEntity {
+  constructor(value: Ticket) {
+    super({
+      id: `/${ManifestType.tickets}/${value.id}`,
+      value,
+    });
+  }
 }

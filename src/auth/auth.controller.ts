@@ -12,7 +12,7 @@ export class AuthController {
   @Post()
   @ApiOperation({
     summary: 'Login',
-    description: 'Login with username and password',
+    description: 'Login with username and api key',
     operationId: 'login',
   })
   async login(@Body() credentials: UserCredentials): Promise<string> {

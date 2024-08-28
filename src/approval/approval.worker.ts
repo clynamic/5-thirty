@@ -46,7 +46,7 @@ export class ApprovalWorker {
       const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
       const recentlyRange = getTwoMonthsRange();
-      const currentDate = dayjs().utc().startOf('hour');
+      const currentDate = dayjs().utc().startOf('day');
 
       const orders = await this.manifestService.listOrdersByRange(
         ManifestType.approvals,
