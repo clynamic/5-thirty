@@ -69,6 +69,10 @@ export class TicketSyncWorker {
             loopGuard.iter({
               page,
               limit: 320,
+              // tickets are *not* ordered properly.
+              // the site enforces special ordering that would be useful for humans, but not for us.
+              // because of that reason, we always need to exhaust the full date range
+              // before moving on and can't use the ID range to continously glide through the data.
               'search[created_at]': dateRange.toRangeString(),
             }),
             axiosConfig,

@@ -30,7 +30,7 @@ export class TicketEntity extends CacheLink {
   @Column({ type: 'int', nullable: true })
   dispId: number | null;
 
-  @Column({ type: 'text', enum: TicketQtype })
+  @Column({ type: 'simple-enum', enum: TicketQtype })
   qtype: TicketQtype;
 
   @Column({ type: 'text' })
@@ -42,7 +42,7 @@ export class TicketEntity extends CacheLink {
   @Column({ type: 'text' })
   response: string;
 
-  @Column({ type: 'text', enum: TicketStatus })
+  @Column({ type: 'simple-enum', enum: TicketStatus })
   status: TicketStatus;
 
   @Column({ type: 'datetime' })

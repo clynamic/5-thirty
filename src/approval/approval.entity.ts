@@ -1,4 +1,6 @@
-import { CacheLink } from 'src/cache';
+import { Approval } from 'src/api/e621';
+import { CacheEntity, CacheLink } from 'src/cache';
+import { ManifestType } from 'src/manifest';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('approvals')
@@ -21,4 +23,13 @@ export class ApprovalEntity extends CacheLink {
 
   @Column({ type: 'datetime' })
   createdAt: Date;
+}
+
+export class ApprovalCacheEntity extends CacheEntity {
+  constructor(value: Approval) {
+    super({
+      id: `/${ManifestType.approvals}/${value.id}`,
+      value,
+    });
+  }
 }
