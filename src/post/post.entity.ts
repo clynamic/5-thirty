@@ -4,6 +4,13 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('posts')
 export class PostEntity extends CacheLink {
+  constructor(partial?: Partial<PostEntity>) {
+    super();
+    if (partial) {
+      Object.assign(this, partial);
+    }
+  }
+
   @PrimaryColumn({ type: 'int' })
   id: number;
 

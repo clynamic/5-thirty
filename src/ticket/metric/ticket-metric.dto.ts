@@ -1,21 +1,18 @@
-import { PartialDateRange } from 'src/utils';
-
 export class TicketStatusSummary {
   constructor(value: TicketStatusSummary) {
     Object.assign(this, value);
   }
 
-  range: PartialDateRange;
   pending: number;
   approved: number;
   partial: number;
 }
+
 export class TicketTypeSummary {
   constructor(value: TicketTypeSummary) {
     Object.assign(this, value);
   }
 
-  range: PartialDateRange;
   user: number;
   comment: number;
   forum: number;
@@ -36,15 +33,6 @@ export class TicketOpenPoint {
   count: number;
 }
 
-export class TicketOpenSeries {
-  constructor(value: TicketOpenSeries) {
-    Object.assign(this, value);
-  }
-
-  range: PartialDateRange;
-  points: TicketOpenPoint[];
-}
-
 export class TicketClosedPoint {
   constructor(value: TicketClosedPoint) {
     Object.assign(this, value);
@@ -54,21 +42,12 @@ export class TicketClosedPoint {
   closed: number;
 }
 
-export class TicketClosedSeries {
-  constructor(value: TicketClosedSeries) {
-    Object.assign(this, value);
-  }
-
-  range: PartialDateRange;
-  points: TicketClosedPoint[];
-}
-
 export class ModSummary {
   constructor(value: ModSummary) {
     Object.assign(this, value);
   }
 
-  userId: string;
+  userId: number;
   userName?: string;
   userAvatar?: string;
   claimed: number;
@@ -80,7 +59,7 @@ export class ReporterSummary {
     Object.assign(this, value);
   }
 
-  userId: string;
+  userId: number;
   userName?: string;
   userAvatar?: string;
   reported: number;

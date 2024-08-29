@@ -4,3 +4,4 @@ export * from './dayjs-extension';
 export * from './limit';
 export * from './loop';
 export * from './range';
+export * from './summary.dto';

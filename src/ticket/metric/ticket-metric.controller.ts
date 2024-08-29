@@ -6,13 +6,13 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthLevel, RolesGuard, UserLevel } from 'src/auth';
-import { PartialDateRange } from 'src/utils';
+import { PartialDateRange, SummaryQuery } from 'src/utils';
 
 import {
   ModSummary,
   ReporterSummary,
-  TicketClosedSeries,
-  TicketOpenSeries,
+  TicketClosedPoint,
+  TicketOpenPoint,
   TicketStatusSummary,
   TicketTypeSummary,
 } from './ticket-metric.dto';
@@ -67,11 +67,11 @@ export class TicketMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: TicketOpenSeries,
+    type: [TicketOpenPoint],
   })
   async openSeries(
     @Query() params: PartialDateRange,
-  ): Promise<TicketOpenSeries> {
+  ): Promise<TicketOpenPoint[]> {
     return this.ticketMetricService.openSeries(params);
   }
 
@@ -83,11 +83,11 @@ export class TicketMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: TicketClosedSeries,
+    type: [TicketClosedPoint],
   })
   async closedSeries(
     @Query() params: PartialDateRange,
-  ): Promise<TicketClosedSeries> {
+  ): Promise<TicketClosedPoint[]> {
     return this.ticketMetricService.closedSeries(params);
   }
 
@@ -103,7 +103,12 @@ export class TicketMetricController {
     type: [ModSummary],
   })
   async modSummary(@Query() params: PartialDateRange): Promise<ModSummary[]> {
-    return this.ticketMetricService.modSummary(params);
+    return this.ticketMetricService.modSummary(
+      new SummaryQuery({
+        ...params,
+        limit: 20,
+      }),
+    );
   }
 
   @Get('reporter/summary')
@@ -120,6 +125,11 @@ export class TicketMetricController {
   async reporterSummary(
     @Query() params: PartialDateRange,
   ): Promise<ReporterSummary[]> {
-    return this.ticketMetricService.reporterSummary(params);
+    return this.ticketMetricService.reporterSummary(
+      new SummaryQuery({
+        ...params,
+        limit: 20,
+      }),
+    );
   }
 }

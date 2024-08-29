@@ -145,9 +145,7 @@ export class ManifestService {
     const orders: Order[] = [];
     let boundary: OrderBoundary = dateRange.startDate;
 
-    for (let i = 0; i < manifests.length; i++) {
-      const manifest = manifests[i];
-
+    for (const manifest of manifests) {
       if (this.areBoundariesContiguous(boundary, manifest, 'end', 'start')) {
         boundary = manifest;
       } else if (this.isBoundaryBefore(boundary, manifest, 'end', 'start')) {
@@ -164,7 +162,7 @@ export class ManifestService {
     if (
       orders.length === 0 ||
       (orders.length > 0 &&
-        orders[orders.length - 1].upper !== dateRange.endDate)
+        orders[orders.length - 1]!.upper !== dateRange.endDate)
     ) {
       orders.push({
         lower: boundary,
@@ -229,10 +227,10 @@ export class ManifestService {
     manifests.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 
     for (let i = 0; i < manifests.length; i++) {
-      const manifestA = manifests[i];
+      const manifestA = manifests[i]!;
 
       while (i + 1 < manifests.length) {
-        const manifestB = manifests[i + 1];
+        const manifestB = manifests[i + 1]!;
 
         if (dayjs(manifestB.endDate).isBefore(manifestA.endDate)) {
           await this.delete(manifestB);

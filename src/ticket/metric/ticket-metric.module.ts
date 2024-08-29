@@ -9,5 +9,6 @@ import { TicketMetricService } from './ticket-metric.service';
   imports: [TypeOrmModule.forFeature([TicketEntity])],
   controllers: [TicketMetricController],
   providers: [TicketMetricService],
+  exports: [TicketMetricService],
 })
 export class TicketMetricModule {}

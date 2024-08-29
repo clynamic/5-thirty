@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import _ from 'lodash';
 import { Ticket, tickets } from 'src/api/e621';
 import { AxiosAuthService } from 'src/auth';
+import { Job, JobService } from 'src/job';
 import { ManifestEntity, ManifestService, ManifestType } from 'src/manifest';
 import {
   convertKeysToCamelCase,
@@ -24,207 +25,209 @@ import { FindIncompleteParams, TicketSyncService } from './ticket-sync.service';
 @Injectable()
 export class TicketSyncWorker {
   constructor(
+    private readonly jobService: JobService,
     private readonly axiosAuthService: AxiosAuthService,
     private readonly ticketSyncService: TicketSyncService,
     private readonly manifestService: ManifestService,
   ) {}
 
   private readonly logger = new Logger(TicketSyncWorker.name);
-  private _isRunning = false;
 
-  get isRunning() {
-    return this._isRunning;
-  }
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  runOrders() {
+    this.jobService.addJob(
+      new Job({
+        title: 'Ticket Orders Sync',
+        key: `/${ManifestType.tickets}/orders`,
+        execute: async ({ cancelToken }) => {
+          const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
-  async runOrders() {
-    const axiosConfig = this.axiosAuthService.getGlobalConfig();
+          const recentlyRange = getTwoMonthsRange();
+          const currentDate = dayjs().utc().startOf('day');
 
-    const recentlyRange = getTwoMonthsRange();
-    const currentDate = dayjs().utc().startOf('day');
-
-    const orders = ManifestService.splitLongOrders(
-      await this.manifestService.listOrdersByRange(
-        ManifestType.tickets,
-        recentlyRange,
-      ),
-      14,
-    );
-
-    for (const order of orders) {
-      let page = 1;
-      let results: Ticket[] = [];
-
-      const loopGuard = new LoopGuard();
-
-      const dateRange = new DateRange({
-        startDate: ManifestService.getBoundaryDate(order.lower, 'end'),
-        endDate: ManifestService.getBoundaryDate(order.upper, 'start'),
-      });
-
-      this.logger.log(`Fetching tickets for ${dateRange.toRangeString()}`);
-
-      while (true) {
-        const result = await rateLimit(
-          tickets(
-            loopGuard.iter({
-              page,
-              limit: 320,
-              // tickets are *not* ordered properly.
-              // the site enforces special ordering that would be useful for humans, but not for us.
-              // because of that reason, we always need to exhaust the full date range
-              // before moving on and can't use the ID range to continously glide through the data.
-              'search[created_at]': dateRange.toRangeString(),
-            }),
-            axiosConfig,
-          ),
-        );
-
-        this.logger.log(
-          `Found ${result.length} tickets with id range ${getIdRangeString(
-            findLowestId(result)?.id,
-            findHighestId(result)?.id,
-          )} for ${getDateRangeString(dateRange)}`,
-        );
-
-        if (result.length === 0) break;
-
-        results = results.concat(result);
-        page += 1;
-      }
-
-      if (results.length === 0) continue;
-
-      const gaps = findContiguityGaps(results);
-      if (gaps.size > 0) {
-        this.logger.warn(
-          `Found ${gaps.size} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
-        );
-      }
-
-      const stored = await this.ticketSyncService.create(
-        results.map(
-          (ticket) =>
-            new TicketEntity({
-              ...convertKeysToCamelCase(ticket),
-              cache: new TicketCacheEntity(ticket),
-            }),
-        ),
-      );
-
-      if (order.upper instanceof ManifestEntity) {
-        if (order.lower instanceof ManifestEntity) {
-          // merge and close gap
-          order.upper.lowerId = order.lower.lowerId;
-          order.upper.startDate = order.lower.startDate;
-          order.upper.completedStart = order.lower.completedStart;
-
-          this.manifestService.save(order.upper);
-          this.manifestService.delete(order.lower);
-        } else {
-          // extend upper downwards
-          order.upper.lowerId = findLowestId(stored)?.id ?? order.upper.lowerId;
-          order.upper.startDate = order.lower;
-          order.upper.completedStart = true;
-
-          this.manifestService.save(order.upper);
-        }
-      } else {
-        if (order.lower instanceof ManifestEntity) {
-          // extend lower upwards
-          order.lower.upperId =
-            findHighestId(stored)?.id ?? order.lower.upperId;
-          order.lower.endDate = dayjs
-            .min(dayjs(order.upper), currentDate)
-            .toDate();
-          order.lower.completedEnd = dayjs(order.lower.endDate).isBefore(
-            currentDate,
+          const orders = ManifestService.splitLongOrders(
+            await this.manifestService.listOrdersByRange(
+              ManifestType.tickets,
+              recentlyRange,
+            ),
+            14,
           );
 
-          this.manifestService.save(order.lower);
-        } else {
-          if (stored.length === 0) continue;
+          for (const order of orders) {
+            let page = 1;
+            let results: Ticket[] = [];
 
-          // create new manifest
-          order.upper = new ManifestEntity({
-            type: ManifestType.tickets,
-            lowerId: findLowestId(stored)!.id,
-            upperId: findHighestId(stored)!.id,
-            startDate: order.lower,
-            completedStart: true,
-            endDate: dayjs.min(dayjs(order.upper), currentDate).toDate(),
-            completedEnd: dayjs(order.upper).isBefore(currentDate),
-          });
+            const loopGuard = new LoopGuard();
 
-          this.manifestService.save(order.upper);
-        }
-      }
-    }
+            const dateRange = new DateRange({
+              startDate: ManifestService.getBoundaryDate(order.lower, 'end'),
+              endDate: ManifestService.getBoundaryDate(order.upper, 'start'),
+            });
 
-    await this.manifestService.mergeManifests(
-      ManifestType.tickets,
-      recentlyRange,
-    );
-  }
+            this.logger.log(
+              `Fetching tickets for ${dateRange.toRangeString()}`,
+            );
 
-  async refreshIncomplete() {
-    const incomplete = await this.ticketSyncService.findIncomplete(
-      new FindIncompleteParams({
-        // older than 4 minutes, to ignore the current run
-        staleness: 1000 * 60 * 4,
+            while (true) {
+              cancelToken.ensureRunning();
+
+              const result = await rateLimit(
+                tickets(
+                  loopGuard.iter({
+                    page,
+                    limit: 320,
+                    // tickets are *not* ordered properly.
+                    // the site enforces special ordering that would be useful for humans, but not for us.
+                    // because of that reason, we always need to exhaust the full date range
+                    // before moving on and can't use the ID range to continously glide through the data.
+                    'search[created_at]': dateRange.toRangeString(),
+                  }),
+                  axiosConfig,
+                ),
+              );
+
+              this.logger.log(
+                `Found ${result.length} tickets with id range ${
+                  getIdRangeString(
+                    findLowestId(result)?.id,
+                    findHighestId(result)?.id,
+                  ) || 'none'
+                } for ${getDateRangeString(dateRange)}`,
+              );
+
+              if (result.length === 0) break;
+
+              results = results.concat(result);
+              page++;
+            }
+
+            if (results.length === 0) continue;
+
+            const gaps = findContiguityGaps(results);
+            if (gaps.size > 0) {
+              this.logger.warn(
+                `Found ${gaps.size} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
+              );
+            }
+
+            const stored = await this.ticketSyncService.create(
+              results.map(
+                (ticket) =>
+                  new TicketEntity({
+                    ...convertKeysToCamelCase(ticket),
+                    cache: new TicketCacheEntity(ticket),
+                  }),
+              ),
+            );
+
+            if (order.upper instanceof ManifestEntity) {
+              if (order.lower instanceof ManifestEntity) {
+                // merge and close gap
+                order.upper.lowerId = order.lower.lowerId;
+                order.upper.startDate = order.lower.startDate;
+                order.upper.completedStart = order.lower.completedStart;
+
+                this.manifestService.save(order.upper);
+                this.manifestService.delete(order.lower);
+              } else {
+                // extend upper downwards
+                order.upper.lowerId =
+                  findLowestId(stored)?.id ?? order.upper.lowerId;
+                order.upper.startDate = order.lower;
+                order.upper.completedStart = true;
+
+                this.manifestService.save(order.upper);
+              }
+            } else {
+              if (order.lower instanceof ManifestEntity) {
+                // extend lower upwards
+                order.lower.upperId =
+                  findHighestId(stored)?.id ?? order.lower.upperId;
+                order.lower.endDate = dayjs
+                  .min(dayjs(order.upper), currentDate)
+                  .toDate();
+                order.lower.completedEnd = dayjs(order.lower.endDate).isBefore(
+                  currentDate,
+                );
+
+                this.manifestService.save(order.lower);
+              } else {
+                if (stored.length === 0) continue;
+
+                // create new manifest
+                order.upper = new ManifestEntity({
+                  type: ManifestType.tickets,
+                  lowerId: findLowestId(stored)!.id,
+                  upperId: findHighestId(stored)!.id,
+                  startDate: order.lower,
+                  completedStart: true,
+                  endDate: dayjs.min(dayjs(order.upper), currentDate).toDate(),
+                  completedEnd: dayjs(order.upper).isBefore(currentDate),
+                });
+
+                this.manifestService.save(order.upper);
+              }
+            }
+          }
+
+          await this.manifestService.mergeManifests(
+            ManifestType.tickets,
+            recentlyRange,
+          );
+        },
       }),
     );
-
-    this.logger.log(`Found ${incomplete.length} incomplete tickets`);
-
-    const chunks = _.chunk(incomplete, 100);
-
-    for (const chunk of chunks) {
-      const result = await rateLimit(
-        tickets(
-          { 'search[id]': chunk.join(',') },
-          this.axiosAuthService.getGlobalConfig(),
-        ),
-      );
-
-      const completed = result.filter((ticket) => ticket.status === 'approved');
-      if (completed.length > 0) {
-        this.logger.log(`Found ${completed.length} newly completed tickets`);
-      }
-
-      await this.ticketSyncService.create(
-        result.map(
-          (ticket) =>
-            new TicketEntity({
-              ...convertKeysToCamelCase(ticket),
-              cache: new TicketCacheEntity(ticket),
-            }),
-        ),
-      );
-    }
   }
 
   @Cron(CronExpression.EVERY_5_MINUTES)
-  async onSync() {
-    if (this.isRunning) {
-      this.logger.warn('Task already running, skipping...');
-      return;
-    }
+  refreshIncomplete() {
+    this.jobService.addJob(
+      new Job({
+        title: 'Ticket Incomplete Sync',
+        key: `/${ManifestType.tickets}/incomplete`,
+        execute: async ({ cancelToken }) => {
+          const incomplete = await this.ticketSyncService.findIncomplete(
+            new FindIncompleteParams({
+              // older than 5 minutes, to ignore the current run
+              staleness: 1000 * 60 * 5,
+            }),
+          );
 
-    this.logger.log('Running...');
-    this._isRunning = true;
+          this.logger.log(`Found ${incomplete.length} incomplete tickets`);
 
-    try {
-      await this.runOrders();
-      await this.refreshIncomplete();
-    } catch (error) {
-      this.logger.error(
-        `An error occurred while running ${TicketSyncWorker.name}`,
-        error,
-        error.stack,
-      );
-    } finally {
-      this.logger.log('Finished');
-      this._isRunning = false;
-    }
+          const chunks = _.chunk(incomplete, 100);
+
+          for (const chunk of chunks) {
+            cancelToken.ensureRunning();
+
+            const result = await rateLimit(
+              tickets(
+                { 'search[id]': chunk.join(',') },
+                this.axiosAuthService.getGlobalConfig(),
+              ),
+            );
+
+            const completed = result.filter(
+              (ticket) => ticket.status === 'approved',
+            );
+            if (completed.length > 0) {
+              this.logger.log(
+                `Found ${completed.length} newly completed tickets`,
+              );
+            }
+
+            await this.ticketSyncService.create(
+              result.map(
+                (ticket) =>
+                  new TicketEntity({
+                    ...convertKeysToCamelCase(ticket),
+                    cache: new TicketCacheEntity(ticket),
+                  }),
+              ),
+            );
+          }
+        },
+      }),
+    );
   }
 }

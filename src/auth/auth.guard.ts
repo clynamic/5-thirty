@@ -24,7 +24,7 @@ export class RolesGuard extends JwtAuthGuard {
     super();
   }
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  override async canActivate(context: ExecutionContext): Promise<boolean> {
     if (!(await super.canActivate(context))) return false;
 
     const requiredLevel = this.reflector.get<UserLevel>(
@@ -52,7 +52,7 @@ export class ServerAdminGuard extends JwtAuthGuard {
     super();
   }
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  override async canActivate(context: ExecutionContext): Promise<boolean> {
     if (!(await super.canActivate(context))) return false;
 
     const serverAdminCredentials = readServerAdminCredentials(

@@ -24,7 +24,7 @@ export class ApprovalMetricService {
     return new ApprovalCountSummary({
       range: params,
       total: await this.approvalRepository.count({
-        where: params.toCreatedAtRange(),
+        where: params.toWhereOptions(),
       }),
     });
   }
@@ -36,7 +36,7 @@ export class ApprovalMetricService {
       .createQueryBuilder('approval')
       .select('DATE(approval.created_at) as date')
       .addSelect('COUNT(*) as count')
-      .where(params.toCreatedAtRange()!)
+      .where(params.toWhereOptions()!)
       .groupBy('date')
       .orderBy('date', 'ASC')
       .getRawMany();
@@ -60,7 +60,7 @@ export class ApprovalMetricService {
       .createQueryBuilder('approval')
       .select('approval.creator_id')
       .addSelect('COUNT(*) as count')
-      .where(params.toCreatedAtRange()!)
+      .where(params.toWhereOptions()!)
       .groupBy('approval.creator_id')
       .orderBy('count', 'DESC')
       .limit(20)

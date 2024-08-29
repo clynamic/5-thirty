@@ -8,8 +8,8 @@ export const objectUnpackInterceptor = (
   // no types need to be changed as our docs just assume an array
   if (typeof response.data === 'object' && response.data !== null) {
     const keys = Object.keys(response.data);
-    if (keys.length === 1 && Array.isArray(response.data[keys[0]])) {
-      return { ...response, data: response.data[keys[0]] };
+    if (keys.length === 1 && Array.isArray(response.data[keys[0]!])) {
+      return { ...response, data: response.data[keys[0]!] };
     }
   }
   return response;

@@ -33,7 +33,7 @@ export class TicketSyncService {
     return this.ticketRepository
       .find({
         where: {
-          createdAt: params?.toFindOperator(),
+          ...params?.toWhereOptions(),
           status: Not(TicketStatus.approved),
           cache: params?.staleness
             ? {

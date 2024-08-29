@@ -120,9 +120,9 @@ export const findContiguityGaps = <T extends WithId>(
   const sorted = items.slice().sort((a, b) => a.id - b.id);
 
   for (let i = 1; i < sorted.length; i++) {
-    const gap = sorted[i].id - sorted[i - 1].id - 1;
+    const gap = sorted[i]!.id - sorted[i - 1]!.id - 1;
     if (gap > 0) {
-      idGapMap.set(sorted[i - 1].id, gap);
+      idGapMap.set(sorted[i - 1]!.id, gap);
     }
   }
 

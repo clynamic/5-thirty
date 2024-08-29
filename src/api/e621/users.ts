@@ -5,8 +5,8 @@
  * An API for accessing user information and other resources on e621 and e926.
  * OpenAPI spec version: 1.0.0
  */
+import type { GetUsersParams, User, UserProfile } from './model';
 import { makeRequest } from '../http/axios';
-import type { GetUsersParams, User } from './model';
 
 type SecondParameter<T extends (...args: any) => any> = Parameters<T>[1];
 
@@ -31,7 +31,7 @@ export const user = (
   id: string,
   options?: SecondParameter<typeof makeRequest>,
 ) => {
-  return makeRequest<User>(
+  return makeRequest<UserProfile>(
     { url: `/users/${id}.json`, method: 'GET' },
     options,
   );

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import dayjs from 'dayjs';
 import { TicketQtype, TicketStatus } from 'src/api/e621';
-import { DateRange, PartialDateRange } from 'src/utils';
+import { DateRange, PartialDateRange, SummaryQuery } from 'src/utils';
 import { Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
@@ -10,9 +10,7 @@ import {
   ModSummary,
   ReporterSummary,
   TicketClosedPoint,
-  TicketClosedSeries,
   TicketOpenPoint,
-  TicketOpenSeries,
   TicketStatusSummary,
   TicketTypeSummary,
 } from './ticket-metric.dto';
@@ -35,7 +33,7 @@ export class TicketMetricService {
             status,
             await this.ticketRepository.count({
               where: {
-                ...params.toCreatedAtRange(),
+                ...params.toWhereOptions(),
                 status,
               },
             }),
@@ -55,7 +53,7 @@ export class TicketMetricService {
           Object.entries(TicketQtype).map(async ([, type]) => [
             type,
             await this.ticketRepository.count({
-              where: { ...params.toCreatedAtRange(), qtype: type },
+              where: { ...params.toWhereOptions(), qtype: type },
             }),
           ]),
         ),
@@ -63,10 +61,10 @@ export class TicketMetricService {
     });
   }
 
-  async openSeries(params?: PartialDateRange): Promise<TicketOpenSeries> {
+  async openSeries(params?: PartialDateRange): Promise<TicketOpenPoint[]> {
     params = DateRange.orCurrentMonth(params);
     const tickets = await this.ticketRepository.find({
-      where: params.toCreatedAtRange(),
+      where: params.toWhereOptions(),
     });
 
     const openTicketCounts: Record<string, number> = {};
@@ -91,27 +89,22 @@ export class TicketMetricService {
       }
     });
 
-    const points = Object.keys(openTicketCounts)
+    return Object.keys(openTicketCounts)
       .sort((a, b) => dayjs(a).unix() - dayjs(b).unix())
       .map(
         (date) =>
           new TicketOpenPoint({
             date: new Date(date),
-            count: openTicketCounts[date],
+            count: openTicketCounts[date]!,
           }),
       );
-
-    return new TicketOpenSeries({
-      range: params,
-      points,
-    });
   }
 
-  async closedSeries(params?: PartialDateRange): Promise<TicketClosedSeries> {
+  async closedSeries(params?: PartialDateRange): Promise<TicketClosedPoint[]> {
     params = DateRange.orCurrentMonth(params);
     const tickets = await this.ticketRepository.find({
       where: {
-        ...params.toCreatedAtRange(),
+        ...params.toWhereOptions(),
         status: TicketStatus.approved,
       },
     });
@@ -124,88 +117,66 @@ export class TicketMetricService {
         (closedTicketCounts[closedDate] || 0) + 1;
     });
 
-    const points = Object.keys(closedTicketCounts)
+    return Object.keys(closedTicketCounts)
       .sort((a, b) => dayjs(a).unix() - dayjs(b).unix())
       .map(
         (date) =>
           new TicketClosedPoint({
             date: new Date(date),
-            closed: closedTicketCounts[date],
+            closed: closedTicketCounts[date]!,
           }),
       );
-
-    return new TicketClosedSeries({
-      range: params,
-      points,
-    });
   }
 
-  async modSummary(params?: PartialDateRange): Promise<ModSummary[]> {
-    params = DateRange.orCurrentMonth(params);
-    const tickets = await this.ticketRepository.find({
-      where: params.toCreatedAtRange(),
-    });
+  async modSummary(params?: SummaryQuery): Promise<ModSummary[]> {
+    const rawResults = await this.ticketRepository
+      .createQueryBuilder('ticket')
+      .select('ticket.claimant_id', 'userId')
+      .addSelect('COUNT(ticket.id)', 'claimed')
+      .addSelect(
+        'SUM(CASE WHEN ticket.handler_id = ticket.claimant_id THEN 1 ELSE 0 END)',
+        'handled',
+      )
+      .where(DateRange.orCurrentMonth(params).toWhereOptions())
+      .groupBy('ticket.claimant_id')
+      .orderBy('handled', 'DESC')
+      .take(params?.limit)
+      .getRawMany<{
+        user_id: string;
+        claimed: string;
+        handled: string;
+      }>();
 
-    const modSummaryMap: Record<number, { claimed: number; handled: number }> =
-      {};
-
-    tickets.forEach((ticket) => {
-      if (ticket.claimantId) {
-        modSummaryMap[ticket.claimantId] = modSummaryMap[ticket.claimantId] || {
-          claimed: 0,
-          handled: 0,
-        };
-        modSummaryMap[ticket.claimantId].claimed += 1;
-      }
-
-      if (ticket.handlerId) {
-        modSummaryMap[ticket.handlerId] = modSummaryMap[ticket.handlerId] || {
-          claimed: 0,
-          handled: 0,
-        };
-        modSummaryMap[ticket.handlerId].handled += 1;
-      }
-    });
-
-    let result = Object.entries(modSummaryMap).map(
-      ([userId, { claimed, handled }]) =>
+    return rawResults.map(
+      (row) =>
         new ModSummary({
-          userId,
-          claimed,
-          handled,
+          userId: Number(row.user_id),
+          claimed: Number(row.claimed),
+          handled: Number(row.handled),
         }),
     );
-
-    result.sort((a, b) => b.handled - a.handled);
-    result = result.slice(0, 20);
-
-    return result;
   }
 
-  async reporterSummary(params?: PartialDateRange): Promise<ReporterSummary[]> {
-    params = DateRange.orCurrentMonth(params);
-    const tickets = await this.ticketRepository.find({
-      where: params.toCreatedAtRange(),
-    });
+  async reporterSummary(params?: SummaryQuery): Promise<ReporterSummary[]> {
+    const rawResults = await this.ticketRepository
+      .createQueryBuilder('ticket')
+      .select('ticket.creator_id', 'user_id')
+      .addSelect('COUNT(ticket.id)', 'reported')
+      .where(DateRange.orCurrentMonth(params).toWhereOptions())
+      .groupBy('ticket.creator_id')
+      .orderBy('reported', 'DESC')
+      .take(params?.limit)
+      .getRawMany<{
+        user_id: string;
+        reported: string;
+      }>();
 
-    const reporterSummaryMap: Record<number, number> = {};
-
-    tickets.forEach((ticket) => {
-      reporterSummaryMap[ticket.creatorId] =
-        (reporterSummaryMap[ticket.creatorId] || 0) + 1;
-    });
-
-    let result = Object.entries(reporterSummaryMap).map(
-      ([userId, count]) =>
+    return rawResults.map(
+      (row) =>
         new ReporterSummary({
-          userId,
-          reported: count,
+          userId: Number(row.user_id),
+          reported: Number(row.reported),
         }),
     );
-
-    result.sort((a, b) => b.reported - a.reported);
-    result = result.slice(0, 20);
-
-    return result;
   }
 }

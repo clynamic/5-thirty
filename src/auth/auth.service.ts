@@ -38,10 +38,10 @@ export class AuthService {
 
   decryptCredentials(encryptedCredentials: string): UserCredentials {
     const [ivHex, encrypted] = encryptedCredentials.split(':');
-    const iv = Buffer.from(ivHex, 'hex');
+    const iv = Buffer.from(ivHex!, 'hex');
     const key = Buffer.from(readJwtSecret(this.configService), 'hex');
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-    let decrypted = decipher.update(encrypted, 'hex', 'utf-8');
+    let decrypted = decipher.update(encrypted!, 'hex', 'utf-8');
     decrypted += decipher.final('utf-8');
     return JSON.parse(decrypted);
   }

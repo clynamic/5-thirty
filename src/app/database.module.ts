@@ -16,7 +16,7 @@ import { AppConfigKeys } from './config.module';
           configService.get<string>(AppConfigKeys.DATABASE_URL) || 'db.sqlite',
         entities: ['dist/**/*.entity{.ts,.js}'],
         namingStrategy: new SnakeNamingStrategy(),
-        synchronize: process.env.NODE_ENV !== 'production',
+        synchronize: process.env['NODE_ENV'] !== 'production',
       }),
     }),
   ],

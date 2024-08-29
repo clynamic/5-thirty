@@ -189,7 +189,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserProfile'
         '404':
           description: User not found
         '500':
@@ -1125,7 +1125,7 @@ components:
           items:
             type: integer
           description: An array of child post IDs
-    User:
+    UserProfile:
       type: object
       description: A detailed representation of a user.
       required:
@@ -1181,6 +1181,63 @@ components:
         profile_artinfo:
           type: string
           description: The user's art information profile section
+        id:
+          type: integer
+          description: The unique ID of the user
+        created_at:
+          type: string
+          format: date-time
+          description: The timestamp when the user account was created
+        name:
+          type: string
+          description: The username of the user
+        level:
+          type: integer
+          description: The user's access level (numerical)
+        base_upload_limit:
+          type: integer
+          description: The base upload limit for the user
+        post_upload_count:
+          type: integer
+          description: Number of posts uploaded by the user
+        post_update_count:
+          type: integer
+          description: Number of post updates made by the user
+        note_update_count:
+          type: integer
+          description: Number of note updates made by the user
+        is_banned:
+          type: boolean
+          description: Whether the user is banned
+        can_approve_posts:
+          type: boolean
+          description: Whether the user can approve posts
+        can_upload_free:
+          type: boolean
+          description: Whether the user can upload without restrictions
+        level_string:
+          type: string
+          description: The user's access level (textual description)
+        avatar_id:
+          type: integer
+          description: The ID of the user's avatar image
+    User:
+      type: object
+      description: A simplified representation of a user with core attributes.
+      required:
+        - id
+        - created_at
+        - name
+        - level
+        - base_upload_limit
+        - post_upload_count
+        - post_update_count
+        - note_update_count
+        - is_banned
+        - can_approve_posts
+        - can_upload_free
+        - level_string
+      properties:
         id:
           type: integer
           description: The unique ID of the user

@@ -32,7 +32,7 @@ export const decodeCredentials = (credentials: string) => {
   if (!match) {
     throw new Error('Invalid credentials');
   }
-  const decoded = atob(match[1]);
+  const decoded = atob(match[1]!);
   const [username, password] = decoded.split(':');
   return { username, password };
 };
