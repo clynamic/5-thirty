@@ -131,7 +131,7 @@ export class TicketMetricService {
   async modSummary(params?: SummaryQuery): Promise<ModSummary[]> {
     const rawResults = await this.ticketRepository
       .createQueryBuilder('ticket')
-      .select('ticket.claimant_id', 'userId')
+      .select('ticket.claimant_id', 'user_id')
       .addSelect('COUNT(ticket.id)', 'claimed')
       .addSelect(
         'SUM(CASE WHEN ticket.handler_id = ticket.claimant_id THEN 1 ELSE 0 END)',
