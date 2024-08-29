@@ -36,3 +36,10 @@ export const decodeCredentials = (credentials: string) => {
   const [username, password] = decoded.split(':');
   return { username, password };
 };
+
+export const readServerAdminCredentials = (
+  configService: ConfigService,
+): UserCredentials => ({
+  username: configService.getOrThrow(AppConfigKeys.E621_GLOBAL_USERNAME),
+  password: configService.getOrThrow(AppConfigKeys.E621_GLOBAL_API_KEY),
+});

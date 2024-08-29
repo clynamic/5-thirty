@@ -71,14 +71,14 @@ export class TicketSyncWorker {
           ),
         );
 
-        if (result.length === 0) break;
-
         this.logger.log(
           `Found ${result.length} tickets with id range ${getIdRangeString(
             findLowestId(result)?.id,
             findHighestId(result)?.id,
           )} for ${getDateRangeString(dateRange)}`,
         );
+
+        if (result.length === 0) break;
 
         results = results.concat(result);
         page += 1;

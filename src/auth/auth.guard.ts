@@ -1,14 +1,17 @@
 import {
-  CanActivate,
   ExecutionContext,
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
 import { SetMetadata } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
+import _ from 'lodash';
 
 import { getUserLevelFromString, UserLevel } from './auth.level';
+import { DecodedJwt } from './auth.service';
+import { readServerAdminCredentials } from './auth.utils';
 
 export const AuthLevel = (level: UserLevel) => SetMetadata('level', level);
 
@@ -16,17 +19,13 @@ export const AuthLevel = (level: UserLevel) => SetMetadata('level', level);
 export class JwtAuthGuard extends AuthGuard('jwt') {}
 
 @Injectable()
-export class RolesGuard implements CanActivate {
-  constructor(
-    private reflector: Reflector,
-    private jwtAuthGuard: JwtAuthGuard,
-  ) {}
+export class RolesGuard extends JwtAuthGuard {
+  constructor(private reflector: Reflector) {
+    super();
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isJwtValid = await this.jwtAuthGuard.canActivate(context);
-    if (!isJwtValid) {
-      return false;
-    }
+    if (!(await super.canActivate(context))) return false;
 
     const requiredLevel = this.reflector.get<UserLevel>(
       'level',
@@ -36,8 +35,7 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
+    const user = context.switchToHttp().getRequest().user as DecodedJwt;
     const level = getUserLevelFromString(user.level);
 
     if (!level || level === undefined || level < requiredLevel) {
@@ -45,5 +43,28 @@ export class RolesGuard implements CanActivate {
     }
 
     return true;
+  }
+}
+
+@Injectable()
+export class ServerAdminGuard extends JwtAuthGuard {
+  constructor(private configService: ConfigService) {
+    super();
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (!(await super.canActivate(context))) return false;
+
+    const serverAdminCredentials = readServerAdminCredentials(
+      this.configService,
+    );
+
+    const user = context.switchToHttp().getRequest().user as DecodedJwt;
+
+    if (_.isEqual(user.credentials, serverAdminCredentials)) {
+      return true;
+    } else {
+      throw new ForbiddenException('Insufficient level');
+    }
   }
 }
