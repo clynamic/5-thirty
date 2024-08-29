@@ -1,28 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PartialDateRange } from 'src/utils';
 import { Repository } from 'typeorm';
 
-import { ApprovalEntity } from './approval.entity';
+import { ApprovalEntity } from '../approval.entity';
 
 @Injectable()
-export class ApprovalService {
+export class ApprovalSyncService {
   constructor(
     @InjectRepository(ApprovalEntity)
     private readonly approvalRepository: Repository<ApprovalEntity>,
   ) {}
-
-  async get(id: number): Promise<ApprovalEntity | null> {
-    return this.approvalRepository.findOne({ where: { id } });
-  }
-
-  async list(query?: PartialDateRange): Promise<ApprovalEntity[]> {
-    return this.approvalRepository.find({
-      where: {
-        createdAt: query?.toFindOperator(),
-      },
-    });
-  }
 
   create(value: ApprovalEntity): Promise<ApprovalEntity>;
   create(value: ApprovalEntity[]): Promise<ApprovalEntity[]>;

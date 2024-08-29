@@ -3,17 +3,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ManifestModule } from 'src/manifest';
 
 import { ApprovalEntity } from './approval.entity';
-import { ApprovalService } from './approval.service';
-import { ApprovalWorker } from './approval.worker';
 import { ApprovalMetricModule } from './metric';
+import { ApprovalSyncModule } from './sync';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ApprovalEntity]),
     ManifestModule,
     ApprovalMetricModule,
+    ApprovalSyncModule,
   ],
   controllers: [],
-  providers: [ApprovalService, ApprovalWorker],
+  providers: [],
 })
 export class ApprovalModule {}

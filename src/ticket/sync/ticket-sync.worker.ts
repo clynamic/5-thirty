@@ -30,7 +30,11 @@ export class TicketSyncWorker {
   ) {}
 
   private readonly logger = new Logger(TicketSyncWorker.name);
-  private isRunning = false;
+  private _isRunning = false;
+
+  get isRunning() {
+    return this._isRunning;
+  }
 
   async runOrders() {
     const axiosConfig = this.axiosAuthService.getGlobalConfig();
@@ -203,7 +207,7 @@ export class TicketSyncWorker {
     }
 
     this.logger.log('Running...');
-    this.isRunning = true;
+    this._isRunning = true;
 
     try {
       await this.runOrders();
@@ -216,7 +220,7 @@ export class TicketSyncWorker {
       );
     } finally {
       this.logger.log('Finished');
-      this.isRunning = false;
+      this._isRunning = false;
     }
   }
 }
