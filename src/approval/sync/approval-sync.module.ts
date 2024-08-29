@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ManifestModule } from 'src/manifest';
+import { ManifestModule } from 'src/manifest/manifest.module';
 
 import { ApprovalEntity } from '../approval.entity';
 import { ApprovalSyncService } from './approval-sync.service';

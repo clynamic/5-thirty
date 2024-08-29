@@ -5,7 +5,8 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { AuthLevel, RolesGuard, UserLevel } from 'src/auth';
+import { AuthLevel, RolesGuard } from 'src/auth/auth.guard';
+import { UserLevel } from 'src/auth/auth.level';
 import { PartialDateRange, SummaryQuery } from 'src/utils';
 
 import {

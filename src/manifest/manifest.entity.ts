@@ -4,6 +4,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 export enum ManifestType {
   approvals = 'approvals',
   tickets = 'tickets',
+  posts = 'posts',
   users = 'users',
   userProfiles = 'user_profiles',
 }

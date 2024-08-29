@@ -1,6 +1,6 @@
 import { Controller, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { RolesGuard } from 'src/auth';
+import { RolesGuard } from 'src/auth/auth.guard';
 
 import { ManifestService } from './manifest.service';
 

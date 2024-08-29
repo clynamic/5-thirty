@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'crypto';
 import fs from 'fs';
-import { AppConfigKeys } from 'src/app';
+import { AppConfigKeys } from 'src/app/config.module';
 
 import { UserCredentials } from './auth.dto';
 

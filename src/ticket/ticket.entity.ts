@@ -1,6 +1,6 @@
 import { Ticket, TicketQtype, TicketStatus } from 'src/api/e621';
-import { CacheEntity, CacheLink } from 'src/cache';
-import { ManifestType } from 'src/manifest';
+import { CacheEntity, CacheLink } from 'src/cache/cache.entity';
+import { ManifestType } from 'src/manifest/manifest.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('tickets')

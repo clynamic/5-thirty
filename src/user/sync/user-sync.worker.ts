@@ -2,10 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import _ from 'lodash';
 import { users } from 'src/api/e621';
-import { AxiosAuthService, UserLevel } from 'src/auth';
-import { Job, JobService } from 'src/job';
-import { ManifestType } from 'src/manifest';
-import { TicketMetricService } from 'src/ticket';
+import { UserLevel } from 'src/auth/auth.level';
+import { AxiosAuthService } from 'src/auth/axios-auth.service';
+import { Job } from 'src/job/job.entity';
+import { JobService } from 'src/job/job.service';
+import { ManifestType } from 'src/manifest/manifest.entity';
+import { TicketMetricService } from 'src/ticket/metric/ticket-metric.service';
 import {
   convertKeysToCamelCase,
   LoopGuard,

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TicketMetricModule } from 'src/ticket';
+import { TicketMetricModule } from 'src/ticket/metric/ticket-metric.module';
 
 import { UserEntity } from '../user.entity';
 import { UserSyncService } from './user-sync.service';

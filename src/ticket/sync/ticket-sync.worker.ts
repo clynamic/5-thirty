@@ -3,9 +3,11 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import dayjs from 'dayjs';
 import _ from 'lodash';
 import { Ticket, tickets } from 'src/api/e621';
-import { AxiosAuthService } from 'src/auth';
-import { Job, JobService } from 'src/job';
-import { ManifestEntity, ManifestService, ManifestType } from 'src/manifest';
+import { AxiosAuthService } from 'src/auth/axios-auth.service';
+import { Job } from 'src/job/job.entity';
+import { JobService } from 'src/job/job.service';
+import { ManifestEntity, ManifestType } from 'src/manifest/manifest.entity';
+import { ManifestService } from 'src/manifest/manifest.service';
 import {
   convertKeysToCamelCase,
   DateRange,

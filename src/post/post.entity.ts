@@ -1,5 +1,6 @@
-import { PostRating, Tags } from 'src/api/e621';
-import { CacheLink } from 'src/cache';
+import { Post, PostRating, Tags } from 'src/api/e621';
+import { CacheEntity, CacheLink } from 'src/cache/cache.entity';
+import { ManifestType } from 'src/manifest/manifest.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('posts')
@@ -55,4 +56,13 @@ export class PostEntity extends CacheLink {
 
   @Column({ type: 'boolean' })
   deleted: boolean;
+}
+
+export class PostCacheEntity extends CacheEntity {
+  constructor(value: Post) {
+    super({
+      id: `/${ManifestType.posts}/${value.id}`,
+      value,
+    });
+  }
 }
