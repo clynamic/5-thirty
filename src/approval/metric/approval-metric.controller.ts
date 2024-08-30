@@ -10,7 +10,7 @@ import { UserLevel } from 'src/auth/auth.level';
 import { PartialDateRange } from 'src/utils';
 
 import {
-  ApprovalCountSeries,
+  ApprovalCountPoint,
   ApprovalCountSummary,
   JanitorSummary,
 } from './approval-metric.dto';
@@ -48,11 +48,11 @@ export class ApprovalMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: ApprovalCountSeries,
+    type: [ApprovalCountPoint],
   })
   async countSeries(
     @Query() params: PartialDateRange,
-  ): Promise<ApprovalCountSeries> {
+  ): Promise<ApprovalCountPoint[]> {
     return this.approvalMetricService.countSeries(params);
   }
 

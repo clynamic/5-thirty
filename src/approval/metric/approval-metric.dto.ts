@@ -1,11 +1,10 @@
-import { PartialDateRange } from 'src/utils';
+import { UserHead } from 'src/user/head/user-head.dto';
 
 export class ApprovalCountSummary {
   constructor(value: ApprovalCountSummary) {
     Object.assign(this, value);
   }
 
-  range: PartialDateRange;
   total: number;
 }
 
@@ -18,23 +17,12 @@ export class ApprovalCountPoint {
   count: number;
 }
 
-export class ApprovalCountSeries {
-  constructor(value: ApprovalCountSeries) {
-    Object.assign(this, value);
-  }
-
-  range: PartialDateRange;
-  points: ApprovalCountPoint[];
-}
-
 export class JanitorSummary {
   constructor(value: JanitorSummary) {
     Object.assign(this, value);
   }
 
-  range: PartialDateRange;
-  userId: string;
-  userName?: string;
-  userAvatar?: string;
+  userId: number;
+  head?: UserHead;
   total: number;
 }

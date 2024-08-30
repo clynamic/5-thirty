@@ -1,3 +1,5 @@
+import { UserHead } from 'src/user/head/user-head.dto';
+
 export class TicketStatusSummary {
   constructor(value: TicketStatusSummary) {
     Object.assign(this, value);
@@ -48,8 +50,7 @@ export class ModSummary {
   }
 
   userId: number;
-  userName?: string;
-  userAvatar?: string;
+  head?: UserHead;
   claimed: number;
   handled: number;
 }
@@ -60,7 +61,6 @@ export class ReporterSummary {
   }
 
   userId: number;
-  userName?: string;
-  userAvatar?: string;
+  head?: UserHead;
   reported: number;
 }

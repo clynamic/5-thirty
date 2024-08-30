@@ -2,8 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import dayjs from 'dayjs';
 import { TicketQtype, TicketStatus } from 'src/api/e621';
-import { DateRange, PartialDateRange, SummaryQuery } from 'src/utils';
-import { Repository } from 'typeorm';
+import { UserHeadService } from 'src/user/head/user-head.service';
+import { convertKeysToCamelCase, DateRange, PartialDateRange } from 'src/utils';
+import { IsNull, Not, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
 import {
@@ -20,6 +21,7 @@ export class TicketMetricService {
   constructor(
     @InjectRepository(TicketEntity)
     private readonly ticketRepository: Repository<TicketEntity>,
+    private readonly userHeadService: UserHeadService,
   ) {}
 
   async statusSummary(params?: PartialDateRange): Promise<TicketStatusSummary> {
@@ -128,7 +130,7 @@ export class TicketMetricService {
       );
   }
 
-  async modSummary(params?: SummaryQuery): Promise<ModSummary[]> {
+  async modSummary(params?: PartialDateRange): Promise<ModSummary[]> {
     const rawResults = await this.ticketRepository
       .createQueryBuilder('ticket')
       .select('ticket.claimant_id', 'user_id')
@@ -137,27 +139,33 @@ export class TicketMetricService {
         'SUM(CASE WHEN ticket.handler_id = ticket.claimant_id THEN 1 ELSE 0 END)',
         'handled',
       )
-      .where(DateRange.orCurrentMonth(params).toWhereOptions())
+      .andWhere({
+        ...DateRange.orCurrentMonth(params).toWhereOptions(),
+        claimantId: Not(IsNull()),
+      })
       .groupBy('ticket.claimant_id')
       .orderBy('handled', 'DESC')
-      .take(params?.limit)
+      .take(20)
       .getRawMany<{
-        user_id: string;
-        claimed: string;
-        handled: string;
+        user_id: number;
+        claimed: number;
+        handled: number;
       }>();
+
+    const ids = rawResults.map((row) => row.user_id);
+
+    const heads = await this.userHeadService.get(ids);
 
     return rawResults.map(
       (row) =>
         new ModSummary({
-          userId: Number(row.user_id),
-          claimed: Number(row.claimed),
-          handled: Number(row.handled),
+          ...convertKeysToCamelCase(row),
+          head: heads.find((head) => head.id === row.user_id),
         }),
     );
   }
 
-  async reporterSummary(params?: SummaryQuery): Promise<ReporterSummary[]> {
+  async reporterSummary(params?: PartialDateRange): Promise<ReporterSummary[]> {
     const rawResults = await this.ticketRepository
       .createQueryBuilder('ticket')
       .select('ticket.creator_id', 'user_id')
@@ -165,18 +173,21 @@ export class TicketMetricService {
       .where(DateRange.orCurrentMonth(params).toWhereOptions())
       .groupBy('ticket.creator_id')
       .orderBy('reported', 'DESC')
-      .take(params?.limit)
+      .take(20)
       .getRawMany<{
-        user_id: string;
-        reported: string;
+        user_id: number;
+        reported: number;
       }>();
 
-    return rawResults.map(
-      (row) =>
-        new ReporterSummary({
-          userId: Number(row.user_id),
-          reported: Number(row.reported),
-        }),
+    const counts = rawResults.map(
+      (row) => new ReporterSummary(convertKeysToCamelCase(row)),
     );
+
+    const heads = await this.userHeadService.get(counts.map((c) => c.userId));
+
+    return counts.map((count) => ({
+      ...count,
+      head: heads.find((head) => head.id === count.userId),
+    }));
   }
 }

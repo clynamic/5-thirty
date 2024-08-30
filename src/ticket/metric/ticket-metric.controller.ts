@@ -7,7 +7,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthLevel, RolesGuard } from 'src/auth/auth.guard';
 import { UserLevel } from 'src/auth/auth.level';
-import { PartialDateRange, SummaryQuery } from 'src/utils';
+import { PartialDateRange } from 'src/utils';
 
 import {
   ModSummary,
@@ -104,12 +104,7 @@ export class TicketMetricController {
     type: [ModSummary],
   })
   async modSummary(@Query() params: PartialDateRange): Promise<ModSummary[]> {
-    return this.ticketMetricService.modSummary(
-      new SummaryQuery({
-        ...params,
-        limit: 20,
-      }),
-    );
+    return this.ticketMetricService.modSummary(params);
   }
 
   @Get('reporter/summary')
@@ -126,11 +121,6 @@ export class TicketMetricController {
   async reporterSummary(
     @Query() params: PartialDateRange,
   ): Promise<ReporterSummary[]> {
-    return this.ticketMetricService.reporterSummary(
-      new SummaryQuery({
-        ...params,
-        limit: 20,
-      }),
-    );
+    return this.ticketMetricService.reporterSummary(params);
   }
 }
