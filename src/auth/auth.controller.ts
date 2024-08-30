@@ -1,15 +1,28 @@
-import { Body, Controller, Post, UnauthorizedException } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { UserCredentials } from './auth.dto';
+import { RolesGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 
 @ApiTags('Auth')
-@Controller('login')
+@Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post()
+  @Post('login')
   @ApiOperation({
     summary: 'Login',
     description: 'Login with username and api key',
@@ -20,4 +33,16 @@ export class AuthController {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return await this.authService.createToken(credentials, user);
   }
+
+  @Get('validate')
+  @ApiOperation({
+    summary: 'Validate',
+    description: 'Validate token',
+    operationId: 'validate',
+  })
+  @ApiResponse({ status: 200, description: 'When token is valid' })
+  @ApiResponse({ status: 401, description: 'When token is invalid' })
+  @UseGuards(RolesGuard)
+  @ApiBearerAuth()
+  async validate(): Promise<void> {}
 }
