@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TicketStatus } from 'src/api/e621';
-import { PartialDateRange } from 'src/utils';
+import { DateRange, PartialDateRange } from 'src/utils';
 import { LessThan, Not, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
@@ -45,6 +45,23 @@ export class TicketSyncService {
         relations: ['cache'],
       })
       .then((tickets) => tickets.map((ticket) => ticket.id));
+  }
+
+  async findReporters(range?: DateRange): Promise<number[]> {
+    return (
+      await this.ticketRepository
+        .createQueryBuilder('ticket')
+        .select('ticket.creator_id', 'user_id')
+        .addSelect('COUNT(ticket.id)', 'reported')
+        .where(DateRange.orCurrentMonth(range).toWhereOptions())
+        .groupBy('ticket.creator_id')
+        .orderBy('reported', 'DESC')
+        .take(100)
+        .getRawMany<{
+          user_id: string;
+          reported: string;
+        }>()
+    ).map((row) => Number(row.user_id));
   }
 
   create(value: TicketEntity): Promise<TicketEntity>;

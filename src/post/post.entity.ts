@@ -12,6 +12,27 @@ export class PostEntity extends CacheLink {
     }
   }
 
+  static fromPost(value: Post): PostEntity {
+    return new PostEntity({
+      id: value.id,
+      createdAt: value.created_at,
+      updatedAt: value.updated_at,
+      file: value.file.url,
+      previewUrl: value.preview.url,
+      sampleUrl: value.sample.url,
+      extension: value.file.ext,
+      rating: value.rating,
+      favorites: value.fav_count,
+      score: value.score.total,
+      description: value.description,
+      uploaderId: value.uploader_id,
+      approverId: value.approver_id,
+      tags: value.tags,
+      deleted: value.flags.deleted,
+      cache: new PostCacheEntity(value),
+    });
+  }
+
   @PrimaryColumn({ type: 'int' })
   id: number;
 
@@ -21,19 +42,19 @@ export class PostEntity extends CacheLink {
   @Column({ type: 'datetime' })
   updatedAt: Date;
 
-  @Column({ type: 'text' })
-  file: string;
+  @Column({ type: 'text', nullable: true })
+  file: string | null;
 
-  @Column({ type: 'text' })
-  previewUrl: string;
+  @Column({ type: 'text', nullable: true })
+  previewUrl: string | null;
 
-  @Column({ type: 'text' })
-  sampleUrl: string;
+  @Column({ type: 'text', nullable: true })
+  sampleUrl: string | null;
 
   @Column({ type: 'text' })
   extension: string;
 
-  @Column({ type: 'text', enum: PostRating })
+  @Column({ type: 'simple-enum', enum: PostRating })
   rating: PostRating;
 
   @Column({ type: 'int' })

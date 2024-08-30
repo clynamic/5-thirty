@@ -7,6 +7,7 @@ import { AuthModule } from 'src/auth/auth.module';
 import { CacheModule } from 'src/cache/cache.module';
 import { JobModule } from 'src/job/job.module';
 import { ManifestModule } from 'src/manifest/manifest.module';
+import { PostModule } from 'src/post/post.module';
 import { TicketModule } from 'src/ticket/ticket.module';
 import { UserModule } from 'src/user/user.module';
 
@@ -25,6 +26,7 @@ import { DatabaseModule } from './database.module';
     ApprovalModule,
     TicketModule,
     UserModule,
+    PostModule,
   ],
   controllers: [],
   providers: [],

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import dayjs from 'dayjs';
 import _ from 'lodash';
 import { users } from 'src/api/e621';
 import { UserLevel } from 'src/auth/auth.level';
@@ -7,15 +8,10 @@ import { AxiosAuthService } from 'src/auth/axios-auth.service';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
 import { ManifestType } from 'src/manifest/manifest.entity';
-import { TicketMetricService } from 'src/ticket/metric/ticket-metric.service';
-import {
-  convertKeysToCamelCase,
-  LoopGuard,
-  rateLimit,
-  SummaryQuery,
-} from 'src/utils';
+import { convertKeysToCamelCase, LoopGuard, rateLimit } from 'src/utils';
 
 import { UserCacheEntity, UserEntity } from '../user.entity';
+import { NotabilityType, NotableUserEntity } from './notable-user.entity';
 import { UserSyncService } from './user-sync.service';
 
 @Injectable()
@@ -24,7 +20,6 @@ export class UserSyncWorker {
     private readonly jobService: JobService,
     private readonly userSyncService: UserSyncService,
     private readonly axiosAuthService: AxiosAuthService,
-    private readonly ticketMetricService: TicketMetricService,
   ) {}
 
   private readonly logger = new Logger(UserSyncWorker.name);
@@ -40,6 +35,7 @@ export class UserSyncWorker {
 
           const loopGuard = new LoopGuard();
           let page = 1;
+          const limit = 100;
 
           while (true) {
             cancelToken.ensureRunning();
@@ -48,14 +44,12 @@ export class UserSyncWorker {
               users(
                 loopGuard.iter({
                   page,
-                  limit: 100,
+                  limit,
                   'search[min_level]': UserLevel.Janitor,
                 }),
                 axiosConfig,
               ),
             );
-
-            if (result.length === 0) break;
 
             this.logger.log(`Found ${result.length} staff members`);
 
@@ -69,6 +63,17 @@ export class UserSyncWorker {
               ),
             );
 
+            await this.userSyncService.note(
+              result.map(
+                (user) =>
+                  new NotableUserEntity({
+                    id: user.id,
+                    type: NotabilityType.staff,
+                  }),
+              ),
+            );
+
+            if (result.length < limit) break;
             page++;
           }
         },
@@ -77,44 +82,42 @@ export class UserSyncWorker {
   }
 
   @Cron(CronExpression.EVERY_HOUR)
-  refreshReporters() {
+  refreshNotable() {
     this.jobService.addJob(
       new Job({
-        title: 'User Reporter Sync',
-        key: `/${ManifestType.users}/reporters`,
+        title: 'User Notable Sync',
+        key: `/${ManifestType.users}/notable`,
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
-          const reporters = await this.ticketMetricService.reporterSummary(
-            new SummaryQuery({
-              limit: 100,
-            }),
-          );
+          const notable = await this.userSyncService.listNotable({
+            // staff are already handled by the staff sync
+            type: Object.values(NotabilityType).filter(
+              (type) => type !== NotabilityType.staff,
+            ),
+            newerThan: dayjs().subtract(1, 'month').toDate(),
+          });
 
-          const loopGuard = new LoopGuard();
           const chunks = _.chunk(
-            reporters.map((reporter) => reporter.userId),
+            notable.map((notable) => notable.id),
             100,
           );
-          let page = 0;
 
-          while (true) {
+          for (const chunk of chunks) {
             cancelToken.ensureRunning();
-
-            if (page >= chunks.length) break;
 
             const result = await rateLimit(
               users(
-                loopGuard.iter({
+                {
                   page: 1,
                   limit: 100,
-                  'search[id]': chunks[page]!.join(','),
-                }),
+                  'search[id]': chunk.join(','),
+                },
                 axiosConfig,
               ),
             );
 
-            this.logger.log(`Found ${result.length} reporters`);
+            this.logger.log(`Found ${result.length} notable users`);
 
             await this.userSyncService.create(
               result.map(
@@ -125,8 +128,6 @@ export class UserSyncWorker {
                   }),
               ),
             );
-
-            page++;
           }
         },
       }),

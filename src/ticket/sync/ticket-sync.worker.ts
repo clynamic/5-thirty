@@ -9,6 +9,11 @@ import { JobService } from 'src/job/job.service';
 import { ManifestEntity, ManifestType } from 'src/manifest/manifest.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 import {
+  NotabilityType,
+  NotableUserEntity,
+} from 'src/user/sync/notable-user.entity';
+import { UserSyncService } from 'src/user/sync/user-sync.service';
+import {
   convertKeysToCamelCase,
   DateRange,
   findContiguityGaps,
@@ -30,6 +35,7 @@ export class TicketSyncWorker {
     private readonly jobService: JobService,
     private readonly axiosAuthService: AxiosAuthService,
     private readonly ticketSyncService: TicketSyncService,
+    private readonly userSyncService: UserSyncService,
     private readonly manifestService: ManifestService,
   ) {}
 
@@ -228,6 +234,31 @@ export class TicketSyncWorker {
               ),
             );
           }
+        },
+      }),
+    );
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  writeNotable() {
+    this.jobService.addJob(
+      new Job({
+        title: 'Ticket Notable Sync',
+        key: `/${ManifestType.tickets}/notable`,
+        execute: async () => {
+          const reporters = await this.ticketSyncService.findReporters();
+
+          await this.userSyncService.note(
+            reporters.map(
+              (reporter) =>
+                new NotableUserEntity({
+                  id: reporter,
+                  type: NotabilityType.reporter,
+                }),
+            ),
+          );
+
+          this.logger.log(`Noted ${reporters.length} reporters`);
         },
       }),
     );
