@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ApprovalModule } from 'src/approval/approval.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { CacheModule } from 'src/cache/cache.module';
+import { DashboardModule } from 'src/dashboard/dashboard.module';
 import { JobModule } from 'src/job/job.module';
 import { ManifestModule } from 'src/manifest/manifest.module';
 import { PostModule } from 'src/post/post.module';
@@ -21,6 +22,7 @@ import { DatabaseModule } from './database.module';
     DatabaseModule,
     AuthModule,
     JobModule,
+    DashboardModule,
     CacheModule,
     ManifestModule,
     ApprovalModule,
