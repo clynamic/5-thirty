@@ -9,3 +9,7 @@ export class UserCredentials {
   @Matches(/^[a-zA-Z0-9]{24,32}$/)
   password: string;
 }
+
+export class TokenValidation {
+  token: string;
+}
