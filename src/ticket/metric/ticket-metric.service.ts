@@ -28,7 +28,6 @@ export class TicketMetricService {
     params = DateRange.orCurrentMonth(params);
 
     return new TicketStatusSummary({
-      range: params,
       ...Object.fromEntries(
         await Promise.all(
           Object.values(TicketStatus).map(async (status) => [
@@ -49,7 +48,6 @@ export class TicketMetricService {
     params = DateRange.orCurrentMonth(params);
 
     return new TicketTypeSummary({
-      range: params,
       ...Object.fromEntries(
         await Promise.all(
           Object.entries(TicketQtype).map(async ([, type]) => [
@@ -125,7 +123,7 @@ export class TicketMetricService {
         (date) =>
           new TicketClosedPoint({
             date: new Date(date),
-            closed: closedTicketCounts[date]!,
+            count: closedTicketCounts[date]!,
           }),
       );
   }
@@ -139,6 +137,7 @@ export class TicketMetricService {
         'SUM(CASE WHEN ticket.handler_id = ticket.claimant_id THEN 1 ELSE 0 END)',
         'handled',
       )
+      .addSelect('COUNT(DISTINCT DATE(ticket.updated_at))', 'days')
       .andWhere({
         ...DateRange.orCurrentMonth(params).toWhereOptions(),
         claimantId: Not(IsNull()),
@@ -150,6 +149,7 @@ export class TicketMetricService {
         user_id: number;
         claimed: number;
         handled: number;
+        days: number;
       }>();
 
     const ids = rawResults.map((row) => row.user_id);
@@ -170,6 +170,7 @@ export class TicketMetricService {
       .createQueryBuilder('ticket')
       .select('ticket.creator_id', 'user_id')
       .addSelect('COUNT(ticket.id)', 'reported')
+      .addSelect('COUNT(DISTINCT DATE(ticket.updated_at))', 'days')
       .where(DateRange.orCurrentMonth(params).toWhereOptions())
       .groupBy('ticket.creator_id')
       .orderBy('reported', 'DESC')
@@ -177,6 +178,7 @@ export class TicketMetricService {
       .getRawMany<{
         user_id: number;
         reported: number;
+        days: number;
       }>();
 
     const counts = rawResults.map(

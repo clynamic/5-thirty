@@ -41,7 +41,7 @@ export class TicketClosedPoint {
   }
 
   date: Date;
-  closed: number;
+  count: number;
 }
 
 export class ModSummary {
@@ -53,6 +53,7 @@ export class ModSummary {
   head?: UserHead;
   claimed: number;
   handled: number;
+  days: number;
 }
 
 export class ReporterSummary {
@@ -63,4 +64,5 @@ export class ReporterSummary {
   userId: number;
   head?: UserHead;
   reported: number;
+  days: number;
 }

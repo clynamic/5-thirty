@@ -25,4 +25,5 @@ export class JanitorSummary {
   userId: number;
   head?: UserHead;
   total: number;
+  days: number;
 }

@@ -54,13 +54,15 @@ export class ApprovalMetricService {
       .createQueryBuilder('approval')
       .select('approval.user_id')
       .addSelect('COUNT(*) as total')
+      .addSelect('COUNT(DISTINCT DATE(approval.created_at))', 'days')
       .where(params.toWhereOptions()!)
-      .groupBy('user_id')
+      .groupBy('approval.user_id')
       .orderBy('total', 'DESC')
       .limit(20)
       .getRawMany<{
         user_id: number;
         total: number;
+        days: number;
       }>();
 
     const ids = janitorSummaries.map((summary) => summary.user_id);
