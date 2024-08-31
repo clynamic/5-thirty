@@ -13,7 +13,7 @@ import {
   findHighestId,
   findLowestId,
   getIdRangeString,
-  getTwoMonthsRange,
+  getRecentDateRange,
   LoopGuard,
   rateLimit,
 } from 'src/utils';
@@ -41,7 +41,7 @@ export class FlagSyncWorker {
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
-          const recentlyRange = getTwoMonthsRange();
+          const recentlyRange = getRecentDateRange();
 
           const orders = await this.manifestService.listOrdersByRange(
             ManifestType.flags,

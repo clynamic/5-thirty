@@ -2,6 +2,9 @@ import dayjs from 'dayjs';
 
 import { DateRange, PartialDateRange } from './date-range.dto';
 
+/**
+ * Gets the range for the current month.
+ */
 export const getCurrentMonthRange = (): DateRange => {
   const now = dayjs().utc();
   const firstDay = now.startOf('month').format('YYYY-MM-DD');
@@ -13,10 +16,14 @@ export const getCurrentMonthRange = (): DateRange => {
   });
 };
 
-export const getTwoMonthsRange = (): DateRange => {
+/**
+ * Gets the range for "recent" months.
+ * This is defined as the current month plus the 3 previous months.
+ */
+export const getRecentDateRange = (): DateRange => {
   const now = dayjs().utc();
   const firstDay = now
-    .subtract(1, 'month')
+    .subtract(3, 'month')
     .startOf('month')
     .format('YYYY-MM-DD');
   const lastDay = now.endOf('month').format('YYYY-MM-DD');
@@ -27,6 +34,10 @@ export const getTwoMonthsRange = (): DateRange => {
   });
 };
 
+/**
+ * Turns a date range into a string fit for an e621 search query.
+ * Inclusive on both ends.
+ */
 export const getDateRangeString = (range: PartialDateRange): string => {
   const start = dayjs(range.startDate).format('YYYY-MM-DD');
   const end = dayjs(range.endDate).format('YYYY-MM-DD');
@@ -49,6 +60,10 @@ export interface WithId {
   id: number;
 }
 
+/**
+ * Turns a range of IDs into a string fit for an e621 search query.
+ * Exclusive on both ends.
+ */
 export const getIdRangeString = (
   start: number | undefined,
   end: number | undefined,
@@ -63,6 +78,9 @@ export const getIdRangeString = (
   return '';
 };
 
+/**
+ * Finds the lowest ID in a list of items.
+ */
 export const findLowestId = <T extends WithId>(
   items: T[] | undefined,
 ): T | undefined => {
@@ -72,6 +90,9 @@ export const findLowestId = <T extends WithId>(
   );
 };
 
+/**
+ * Finds the highest ID in a list of items.
+ */
 export const findHighestId = <T extends WithId>(
   items: T[] | undefined,
 ): T | undefined => {
@@ -81,6 +102,9 @@ export const findHighestId = <T extends WithId>(
   );
 };
 
+/**
+ * Finds the bounds of a list of items by ID.
+ */
 export const findIdBounds = <T extends WithId>(items: T[] | undefined) => {
   return {
     lowest: findLowestId(items),
@@ -92,6 +116,9 @@ export interface WithCreationDate {
   createdAt: Date;
 }
 
+/**
+ * Finds the least recent creation date in a list of items.
+ */
 export const findLowestDate = <T extends WithCreationDate>(
   items: T[] | undefined,
 ): T | undefined => {
@@ -101,6 +128,9 @@ export const findLowestDate = <T extends WithCreationDate>(
   );
 };
 
+/**
+ * Finds the most recent creation date in a list of items.
+ */
 export const findHighestDate = <T extends WithCreationDate>(
   items: T[] | undefined,
 ): T | undefined => {
@@ -110,6 +140,9 @@ export const findHighestDate = <T extends WithCreationDate>(
   );
 };
 
+/**
+ * Finds gaps in the contiguity of IDs in a list of items.
+ */
 export const findContiguityGaps = <T extends WithId>(
   items: T[] | undefined,
 ): Map<number, number> => {

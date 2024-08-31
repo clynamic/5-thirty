@@ -11,6 +11,10 @@ import {
   WithCreationDate,
 } from './range';
 
+/**
+ * A range of dates, inclusive on both ends.
+ * May be missing one or both ends.
+ */
 export class PartialDateRange {
   constructor(partial?: Partial<PartialDateRange>) {
     if (partial) {
@@ -49,6 +53,9 @@ export class PartialDateRange {
   }
 }
 
+/**
+ * A range of dates, inclusive on both ends.
+ */
 export class DateRange extends PartialDateRange {
   constructor(partial?: Partial<DateRange>) {
     super(partial);
@@ -58,6 +65,9 @@ export class DateRange extends PartialDateRange {
 
   override endDate: Date;
 
+  /**
+   * Returns the date range, or, if no range is provided, the current month.
+   */
   static orCurrentMonth(range?: PartialDateRange): DateRange {
     return new DateRange({
       ...getCurrentMonthRange(),

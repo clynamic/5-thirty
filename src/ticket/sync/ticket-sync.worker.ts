@@ -20,7 +20,7 @@ import {
   findLowestId,
   getDateRangeString,
   getIdRangeString,
-  getTwoMonthsRange,
+  getRecentDateRange,
   LoopGuard,
   rateLimit,
 } from 'src/utils';
@@ -49,7 +49,7 @@ export class TicketSyncWorker {
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
-          const recentlyRange = getTwoMonthsRange();
+          const recentlyRange = getRecentDateRange();
 
           const orders = ManifestService.splitLongOrders(
             await this.manifestService.listOrdersByRange(
