@@ -1,6 +1,11 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import dayjs from 'dayjs';
-import { DateRange } from 'src/utils';
+import {
+  DateRange,
+  findHighestId,
+  findLowestDate,
+  findLowestId,
+} from 'src/utils';
 import { Between, LessThan, MoreThan, Repository } from 'typeorm';
 
 import {
@@ -8,6 +13,7 @@ import {
   ManifestType,
   Order,
   OrderBoundary,
+  OrderResults,
   OrderSide,
 } from './manifest.entity';
 
@@ -56,21 +62,14 @@ export class ManifestService {
     return ManifestService.computeOrders(manifests, range);
   }
 
-  static getBoundaryDate(boundary: OrderBoundary, side: OrderSide): Date {
-    if (boundary instanceof Date) {
-      return boundary;
-    }
-    return side === 'start' ? boundary.startDate : boundary.endDate;
-  }
-
   static areBoundariesContiguous(
     boundary1: OrderBoundary,
     boundary2: OrderBoundary,
     side1: OrderSide,
     side2: OrderSide,
   ): boolean {
-    const date1 = dayjs(this.getBoundaryDate(boundary1, side1));
-    const date2 = dayjs(this.getBoundaryDate(boundary2, side2));
+    const date1 = dayjs(Order.getBoundaryDate(boundary1, side1));
+    const date2 = dayjs(Order.getBoundaryDate(boundary2, side2));
 
     if (
       boundary1 instanceof ManifestEntity &&
@@ -115,8 +114,8 @@ export class ManifestService {
     side1: OrderSide,
     side2: OrderSide,
   ): boolean {
-    const date1 = dayjs(this.getBoundaryDate(boundary1, side1));
-    const date2 = dayjs(this.getBoundaryDate(boundary2, side2));
+    const date1 = dayjs(Order.getBoundaryDate(boundary1, side1));
+    const date2 = dayjs(Order.getBoundaryDate(boundary2, side2));
 
     if (
       boundary1 instanceof ManifestEntity &&
@@ -149,10 +148,12 @@ export class ManifestService {
       if (this.areBoundariesContiguous(boundary, manifest, 'end', 'start')) {
         boundary = manifest;
       } else if (this.isBoundaryBefore(boundary, manifest, 'end', 'start')) {
-        orders.push({
-          lower: boundary,
-          upper: manifest,
-        });
+        orders.push(
+          new Order({
+            lower: boundary,
+            upper: manifest,
+          }),
+        );
         boundary = manifest;
       } else if (this.isBoundaryBefore(boundary, manifest, 'end', 'end')) {
         boundary = manifest;
@@ -164,10 +165,12 @@ export class ManifestService {
       (orders.length > 0 &&
         orders[orders.length - 1]!.upper !== dateRange.endDate)
     ) {
-      orders.push({
-        lower: boundary,
-        upper: dateRange.endDate,
-      });
+      orders.push(
+        new Order({
+          lower: boundary,
+          upper: dateRange.endDate,
+        }),
+      );
     }
 
     return orders;
@@ -180,12 +183,8 @@ export class ManifestService {
     const splitOrders: Order[] = [];
 
     for (const order of orders) {
-      const lowerDate = dayjs(
-        ManifestService.getBoundaryDate(order.lower, 'end'),
-      );
-      const upperDate = dayjs(
-        ManifestService.getBoundaryDate(order.upper, 'start'),
-      );
+      const lowerDate = dayjs(order.lowerDate);
+      const upperDate = dayjs(order.upperDate);
 
       let currentStart = lowerDate;
       const originalLowerBoundary = order.lower;
@@ -198,20 +197,26 @@ export class ManifestService {
         );
 
         if (currentStart.isSame(lowerDate)) {
-          splitOrders.push({
-            lower: originalLowerBoundary,
-            upper: currentEnd.toDate(),
-          });
+          splitOrders.push(
+            new Order({
+              lower: originalLowerBoundary,
+              upper: currentEnd.toDate(),
+            }),
+          );
         } else if (currentEnd.isSame(upperDate)) {
-          splitOrders.push({
-            lower: currentStart.toDate(),
-            upper: originalUpperBoundary,
-          });
+          splitOrders.push(
+            new Order({
+              lower: currentStart.toDate(),
+              upper: originalUpperBoundary,
+            }),
+          );
         } else {
-          splitOrders.push({
-            lower: currentStart.toDate(),
-            upper: currentEnd.toDate(),
-          });
+          splitOrders.push(
+            new Order({
+              lower: currentStart.toDate(),
+              upper: currentEnd.toDate(),
+            }),
+          );
         }
 
         currentStart = currentEnd.add(1, 'day');
@@ -221,7 +226,90 @@ export class ManifestService {
     return splitOrders;
   }
 
-  async mergeManifests(type: ManifestType, range: DateRange): Promise<void> {
+  async saveResults({
+    type,
+    order,
+    items,
+    exhausted,
+  }: OrderResults): Promise<void> {
+    const currentDate = dayjs().utc().startOf('day');
+
+    exhausted = exhausted ?? items.length === 0;
+
+    if (!exhausted) {
+      // we assume that data is paginated newest to oldest,
+      // therefore we create an upper boundary.
+      // if this is not the case, we need to expand our logic,
+      // to allow starting at a lower boundary instead.
+      if (order.upper instanceof ManifestEntity) {
+        // extend upper downwards
+        this.save(
+          order.upper.extend(
+            'start',
+            findLowestDate(items)?.createdAt,
+            findLowestId(items)?.id,
+            false,
+          ),
+        );
+      } else {
+        // create new manifest
+        order.upper = new ManifestEntity({
+          type: type,
+          lowerId: findLowestId(items)!.id,
+          upperId: findHighestId(items)!.id,
+          startDate: findLowestDate(items)!.createdAt,
+          completedStart: false,
+          endDate: dayjs.min(dayjs(order.upper), currentDate).toDate(),
+          completedEnd: dayjs(order.upper).isBefore(currentDate),
+        });
+
+        this.save(order.upper);
+      }
+    } else {
+      if (order.upper instanceof ManifestEntity) {
+        if (order.lower instanceof ManifestEntity) {
+          this.merge(order.lower, order.upper);
+        } else {
+          // extend upper downwards
+          this.save(
+            order.upper.extend(
+              'start',
+              order.lower,
+              findLowestId(items)?.id,
+              true,
+            ),
+          );
+        }
+      } else if (order.lower instanceof ManifestEntity) {
+        // extend lower upwards
+        this.save(
+          order.lower.extend(
+            'end',
+            dayjs.min(dayjs(order.upper), currentDate).toDate(),
+            findHighestId(items)?.id,
+            dayjs(order.lower.endDate).isBefore(currentDate),
+          ),
+        );
+      } else if (items.length > 0) {
+        // create new manifest
+        order.upper = new ManifestEntity({
+          type: type,
+          lowerId: findLowestId(items)!.id,
+          upperId: findHighestId(items)!.id,
+          startDate: order.lower,
+          completedStart: true,
+          endDate: dayjs.min(dayjs(order.upper), currentDate).toDate(),
+          completedEnd: dayjs(order.upper).isBefore(currentDate),
+        });
+
+        this.save(order.upper);
+      } else {
+        // abort without data
+      }
+    }
+  }
+
+  async mergeInRange(type: ManifestType, range: DateRange): Promise<void> {
     const manifests = await this.listByRange(type, range);
 
     manifests.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
@@ -268,5 +356,15 @@ export class ManifestService {
 
       await this.save(manifestA);
     }
+  }
+
+  async merge(
+    lower: ManifestEntity,
+    upper: ManifestEntity,
+  ): Promise<ManifestEntity> {
+    lower.extendWith(upper, 'end');
+
+    await this.manifestRepository.remove(upper);
+    return this.manifestRepository.save(lower);
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { Approval, postApprovals } from 'src/api/e621';
+import { PostFlag, postFlags } from 'src/api';
 import { MAX_API_LIMIT } from 'src/api/http/params';
 import { AxiosAuthService } from 'src/auth/axios-auth.service';
 import { Job } from 'src/job/job.entity';
@@ -18,39 +18,38 @@ import {
   rateLimit,
 } from 'src/utils';
 
-import { ApprovalCacheEntity, ApprovalEntity } from '../approval.entity';
-import { ApprovalSyncService } from './approval-sync.service';
+import { FlagCacheEntity, FlagEntity } from '../flag.entity';
+import { FlagSyncService } from './flag-sync.service';
 
 @Injectable()
-export class ApprovalSyncWorker {
+export class FlagSyncWorker {
   constructor(
     private readonly jobService: JobService,
     private readonly axiosAuthService: AxiosAuthService,
-    private readonly approvalSyncService: ApprovalSyncService,
+    private readonly flagSyncService: FlagSyncService,
     private readonly manifestService: ManifestService,
   ) {}
 
-  private readonly logger = new Logger(ApprovalSyncWorker.name);
+  private readonly logger = new Logger(FlagSyncWorker.name);
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async runOrders() {
     this.jobService.add(
       new Job({
-        title: 'Approval Orders Sync',
-        key: `/${ManifestType.approvals}/orders`,
+        title: 'Flag Orders Sync',
+        key: `/${ManifestType.flags}/orders`,
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
           const recentlyRange = getTwoMonthsRange();
 
           const orders = await this.manifestService.listOrdersByRange(
-            ManifestType.approvals,
+            ManifestType.flags,
             recentlyRange,
           );
 
           for (const order of orders) {
-            const results: Approval[] = [];
-
+            const results: PostFlag[] = [];
             const loopGuard = new LoopGuard();
 
             while (true) {
@@ -61,21 +60,18 @@ export class ApprovalSyncWorker {
               const upperId = order.upperId;
 
               this.logger.log(
-                `Fetching approvals for ${dateRange.toRangeString()} with ids ${getIdRangeString(
+                `Fetching flags for ${dateRange.toRangeString()} with ids ${getIdRangeString(
                   lowerId,
                   upperId,
                 )}`,
               );
 
               const result = await rateLimit(
-                postApprovals(
+                postFlags(
                   loopGuard.iter({
                     page: 1,
                     limit: MAX_API_LIMIT,
                     'search[created_at]': dateRange.toRangeString(),
-                    // because post_approvals are ordered properly id descending,
-                    // we can rely on always getting (almost) contiguous results
-                    // some approval IDs seem to just not exist, but that's fine for this use case
                     'search[id]': getIdRangeString(lowerId, upperId),
                   }),
                   axiosConfig,
@@ -83,36 +79,32 @@ export class ApprovalSyncWorker {
               );
 
               this.logger.log(
-                `Found ${result.length} approvals with id range ${
-                  getIdRangeString(
-                    findLowestId(result)?.id,
-                    findHighestId(result)?.id,
-                  ) || 'none'
-                }`,
+                `Found ${result.length} flags with id range ${getIdRangeString(
+                  findLowestId(result)?.id,
+                  findHighestId(result)?.id,
+                )}`,
               );
 
               results.push(...result);
 
-              const stored = await this.approvalSyncService.create(
+              const stored = await this.flagSyncService.create(
                 result.map(
-                  (approval) =>
-                    new ApprovalEntity({
-                      ...convertKeysToCamelCase(approval),
-                      cache: new ApprovalCacheEntity(approval),
+                  (flag) =>
+                    new FlagEntity({
+                      ...convertKeysToCamelCase(flag),
+                      cache: new FlagCacheEntity(flag),
                     }),
                 ),
               );
 
-              await this.manifestService.saveResults({
-                type: ManifestType.approvals,
+              this.manifestService.saveResults({
+                type: ManifestType.flags,
                 order,
                 items: stored,
               });
 
               if (result.length === 0) {
                 const gaps = findContiguityGaps(results);
-                // as long as the gaps are not too big, one or two IDs, we can ignore them
-                // these can be accounted for by the deleted (?) approvals
                 if (gaps.size > 0) {
                   this.logger.warn(
                     `Found ${gaps.size} gaps in ID contiguity: ${JSON.stringify(gaps)},`,

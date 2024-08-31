@@ -26,7 +26,7 @@ export class PostSyncWorker {
 
   @Cron(CronExpression.EVERY_HOUR)
   async fetchAvatars() {
-    this.jobService.addJob(
+    this.jobService.add(
       new Job({
         title: 'Post Avatars Sync',
         key: `/${ManifestType.posts}/avatars`,

@@ -8,7 +8,7 @@ export class JobService {
   private isProcessing = false;
   private readonly logger = new Logger(JobService.name);
 
-  addJob<MetadataType = unknown>(job: Job<MetadataType>): void {
+  add<MetadataType = unknown>(job: Job<MetadataType>): void {
     if (job.key) {
       const existingJob = this.queue.find((j) => j.key === job.key);
       if (existingJob) {
@@ -57,7 +57,7 @@ export class JobService {
     this.isProcessing = false;
   }
 
-  cancelJob(jobId: number, reason?: string): void {
+  cancel(jobId: number, reason?: string): void {
     const job = this.queue.find((j) => j.id === jobId);
     if (job) {
       job.cancelToken.cancel(reason);

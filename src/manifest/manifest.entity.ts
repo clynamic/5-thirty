@@ -1,4 +1,4 @@
-import { DateRange } from 'src/utils';
+import { DateRange, WithCreationDate, WithId } from 'src/utils';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum ManifestType {
@@ -7,6 +7,7 @@ export enum ManifestType {
   posts = 'posts',
   users = 'users',
   userProfiles = 'user_profiles',
+  flags = 'flags',
 }
 
 @Entity('manifests')
@@ -42,22 +43,123 @@ export class ManifestEntity {
     });
   }
 
-  get completed(): boolean {
-    return this.completedStart && this.completedEnd;
-  }
-
   @Column({ type: 'int' })
   lowerId: number;
 
   @Column({ type: 'int' })
   upperId: number;
+
+  /**
+   * In-place extend the manifest entity in the given direction.
+   * Undefined values are not updated.
+   * Returns the entity for chaining.
+   */
+  extend(side: OrderSide, date?: Date, id?: number, completed?: boolean) {
+    if (side === 'start') {
+      // extend downwards
+      this.lowerId = id ?? this.lowerId;
+      this.startDate = date ?? this.startDate;
+      this.completedStart = completed ?? this.completedStart;
+    } else if (side === 'end') {
+      // extend upwards
+      this.upperId = id ?? this.upperId;
+      this.endDate = date ?? this.endDate;
+      this.completedEnd = completed ?? this.completedEnd;
+    }
+
+    return this;
+  }
+
+  /**
+   * In-place extend this manifest to the given other.
+   * The side of extension is passed or determined by date comparison,
+   * then by id comparison, then default to treating this manifest as the lower one.
+   */
+  extendWith(other: ManifestEntity, side?: OrderSide) {
+    if (!side) {
+      if (other.startDate < this.startDate) {
+        side = 'start';
+      } else if (other.endDate > this.endDate) {
+        side = 'end';
+      } else if (other.startDate === this.startDate) {
+        side = other.id < this.id ? 'start' : 'end';
+      } else {
+        side = other.startDate < this.startDate ? 'start' : 'end';
+      }
+    }
+
+    if (side === 'start') {
+      return this.extend(
+        'start',
+        other.startDate,
+        other.lowerId,
+        other.completedStart,
+      );
+    } else {
+      return this.extend(
+        'end',
+        other.endDate,
+        other.upperId,
+        other.completedEnd,
+      );
+    }
+  }
 }
 
 export type OrderBoundary = Date | ManifestEntity;
 
+export type OrderResult = WithId & WithCreationDate;
+
+export interface OrderResults {
+  type: ManifestType;
+  order: Order;
+  items: OrderResult[];
+  exhausted?: boolean;
+}
+
 export type OrderSide = 'start' | 'end';
 
-export interface Order {
+export class Order {
+  constructor(partial?: Partial<Order>) {
+    if (partial) {
+      Object.assign(this, partial);
+    }
+  }
+
   lower: OrderBoundary;
   upper: OrderBoundary;
+
+  static getBoundaryDate(boundary: OrderBoundary, side: OrderSide): Date {
+    if (boundary instanceof Date) {
+      return boundary;
+    }
+    return side === 'start' ? boundary.startDate : boundary.endDate;
+  }
+
+  get lowerDate(): Date {
+    return Order.getBoundaryDate(this.lower, 'end');
+  }
+
+  get upperDate(): Date {
+    return Order.getBoundaryDate(this.upper, 'start');
+  }
+
+  get lowerId(): number | undefined {
+    return this.lower instanceof ManifestEntity
+      ? this.lower.upperId
+      : undefined;
+  }
+
+  get upperId(): number | undefined {
+    return this.upper instanceof ManifestEntity
+      ? this.upper.lowerId
+      : undefined;
+  }
+
+  toDateRange(): DateRange {
+    return new DateRange({
+      startDate: this.lowerDate,
+      endDate: this.upperDate,
+    });
+  }
 }

@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import dayjs from 'dayjs';
 import _ from 'lodash';
 import { Ticket, tickets } from 'src/api/e621';
+import { MAX_API_LIMIT } from 'src/api/http/params';
 import { AxiosAuthService } from 'src/auth/axios-auth.service';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
-import { ManifestEntity, ManifestType } from 'src/manifest/manifest.entity';
+import { ManifestType } from 'src/manifest/manifest.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 import {
   NotabilityType,
@@ -15,7 +15,6 @@ import {
 import { UserSyncService } from 'src/user/sync/user-sync.service';
 import {
   convertKeysToCamelCase,
-  DateRange,
   findContiguityGaps,
   findHighestId,
   findLowestId,
@@ -43,7 +42,7 @@ export class TicketSyncWorker {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   runOrders() {
-    this.jobService.addJob(
+    this.jobService.add(
       new Job({
         title: 'Ticket Orders Sync',
         key: `/${ManifestType.tickets}/orders`,
@@ -51,7 +50,6 @@ export class TicketSyncWorker {
           const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
           const recentlyRange = getTwoMonthsRange();
-          const currentDate = dayjs().utc().startOf('day');
 
           const orders = ManifestService.splitLongOrders(
             await this.manifestService.listOrdersByRange(
@@ -66,11 +64,7 @@ export class TicketSyncWorker {
             let results: Ticket[] = [];
 
             const loopGuard = new LoopGuard();
-
-            const dateRange = new DateRange({
-              startDate: ManifestService.getBoundaryDate(order.lower, 'end'),
-              endDate: ManifestService.getBoundaryDate(order.upper, 'start'),
-            });
+            const dateRange = order.toDateRange();
 
             this.logger.log(
               `Fetching tickets for ${dateRange.toRangeString()}`,
@@ -83,7 +77,7 @@ export class TicketSyncWorker {
                 tickets(
                   loopGuard.iter({
                     page,
-                    limit: 320,
+                    limit: MAX_API_LIMIT,
                     // tickets are *not* ordered properly.
                     // the site enforces special ordering that would be useful for humans, but not for us.
                     // because of that reason, we always need to exhaust the full date range
@@ -128,57 +122,15 @@ export class TicketSyncWorker {
               ),
             );
 
-            if (order.upper instanceof ManifestEntity) {
-              if (order.lower instanceof ManifestEntity) {
-                // merge and close gap
-                order.upper.lowerId = order.lower.lowerId;
-                order.upper.startDate = order.lower.startDate;
-                order.upper.completedStart = order.lower.completedStart;
-
-                this.manifestService.save(order.upper);
-                this.manifestService.delete(order.lower);
-              } else {
-                // extend upper downwards
-                order.upper.lowerId =
-                  findLowestId(stored)?.id ?? order.upper.lowerId;
-                order.upper.startDate = order.lower;
-                order.upper.completedStart = true;
-
-                this.manifestService.save(order.upper);
-              }
-            } else {
-              if (order.lower instanceof ManifestEntity) {
-                // extend lower upwards
-                order.lower.upperId =
-                  findHighestId(stored)?.id ?? order.lower.upperId;
-                order.lower.endDate = dayjs
-                  .min(dayjs(order.upper), currentDate)
-                  .toDate();
-                order.lower.completedEnd = dayjs(order.lower.endDate).isBefore(
-                  currentDate,
-                );
-
-                this.manifestService.save(order.lower);
-              } else {
-                if (stored.length === 0) continue;
-
-                // create new manifest
-                order.upper = new ManifestEntity({
-                  type: ManifestType.tickets,
-                  lowerId: findLowestId(stored)!.id,
-                  upperId: findHighestId(stored)!.id,
-                  startDate: order.lower,
-                  completedStart: true,
-                  endDate: dayjs.min(dayjs(order.upper), currentDate).toDate(),
-                  completedEnd: dayjs(order.upper).isBefore(currentDate),
-                });
-
-                this.manifestService.save(order.upper);
-              }
-            }
+            this.manifestService.saveResults({
+              type: ManifestType.tickets,
+              order,
+              items: stored,
+              exhausted: true,
+            });
           }
 
-          await this.manifestService.mergeManifests(
+          await this.manifestService.mergeInRange(
             ManifestType.tickets,
             recentlyRange,
           );
@@ -189,7 +141,7 @@ export class TicketSyncWorker {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   refreshIncomplete() {
-    this.jobService.addJob(
+    this.jobService.add(
       new Job({
         title: 'Ticket Incomplete Sync',
         key: `/${ManifestType.tickets}/incomplete`,
@@ -241,7 +193,7 @@ export class TicketSyncWorker {
 
   @Cron(CronExpression.EVERY_HOUR)
   writeNotable() {
-    this.jobService.addJob(
+    this.jobService.add(
       new Job({
         title: 'Ticket Notable Sync',
         key: `/${ManifestType.tickets}/notable`,

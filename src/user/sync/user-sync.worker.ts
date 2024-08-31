@@ -26,7 +26,7 @@ export class UserSyncWorker {
 
   @Cron(CronExpression.EVERY_HOUR)
   refreshStaff() {
-    this.jobService.addJob(
+    this.jobService.add(
       new Job({
         title: 'User Staff Sync',
         key: `/${ManifestType.users}/staff`,
@@ -83,7 +83,7 @@ export class UserSyncWorker {
 
   @Cron(CronExpression.EVERY_HOUR)
   refreshNotable() {
-    this.jobService.addJob(
+    this.jobService.add(
       new Job({
         title: 'User Notable Sync',
         key: `/${ManifestType.users}/notable`,

@@ -613,18 +613,30 @@ paths:
           description: Filter post flags by the creator's username
           schema:
             type: string
+        - name: search[creator_id]
+          in: query
+          required: false
+          description: Filter post flags by creator ID
+          schema:
+            type: integer
         - name: search[created_at]
           in: query
           required: false
-          description: Filter by the creation date of the post flag
+          description: Filter post flags by creation date
           schema:
             type: string
         - name: search[updated_at]
           in: query
           required: false
-          description: Filter by the last update date of the post flag
+          description: Filter post flags by last update date
           schema:
             type: string
+        - name: search[id]
+          in: query
+          required: false
+          description: Filter post flags by flag ID
+          schema:
+            type: integer
       responses:
         '200':
           description: A list of post flags matching the search criteria
@@ -1494,7 +1506,7 @@ components:
           description: The username of the uploader
     PostFlag:
       type: object
-      description: A post flag object representing a user's flag or deletion request on a post.
+      description: A post flag object representing a user's flag or deletion of a post.
       required:
         - id
         - created_at
