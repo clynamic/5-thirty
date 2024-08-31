@@ -21,8 +21,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: EncodedJwt): Promise<DecodedJwt> {
     return {
       credentials: this.authService.decryptCredentials(payload.credentials),
-      level: payload.level,
+      userId: parseInt(payload.userId),
       username: payload.username,
+      level: payload.level,
     };
   }
 }

@@ -10,12 +10,14 @@ import { encodeCredentials, readJwtSecret } from './auth.utils';
 
 export interface EncodedJwt {
   credentials: string;
+  userId: string;
   username: string;
   level: string;
 }
 
 export interface DecodedJwt {
   credentials: UserCredentials;
+  userId: number;
   username: string;
   level: string;
 }
@@ -50,6 +52,7 @@ export class AuthService {
     const encryptedCredentials = this.encryptCredentials(credentials);
     const payload: EncodedJwt = {
       credentials: encryptedCredentials,
+      userId: user.id.toString(),
       username: user.name,
       level: user.level_string,
     };
@@ -60,6 +63,7 @@ export class AuthService {
     const decoded = this.jwtService.verify(token);
     return {
       credentials: this.decryptCredentials(decoded.credentials),
+      userId: parseInt(decoded.userId),
       username: decoded.username,
       level: decoded.level,
     };

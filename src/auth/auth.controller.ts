@@ -29,8 +29,8 @@ export class AuthController {
 
   @Post('validate')
   @ApiOperation({
-    summary: 'Validate',
-    description: 'Validate token',
+    summary: 'Validate token',
+    description: 'Validate JWT token',
     operationId: 'validateToken',
   })
   @ApiResponse({
