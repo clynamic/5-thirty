@@ -16,12 +16,15 @@ import { UserSyncService } from 'src/user/sync/user-sync.service';
 import {
   convertKeysToCamelCase,
   findContiguityGaps,
+  findHighestDate,
   findHighestId,
+  findLowestDate,
   findLowestId,
   getDateRangeString,
   getIdRangeString,
   getRecentDateRange,
   LoopGuard,
+  PartialDateRange,
   rateLimit,
 } from 'src/utils';
 
@@ -89,12 +92,23 @@ export class TicketSyncWorker {
               );
 
               this.logger.log(
-                `Found ${result.length} tickets with id range ${
+                `Found ${result.length} tickets with ids ${
                   getIdRangeString(
                     findLowestId(result)?.id,
                     findHighestId(result)?.id,
                   ) || 'none'
-                } for ${getDateRangeString(dateRange)}`,
+                } and dates ${
+                  getDateRangeString(
+                    new PartialDateRange({
+                      startDate: findLowestDate(
+                        result.map(convertKeysToCamelCase),
+                      )?.createdAt,
+                      endDate: findHighestDate(
+                        result.map(convertKeysToCamelCase),
+                      )?.createdAt,
+                    }),
+                  ) || 'none'
+                }`,
               );
 
               if (result.length === 0) break;
@@ -106,9 +120,9 @@ export class TicketSyncWorker {
             if (results.length === 0) continue;
 
             const gaps = findContiguityGaps(results);
-            if (gaps.size > 0) {
+            if (gaps.length > 0) {
               this.logger.warn(
-                `Found ${gaps.size} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
+                `Found ${gaps.length} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
               );
             }
 

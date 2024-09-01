@@ -83,8 +83,6 @@ export class ManifestEntity {
         side = 'end';
       } else if (other.startDate === this.startDate) {
         side = other.id < this.id ? 'start' : 'end';
-      } else {
-        side = other.startDate < this.startDate ? 'start' : 'end';
       }
     }
 

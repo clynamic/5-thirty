@@ -11,10 +11,13 @@ import {
   convertKeysToCamelCase,
   findContiguityGaps,
   findHighestId,
+  findLowestDate,
   findLowestId,
+  getDateRangeString,
   getIdRangeString,
   getRecentDateRange,
   LoopGuard,
+  PartialDateRange,
   rateLimit,
 } from 'src/utils';
 
@@ -78,13 +81,6 @@ export class FlagSyncWorker {
                 ),
               );
 
-              this.logger.log(
-                `Found ${result.length} flags with id range ${getIdRangeString(
-                  findLowestId(result)?.id,
-                  findHighestId(result)?.id,
-                )}`,
-              );
-
               results.push(...result);
 
               const stored = await this.flagSyncService.create(
@@ -97,6 +93,22 @@ export class FlagSyncWorker {
                 ),
               );
 
+              this.logger.log(
+                `Found ${result.length} flags with ids ${
+                  getIdRangeString(
+                    findLowestId(result)?.id,
+                    findHighestId(result)?.id,
+                  ) || 'none'
+                } and dates ${
+                  getDateRangeString(
+                    new PartialDateRange({
+                      startDate: findLowestDate(stored)?.createdAt,
+                      endDate: findHighestId(stored)?.createdAt,
+                    }),
+                  ) || 'none'
+                }`,
+              );
+
               this.manifestService.saveResults({
                 type: ManifestType.flags,
                 order,
@@ -105,9 +117,9 @@ export class FlagSyncWorker {
 
               if (result.length === 0) {
                 const gaps = findContiguityGaps(results);
-                if (gaps.size > 0) {
+                if (gaps.length > 0) {
                   this.logger.warn(
-                    `Found ${gaps.size} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
+                    `Found ${gaps.length} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
                   );
                 }
 

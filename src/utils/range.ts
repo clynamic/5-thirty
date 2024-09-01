@@ -7,12 +7,9 @@ import { DateRange, PartialDateRange } from './date-range.dto';
  */
 export const getCurrentMonthRange = (): DateRange => {
   const now = dayjs().utc();
-  const firstDay = now.startOf('month').format('YYYY-MM-DD');
-  const lastDay = now.endOf('month').format('YYYY-MM-DD');
-
   return new DateRange({
-    startDate: new Date(firstDay),
-    endDate: new Date(lastDay),
+    startDate: now.startOf('month').toDate(),
+    endDate: now.endOf('month').toDate(),
   });
 };
 
@@ -22,15 +19,9 @@ export const getCurrentMonthRange = (): DateRange => {
  */
 export const getRecentDateRange = (): DateRange => {
   const now = dayjs().utc();
-  const firstDay = now
-    .subtract(3, 'month')
-    .startOf('month')
-    .format('YYYY-MM-DD');
-  const lastDay = now.endOf('month').format('YYYY-MM-DD');
-
   return new DateRange({
-    startDate: new Date(firstDay),
-    endDate: new Date(lastDay),
+    startDate: now.subtract(3, 'month').startOf('month').toDate(),
+    endDate: now.endOf('month').toDate(),
   });
 };
 
@@ -39,18 +30,23 @@ export const getRecentDateRange = (): DateRange => {
  * Inclusive on both ends.
  */
 export const getDateRangeString = (range: PartialDateRange): string => {
-  const start = dayjs(range.startDate).format('YYYY-MM-DD');
-  const end = dayjs(range.endDate).format('YYYY-MM-DD');
+  let start = '';
+  let end = '';
 
-  const grt = '>=';
-  const lss = '<=';
+  if (range.startDate) {
+    start = dayjs(range.startDate).subtract(1, 'day').format('YYYY-MM-DD');
+  }
+
+  if (range.endDate) {
+    end = dayjs(range.endDate).add(1, 'day').format('YYYY-MM-DD');
+  }
 
   if (start && !end) {
-    return `${grt}${start}`;
+    return `>${start}`;
   } else if (!start && end) {
-    return `${lss}${end}`;
+    return `<${end}`;
   } else if (start && end) {
-    return `${grt}${start}${lss}${end}`;
+    return `${start}..${end}`;
   } else {
     return '';
   }
@@ -145,10 +141,10 @@ export const findHighestDate = <T extends WithCreationDate>(
  */
 export const findContiguityGaps = <T extends WithId>(
   items: T[] | undefined,
-): Map<number, number> => {
+): Record<number, number>[] => {
   const idGapMap = new Map<number, number>();
 
-  if (items === undefined || items.length < 2) return idGapMap;
+  if (items === undefined || items.length < 2) return [];
 
   const sorted = items.slice().sort((a, b) => a.id - b.id);
 
@@ -160,5 +156,5 @@ export const findContiguityGaps = <T extends WithId>(
     }
   }
 
-  return idGapMap;
+  return Array.from(idGapMap.entries()).map(([id, gap]) => ({ [id]: gap }));
 };

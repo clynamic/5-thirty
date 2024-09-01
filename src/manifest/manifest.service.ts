@@ -82,8 +82,8 @@ export class ManifestService {
 
       return (
         (date1.isSame(date2) && (isComplete1 || isComplete2)) ||
-        ((date1.add(1, 'day').isSame(date2) ||
-          date2.add(1, 'day').isSame(date1)) &&
+        ((date1.add(1, 'ms').isSame(date2) ||
+          date2.add(1, 'ms').isSame(date1)) &&
           isComplete1 &&
           isComplete2)
       );
@@ -114,25 +114,9 @@ export class ManifestService {
     side1: OrderSide,
     side2: OrderSide,
   ): boolean {
-    const date1 = dayjs(Order.getBoundaryDate(boundary1, side1));
-    const date2 = dayjs(Order.getBoundaryDate(boundary2, side2));
-
-    if (
-      boundary1 instanceof ManifestEntity &&
-      side1 === 'start' &&
-      !boundary1.completedStart
-    ) {
-      return date1.add(1, 'millisecond').isBefore(date2);
-    }
-    if (
-      boundary1 instanceof ManifestEntity &&
-      side1 === 'end' &&
-      !boundary1.completedEnd
-    ) {
-      return date1.subtract(1, 'millisecond').isBefore(date2);
-    }
-
-    return date1.isBefore(date2);
+    return dayjs(Order.getBoundaryDate(boundary1, side1)).isBefore(
+      dayjs(Order.getBoundaryDate(boundary2, side2)),
+    );
   }
 
   static computeOrders(
@@ -192,7 +176,7 @@ export class ManifestService {
 
       while (currentStart.isBefore(upperDate)) {
         const currentEnd = dayjs.min(
-          currentStart.add(maxOrderDuration, 'day'),
+          currentStart.add(maxOrderDuration, 'day').endOf('day'),
           upperDate,
         );
 
@@ -219,7 +203,7 @@ export class ManifestService {
           );
         }
 
-        currentStart = currentEnd.add(1, 'day');
+        currentStart = currentEnd.add(1, 'day').startOf('day');
       }
     }
 
@@ -232,7 +216,7 @@ export class ManifestService {
     items,
     exhausted,
   }: OrderResults): Promise<void> {
-    const currentDate = dayjs().utc().startOf('day');
+    const currentDate = dayjs().utc();
 
     exhausted = exhausted ?? items.length === 0;
 
@@ -324,30 +308,16 @@ export class ManifestService {
           await this.delete(manifestB);
           i++;
         } else if (dayjs(manifestB.startDate).isBefore(manifestA.endDate)) {
-          const newEndDate = dayjs(manifestA.endDate).isAfter(manifestB.endDate)
-            ? manifestA.endDate
-            : manifestB.endDate;
-          const newCompletedEnd =
-            newEndDate === manifestA.endDate
-              ? manifestA.completedEnd
-              : manifestB.completedEnd;
-
-          manifestA.endDate = newEndDate;
-          manifestA.completedEnd = newCompletedEnd;
-
-          await this.delete(manifestB);
+          this.merge(manifestA, manifestB);
           i++;
         } else if (
           dayjs(manifestB.startDate).isSame(
-            dayjs(manifestA.endDate).add(1, 'day'),
+            dayjs(manifestA.endDate).add(1, 'ms'),
           ) &&
           manifestA.completedEnd &&
           manifestB.completedStart
         ) {
-          manifestA.endDate = manifestB.endDate;
-          manifestA.completedEnd = manifestB.completedEnd;
-
-          await this.delete(manifestB);
+          this.merge(manifestA, manifestB);
           i++;
         } else {
           break;

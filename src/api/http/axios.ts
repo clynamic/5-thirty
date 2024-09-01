@@ -27,8 +27,7 @@ AXIOS_INSTANCE.interceptors.request.use((config) => {
     url.search = searchParams.toString();
   }
 
-  const fullUrl = url.href;
-  logger.log(`[${config.method?.toUpperCase() ?? '???'}] -> ${fullUrl}`);
+  logger.log(`[${config.method?.toUpperCase() ?? '???'}] -> ${url.href}`);
   return config;
 });
 
@@ -36,6 +35,12 @@ AXIOS_INSTANCE.interceptors.response.use(
   (response) => {
     const { config, status } = response;
     const url = new URL(config.url ?? '', config.baseURL);
+
+    if (config.params) {
+      const searchParams = new URLSearchParams(config.params);
+      url.search = searchParams.toString();
+    }
+
     logger.log(
       `[${config.method?.toUpperCase() ?? '???'}] <- ${url.href} : ${status}`,
     );
@@ -45,6 +50,12 @@ AXIOS_INSTANCE.interceptors.response.use(
     if (error instanceof AxiosError && error.response) {
       const { config, status } = error.response;
       const url = new URL(config.url ?? '', config.baseURL);
+
+      if (config.params) {
+        const searchParams = new URLSearchParams(config.params);
+        url.search = searchParams.toString();
+      }
+
       logger.log(
         `[${config.method?.toUpperCase() ?? '???'}] <- ${url.href} : ${status}`,
       );

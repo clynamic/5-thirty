@@ -10,11 +10,15 @@ import { ManifestService } from 'src/manifest/manifest.service';
 import {
   convertKeysToCamelCase,
   findContiguityGaps,
+  findHighestDate,
   findHighestId,
+  findLowestDate,
   findLowestId,
+  getDateRangeString,
   getIdRangeString,
   getRecentDateRange,
   LoopGuard,
+  PartialDateRange,
   rateLimit,
 } from 'src/utils';
 
@@ -82,15 +86,6 @@ export class ApprovalSyncWorker {
                 ),
               );
 
-              this.logger.log(
-                `Found ${result.length} approvals with id range ${
-                  getIdRangeString(
-                    findLowestId(result)?.id,
-                    findHighestId(result)?.id,
-                  ) || 'none'
-                }`,
-              );
-
               results.push(...result);
 
               const stored = await this.approvalSyncService.create(
@@ -103,6 +98,22 @@ export class ApprovalSyncWorker {
                 ),
               );
 
+              this.logger.log(
+                `Found ${stored.length} approvals with ids ${
+                  getIdRangeString(
+                    findLowestId(stored)?.id,
+                    findHighestId(stored)?.id,
+                  ) || 'none'
+                } and dates ${
+                  getDateRangeString(
+                    new PartialDateRange({
+                      startDate: findLowestDate(stored)?.createdAt,
+                      endDate: findHighestDate(stored)?.createdAt,
+                    }),
+                  ) || 'none'
+                }`,
+              );
+
               await this.manifestService.saveResults({
                 type: ManifestType.approvals,
                 order,
@@ -113,9 +124,9 @@ export class ApprovalSyncWorker {
                 const gaps = findContiguityGaps(results);
                 // as long as the gaps are not too big, one or two IDs, we can ignore them
                 // these can be accounted for by the deleted (?) approvals
-                if (gaps.size > 0) {
+                if (gaps.length > 0) {
                   this.logger.warn(
-                    `Found ${gaps.size} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
+                    `Found ${gaps.length} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
                   );
                 }
 
