@@ -18,8 +18,8 @@ export class PostEntity extends CacheLink {
       createdAt: value.created_at,
       updatedAt: value.updated_at,
       file: value.file.url,
-      previewUrl: value.preview.url,
-      sampleUrl: value.sample.url,
+      preview: value.preview.url,
+      sample: value.sample.url,
       extension: value.file.ext,
       rating: value.rating,
       favorites: value.fav_count,
@@ -46,10 +46,10 @@ export class PostEntity extends CacheLink {
   file: string | null;
 
   @Column({ type: 'text', nullable: true })
-  previewUrl: string | null;
+  preview: string | null;
 
   @Column({ type: 'text', nullable: true })
-  sampleUrl: string | null;
+  sample: string | null;
 
   @Column({ type: 'text' })
   extension: string;

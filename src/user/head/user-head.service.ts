@@ -45,7 +45,7 @@ export class UserHeadService {
           id: user.id,
           name: user.name,
           avatar:
-            avatars.find((avatar) => avatar.id === user.avatarId)?.file ??
+            avatars.find((avatar) => avatar.id === user.avatarId)?.preview ??
             undefined,
           level: user.levelString,
         }),
