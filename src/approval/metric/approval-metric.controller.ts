@@ -12,7 +12,7 @@ import { PartialDateRange } from 'src/utils';
 import {
   ApprovalCountPoint,
   ApprovalCountSummary,
-  JanitorSummary,
+  ApproverSummary,
 } from './approval-metric.dto';
 import { ApprovalMetricService } from './approval-metric.service';
 
@@ -56,20 +56,20 @@ export class ApprovalMetricController {
     return this.approvalMetricService.countSeries(params);
   }
 
-  @Get('janitor/summary')
+  @Get('approver/summary')
   @ApiOperation({
-    summary: 'Janitor summary',
+    summary: 'Approver summary',
     description:
-      'Get a summary of the top 20 janitors by approval count for a given date range',
-    operationId: 'getJanitorSummary',
+      'Get a summary of the top 20 approvers by approval count for a given date range',
+    operationId: 'getApproverSummary',
   })
   @ApiResponse({
     status: 200,
-    type: [JanitorSummary],
+    type: [ApproverSummary],
   })
-  async janitorSummary(
+  async approverSummary(
     @Query() params: PartialDateRange,
-  ): Promise<JanitorSummary[]> {
-    return this.approvalMetricService.janitorSummary(params);
+  ): Promise<ApproverSummary[]> {
+    return this.approvalMetricService.approverSummary(params);
   }
 }

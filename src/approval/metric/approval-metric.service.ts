@@ -9,7 +9,7 @@ import { ApprovalEntity } from '../approval.entity';
 import {
   ApprovalCountPoint,
   ApprovalCountSummary,
-  JanitorSummary,
+  ApproverSummary,
 } from './approval-metric.dto';
 
 @Injectable()
@@ -47,15 +47,13 @@ export class ApprovalMetricService {
     );
   }
 
-  async janitorSummary(params?: PartialDateRange): Promise<JanitorSummary[]> {
-    params = DateRange.orCurrentMonth(params);
-
-    const janitorSummaries = await this.approvalRepository
+  async approverSummary(params?: PartialDateRange): Promise<ApproverSummary[]> {
+    const results = await this.approvalRepository
       .createQueryBuilder('approval')
       .select('approval.user_id')
       .addSelect('COUNT(*) as total')
       .addSelect('COUNT(DISTINCT DATE(approval.created_at))', 'days')
-      .where(params.toWhereOptions()!)
+      .where(DateRange.orCurrentMonth(params).toWhereOptions()!)
       .groupBy('approval.user_id')
       .orderBy('total', 'DESC')
       .limit(20)
@@ -65,13 +63,13 @@ export class ApprovalMetricService {
         days: number;
       }>();
 
-    const ids = janitorSummaries.map((summary) => summary.user_id);
+    const ids = results.map((summary) => summary.user_id);
 
     const heads = await this.userHeadService.get(ids);
 
-    return janitorSummaries.map(
+    return results.map(
       (summary) =>
-        new JanitorSummary({
+        new ApproverSummary({
           ...convertKeysToCamelCase(summary),
           head: heads.find((head) => head.id === summary.user_id),
         }),

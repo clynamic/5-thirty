@@ -8,9 +8,9 @@ import { IsNull, Not, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
 import {
-  ModSummary,
   ReporterSummary,
   TicketClosedPoint,
+  TicketerSummary,
   TicketOpenPoint,
   TicketStatusSummary,
   TicketTypeSummary,
@@ -128,8 +128,8 @@ export class TicketMetricService {
       );
   }
 
-  async modSummary(params?: PartialDateRange): Promise<ModSummary[]> {
-    const rawResults = await this.ticketRepository
+  async ticketerSummary(params?: PartialDateRange): Promise<TicketerSummary[]> {
+    const results = await this.ticketRepository
       .createQueryBuilder('ticket')
       .select('ticket.claimant_id', 'user_id')
       .addSelect('COUNT(ticket.id)', 'claimed')
@@ -152,13 +152,13 @@ export class TicketMetricService {
         days: number;
       }>();
 
-    const ids = rawResults.map((row) => row.user_id);
+    const ids = results.map((row) => row.user_id);
 
     const heads = await this.userHeadService.get(ids);
 
-    return rawResults.map(
+    return results.map(
       (row) =>
-        new ModSummary({
+        new TicketerSummary({
           ...convertKeysToCamelCase(row),
           head: heads.find((head) => head.id === row.user_id),
         }),
@@ -166,7 +166,7 @@ export class TicketMetricService {
   }
 
   async reporterSummary(params?: PartialDateRange): Promise<ReporterSummary[]> {
-    const rawResults = await this.ticketRepository
+    const results = await this.ticketRepository
       .createQueryBuilder('ticket')
       .select('ticket.creator_id', 'user_id')
       .addSelect('COUNT(ticket.id)', 'reported')
@@ -181,7 +181,7 @@ export class TicketMetricService {
         days: number;
       }>();
 
-    const counts = rawResults.map(
+    const counts = results.map(
       (row) => new ReporterSummary(convertKeysToCamelCase(row)),
     );
 

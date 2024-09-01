@@ -44,8 +44,8 @@ export class TicketClosedPoint {
   count: number;
 }
 
-export class ModSummary {
-  constructor(value: ModSummary) {
+export class TicketerSummary {
+  constructor(value: TicketerSummary) {
     Object.assign(this, value);
   }
 

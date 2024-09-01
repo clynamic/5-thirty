@@ -10,9 +10,9 @@ import { UserLevel } from 'src/auth/auth.level';
 import { PartialDateRange } from 'src/utils';
 
 import {
-  ModSummary,
   ReporterSummary,
   TicketClosedPoint,
+  TicketerSummary,
   TicketOpenPoint,
   TicketStatusSummary,
   TicketTypeSummary,
@@ -92,19 +92,21 @@ export class TicketMetricController {
     return this.ticketMetricService.closedSeries(params);
   }
 
-  @Get('mod/summary')
+  @Get('ticketer/summary')
   @ApiOperation({
-    summary: 'Moderator summary',
+    summary: 'Ticketer summary',
     description:
-      'Get a summary of the top 20 moderators (claimed and handled tickets) for a given date range',
-    operationId: 'getModSummary',
+      'Get a summary of the top 20 ticket handlers (claimed and handled tickets) for a given date range',
+    operationId: 'getTicketerSummary',
   })
   @ApiResponse({
     status: 200,
-    type: [ModSummary],
+    type: [TicketerSummary],
   })
-  async modSummary(@Query() params: PartialDateRange): Promise<ModSummary[]> {
-    return this.ticketMetricService.modSummary(params);
+  async ticketerSummary(
+    @Query() params: PartialDateRange,
+  ): Promise<TicketerSummary[]> {
+    return this.ticketMetricService.ticketerSummary(params);
   }
 
   @Get('reporter/summary')

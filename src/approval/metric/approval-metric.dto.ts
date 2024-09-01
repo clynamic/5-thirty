@@ -17,8 +17,8 @@ export class ApprovalCountPoint {
   count: number;
 }
 
-export class JanitorSummary {
-  constructor(value: JanitorSummary) {
+export class ApproverSummary {
+  constructor(value: ApproverSummary) {
     Object.assign(this, value);
   }
 
