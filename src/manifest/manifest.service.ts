@@ -23,13 +23,9 @@ export class ManifestService {
     private readonly manifestRepository: Repository<ManifestEntity>,
   ) {}
 
-  async save(manifest: ManifestEntity): Promise<ManifestEntity> {
-    return this.manifestRepository.save(manifest);
-  }
+  save = this.manifestRepository.save.bind(this.manifestRepository);
 
-  async delete(manifest: ManifestEntity): Promise<void> {
-    await this.manifestRepository.delete(manifest.id);
-  }
+  delete = this.manifestRepository.remove.bind(this.manifestRepository);
 
   async listByRange(
     type: ManifestType,
@@ -75,17 +71,10 @@ export class ManifestService {
       boundary1 instanceof ManifestEntity &&
       boundary2 instanceof ManifestEntity
     ) {
-      const isComplete1 =
-        side1 === 'start' ? boundary1.completedStart : boundary1.completedEnd;
-      const isComplete2 =
-        side2 === 'start' ? boundary2.completedStart : boundary2.completedEnd;
-
       return (
-        (date1.isSame(date2) && (isComplete1 || isComplete2)) ||
-        ((date1.add(1, 'ms').isSame(date2) ||
-          date2.add(1, 'ms').isSame(date1)) &&
-          isComplete1 &&
-          isComplete2)
+        date1.isSame(date2) ||
+        date1.add(1, 'ms').isSame(date2) ||
+        date2.add(1, 'ms').isSame(date1)
       );
     }
 
@@ -93,16 +82,7 @@ export class ManifestService {
       boundary1 instanceof ManifestEntity ||
       boundary2 instanceof ManifestEntity
     ) {
-      const manifest =
-        boundary1 instanceof ManifestEntity
-          ? boundary1
-          : (boundary2 as ManifestEntity);
-      const side = boundary1 instanceof ManifestEntity ? side1 : side2;
-
-      const isComplete =
-        side === 'start' ? manifest.completedStart : manifest.completedEnd;
-
-      return date1.isSame(date2) && isComplete;
+      return date1.isSame(date2);
     }
 
     return date1.isSame(date2);
@@ -232,7 +212,6 @@ export class ManifestService {
             'start',
             findLowestDate(items)?.createdAt,
             findLowestId(items)?.id,
-            false,
           ),
         );
       } else {
@@ -242,9 +221,7 @@ export class ManifestService {
           lowerId: findLowestId(items)!.id,
           upperId: findHighestId(items)!.id,
           startDate: findLowestDate(items)!.createdAt,
-          completedStart: false,
           endDate: dayjs.min(dayjs(order.upper), currentDate).toDate(),
-          completedEnd: dayjs(order.upper).isBefore(currentDate),
         });
 
         this.save(order.upper);
@@ -256,12 +233,7 @@ export class ManifestService {
         } else {
           // extend upper downwards
           this.save(
-            order.upper.extend(
-              'start',
-              order.lower,
-              findLowestId(items)?.id,
-              true,
-            ),
+            order.upper.extend('start', order.lower, findLowestId(items)?.id),
           );
         }
       } else if (order.lower instanceof ManifestEntity) {
@@ -271,7 +243,6 @@ export class ManifestService {
             'end',
             dayjs.min(dayjs(order.upper), currentDate).toDate(),
             findHighestId(items)?.id,
-            dayjs(order.lower.endDate).isBefore(currentDate),
           ),
         );
       } else if (items.length > 0) {
@@ -281,9 +252,7 @@ export class ManifestService {
           lowerId: findLowestId(items)!.id,
           upperId: findHighestId(items)!.id,
           startDate: order.lower,
-          completedStart: true,
           endDate: dayjs.min(dayjs(order.upper), currentDate).toDate(),
-          completedEnd: dayjs(order.upper).isBefore(currentDate),
         });
 
         this.save(order.upper);
@@ -313,9 +282,7 @@ export class ManifestService {
         } else if (
           dayjs(manifestB.startDate).isSame(
             dayjs(manifestA.endDate).add(1, 'ms'),
-          ) &&
-          manifestA.completedEnd &&
-          manifestB.completedStart
+          )
         ) {
           this.merge(manifestA, manifestB);
           i++;

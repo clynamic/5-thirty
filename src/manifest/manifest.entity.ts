@@ -27,14 +27,8 @@ export class ManifestEntity {
   @Column({ type: 'datetime' })
   startDate: Date;
 
-  @Column({ type: 'boolean', default: false })
-  completedStart: boolean;
-
   @Column({ type: 'datetime' })
   endDate: Date;
-
-  @Column({ type: 'boolean', default: false })
-  completedEnd: boolean;
 
   get range(): DateRange {
     return new DateRange({
@@ -54,17 +48,15 @@ export class ManifestEntity {
    * Undefined values are not updated.
    * Returns the entity for chaining.
    */
-  extend(side: OrderSide, date?: Date, id?: number, completed?: boolean) {
+  extend(side: OrderSide, date?: Date, id?: number) {
     if (side === 'start') {
       // extend downwards
       this.lowerId = id ?? this.lowerId;
       this.startDate = date ?? this.startDate;
-      this.completedStart = completed ?? this.completedStart;
     } else if (side === 'end') {
       // extend upwards
       this.upperId = id ?? this.upperId;
       this.endDate = date ?? this.endDate;
-      this.completedEnd = completed ?? this.completedEnd;
     }
 
     return this;
@@ -87,19 +79,9 @@ export class ManifestEntity {
     }
 
     if (side === 'start') {
-      return this.extend(
-        'start',
-        other.startDate,
-        other.lowerId,
-        other.completedStart,
-      );
+      return this.extend('start', other.startDate, other.lowerId);
     } else {
-      return this.extend(
-        'end',
-        other.endDate,
-        other.upperId,
-        other.completedEnd,
-      );
+      return this.extend('end', other.endDate, other.upperId);
     }
   }
 }
