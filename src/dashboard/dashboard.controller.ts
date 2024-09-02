@@ -31,6 +31,7 @@ export class DashboardController {
   @ApiOperation({
     summary: 'Get dashboard',
     description: 'Get dashboard by type, for the current user',
+    operationId: 'getDashboard',
   })
   @ApiResponse({
     status: 200,
@@ -58,6 +59,7 @@ export class DashboardController {
   @ApiOperation({
     summary: 'Update dashboard',
     description: 'Update dashboard by type, for the current user',
+    operationId: 'updateDashboard',
   })
   @ApiResponse({
     status: 200,
