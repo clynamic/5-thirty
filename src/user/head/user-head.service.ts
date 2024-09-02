@@ -34,9 +34,9 @@ export class UserHeadService {
     const avatars = await this.postRepository.find({
       where: {
         id: In(avatarIds),
-        file: Not(IsNull()),
+        preview: Not(IsNull()),
       },
-      select: ['id', 'file'],
+      select: ['id', 'preview'],
     });
 
     const result = users.map(
