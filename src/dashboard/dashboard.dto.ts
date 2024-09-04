@@ -1,22 +1,24 @@
-import { Length } from 'class-validator';
+import {
+  DashboardMeta,
+  DashboardPositions,
+  DashboardType,
+} from './dashboard.entity';
 
-export class Dashboard {
-  constructor(partial?: Partial<Dashboard>) {
+export class DashboardConfig {
+  constructor(partial?: Partial<DashboardConfig>) {
     if (partial) {
       Object.assign(this, partial);
     }
   }
 
   id: string;
-  type: string;
+  type: DashboardType;
   userId: number;
-  layout: string;
-  config: string;
+  positions: DashboardPositions;
+  meta: DashboardMeta;
 }
 
 export class DashboardUpdate {
-  @Length(0, 1000000)
-  layout?: string;
-  @Length(0, 1000000)
-  config?: string;
+  positions?: DashboardPositions;
+  meta?: DashboardMeta;
 }

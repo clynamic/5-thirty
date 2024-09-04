@@ -1,5 +1,8 @@
+import { Type } from 'class-transformer';
+import { IsDate, IsOptional } from 'class-validator';
 import {
   Between,
+  FindOperator,
   FindOptionsWhere,
   LessThanOrEqual,
   MoreThanOrEqual,
@@ -25,26 +28,36 @@ export class PartialDateRange {
   /**
    * start date for the range, inclusive.
    */
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
   startDate?: Date;
 
   /**
    * end date for the range, inclusive
    */
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
   endDate?: Date;
 
   static currentMonth(): DateRange {
     return getCurrentMonthRange();
   }
 
+  toFindOptions(): FindOperator<Date> | undefined {
+    return this.startDate
+      ? this.endDate
+        ? Between(this.startDate, this.endDate)
+        : MoreThanOrEqual(this.startDate)
+      : this.endDate
+        ? LessThanOrEqual(this.endDate)
+        : undefined;
+  }
+
   toWhereOptions(): FindOptionsWhere<WithCreationDate> | undefined {
     return {
-      createdAt: this.startDate
-        ? this.endDate
-          ? Between(this.startDate, this.endDate)
-          : MoreThanOrEqual(this.startDate)
-        : this.endDate
-          ? LessThanOrEqual(this.endDate)
-          : undefined,
+      createdAt: this.toFindOptions(),
     };
   }
 
@@ -61,8 +74,12 @@ export class DateRange extends PartialDateRange {
     super(partial);
   }
 
+  @IsDate()
+  @Type(() => Date)
   override startDate: Date;
 
+  @IsDate()
+  @Type(() => Date)
   override endDate: Date;
 
   /**
@@ -82,6 +99,10 @@ export class DateRange extends PartialDateRange {
       ...getCurrentMonthRange().toWhereOptions(),
       ...other,
     };
+  }
+
+  override toFindOptions(): FindOperator<Date> {
+    return super.toFindOptions()!;
   }
 
   override toWhereOptions(): FindOptionsWhere<WithCreationDate> {

@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import dayjs from 'dayjs';
 import { UserHeadService } from 'src/user/head/user-head.service';
-import { convertKeysToCamelCase, DateRange, PartialDateRange } from 'src/utils';
+import {
+  convertKeysToCamelCase,
+  DateRange,
+  PaginationParams,
+  PartialDateRange,
+} from 'src/utils';
 import { Repository } from 'typeorm';
 
 import { ApprovalEntity } from '../approval.entity';
@@ -20,20 +25,20 @@ export class ApprovalMetricService {
     private readonly userHeadService: UserHeadService,
   ) {}
 
-  async countSummary(params?: PartialDateRange): Promise<ApprovalCountSummary> {
+  async countSummary(range?: PartialDateRange): Promise<ApprovalCountSummary> {
     return new ApprovalCountSummary({
       total: await this.approvalRepository.count({
-        where: DateRange.orCurrentMonth(params).toWhereOptions(),
+        where: DateRange.orCurrentMonth(range).toWhereOptions(),
       }),
     });
   }
 
-  async countSeries(params?: PartialDateRange): Promise<ApprovalCountPoint[]> {
+  async countSeries(range?: PartialDateRange): Promise<ApprovalCountPoint[]> {
     const points = await this.approvalRepository
       .createQueryBuilder('approval')
       .select('DATE(approval.created_at) as date')
       .addSelect('COUNT(*) as count')
-      .where(DateRange.orCurrentMonth(params).toWhereOptions()!)
+      .where(DateRange.orCurrentMonth(range).toWhereOptions()!)
       .groupBy('date')
       .orderBy('date', 'ASC')
       .getRawMany();
@@ -47,20 +52,26 @@ export class ApprovalMetricService {
     );
   }
 
-  async approverSummary(params?: PartialDateRange): Promise<ApproverSummary[]> {
+  async approverSummary(
+    range?: PartialDateRange,
+    pages?: PaginationParams,
+  ): Promise<ApproverSummary[]> {
     const results = await this.approvalRepository
       .createQueryBuilder('approval')
       .select('approval.user_id')
       .addSelect('COUNT(*) as total')
       .addSelect('COUNT(DISTINCT DATE(approval.created_at))', 'days')
-      .where(DateRange.orCurrentMonth(params).toWhereOptions()!)
+      .addSelect('RANK() OVER (ORDER BY COUNT(*) DESC)', 'position')
+      .where(DateRange.orCurrentMonth(range).toWhereOptions()!)
       .groupBy('approval.user_id')
       .orderBy('total', 'DESC')
-      .limit(20)
+      .take(pages?.limit || PaginationParams.DEFAULT_PAGE_SIZE)
+      .skip(PaginationParams.calculateOffset(pages))
       .getRawMany<{
         user_id: number;
         total: number;
         days: number;
+        position: number;
       }>();
 
     const ids = results.map((summary) => summary.user_id);

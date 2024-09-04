@@ -7,7 +7,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthLevel, RolesGuard } from 'src/auth/auth.guard';
 import { UserLevel } from 'src/auth/auth.level';
-import { PartialDateRange } from 'src/utils';
+import { PaginationParams, PartialDateRange } from 'src/utils';
 
 import {
   ApprovalCountPoint,
@@ -35,9 +35,9 @@ export class ApprovalMetricController {
     type: ApprovalCountSummary,
   })
   async countSummary(
-    @Query() params: PartialDateRange,
+    @Query() range?: PartialDateRange,
   ): Promise<ApprovalCountSummary> {
-    return this.approvalMetricService.countSummary(params);
+    return this.approvalMetricService.countSummary(range);
   }
 
   @Get('count/series')
@@ -51,9 +51,9 @@ export class ApprovalMetricController {
     type: [ApprovalCountPoint],
   })
   async countSeries(
-    @Query() params: PartialDateRange,
+    @Query() range?: PartialDateRange,
   ): Promise<ApprovalCountPoint[]> {
-    return this.approvalMetricService.countSeries(params);
+    return this.approvalMetricService.countSeries(range);
   }
 
   @Get('approver/summary')
@@ -68,8 +68,9 @@ export class ApprovalMetricController {
     type: [ApproverSummary],
   })
   async approverSummary(
-    @Query() params: PartialDateRange,
+    @Query() range?: PartialDateRange,
+    @Query() pages?: PaginationParams,
   ): Promise<ApproverSummary[]> {
-    return this.approvalMetricService.approverSummary(params);
+    return this.approvalMetricService.approverSummary(range, pages);
   }
 }

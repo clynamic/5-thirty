@@ -95,7 +95,7 @@ export class UserSyncWorker {
             type: Object.values(NotabilityType).filter(
               (type) => type !== NotabilityType.staff,
             ),
-            newerThan: dayjs().subtract(1, 'month').toDate(),
+            newerThan: dayjs().utc().subtract(1, 'month').toDate(),
           });
 
           const chunks = _.chunk(

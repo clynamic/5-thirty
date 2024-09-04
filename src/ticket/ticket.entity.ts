@@ -1,7 +1,7 @@
 import { Ticket, TicketQtype, TicketStatus } from 'src/api/e621';
 import { CacheEntity, CacheLink } from 'src/cache/cache.entity';
 import { ManifestType } from 'src/manifest/manifest.entity';
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @Entity('tickets')
 export class TicketEntity extends CacheLink {
@@ -43,9 +43,11 @@ export class TicketEntity extends CacheLink {
   response: string;
 
   @Column({ type: 'simple-enum', enum: TicketStatus })
+  @Index()
   status: TicketStatus;
 
   @Column({ type: 'datetime' })
+  @Index()
   createdAt: Date;
 
   @Column({ type: 'datetime' })

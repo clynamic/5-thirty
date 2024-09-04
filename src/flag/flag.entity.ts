@@ -1,7 +1,7 @@
 import { PostFlag, PostFlagType } from 'src/api';
 import { CacheEntity, CacheLink } from 'src/cache/cache.entity';
 import { ManifestType } from 'src/manifest/manifest.entity';
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @Entity('flags')
 export class FlagEntity extends CacheLink {
@@ -31,6 +31,7 @@ export class FlagEntity extends CacheLink {
   type: PostFlagType;
 
   @Column({ type: 'datetime' })
+  @Index()
   createdAt: Date;
 
   @Column({ type: 'datetime' })

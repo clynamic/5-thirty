@@ -5,6 +5,36 @@ export enum DashboardType {
   janitor = 'janitor',
 }
 
+export class DashboardPosition {
+  constructor(partial?: Partial<DashboardPosition>) {
+    if (partial) {
+      Object.assign(this, partial);
+    }
+  }
+
+  i: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export class DashboardPositions {
+  constructor(partial?: Partial<DashboardPositions>) {
+    if (partial) {
+      Object.assign(this, partial);
+    }
+  }
+
+  xs?: DashboardPosition[];
+  sm?: DashboardPosition[];
+  md?: DashboardPosition[];
+  lg?: DashboardPosition[];
+  xl?: DashboardPosition[];
+}
+
+export type DashboardMeta = Record<string, unknown>;
+
 @Entity('dashboards')
 export class DashboardEntity {
   @PrimaryColumn({ type: 'simple-enum', enum: DashboardType })
@@ -14,8 +44,8 @@ export class DashboardEntity {
   userId: number;
 
   @Column({ type: 'json' })
-  layout: string;
+  positions: DashboardPositions;
 
   @Column({ type: 'json' })
-  config: string;
+  meta: DashboardMeta;
 }

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import _ from 'lodash';
-import { Ticket, tickets } from 'src/api/e621';
+import { Ticket, tickets, TicketStatus } from 'src/api/e621';
 import { MAX_API_LIMIT } from 'src/api/http/params';
 import { AxiosAuthService } from 'src/auth/axios-auth.service';
 import { Job } from 'src/job/job.entity';
@@ -170,25 +170,22 @@ export class TicketSyncWorker {
           this.logger.log(`Found ${incomplete.length} incomplete tickets`);
 
           const chunks = _.chunk(incomplete, 100);
+          const results: Ticket[] = [];
 
           for (const chunk of chunks) {
             cancelToken.ensureRunning();
 
             const result = await rateLimit(
               tickets(
-                { 'search[id]': chunk.join(',') },
+                {
+                  limit: 100,
+                  'search[id]': chunk.join(','),
+                },
                 this.axiosAuthService.getGlobalConfig(),
               ),
             );
 
-            const completed = result.filter(
-              (ticket) => ticket.status === 'approved',
-            );
-            if (completed.length > 0) {
-              this.logger.log(
-                `Found ${completed.length} newly completed tickets`,
-              );
-            }
+            results.push(...result);
 
             await this.ticketSyncService.create(
               result.map(
@@ -200,6 +197,12 @@ export class TicketSyncWorker {
               ),
             );
           }
+
+          const completed = results.filter(
+            (ticket) => ticket.status === TicketStatus.approved,
+          );
+
+          this.logger.log(`Found ${completed.length} newly completed tickets`);
         },
       }),
     );

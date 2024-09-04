@@ -34,7 +34,7 @@ export class PostSyncWorker {
           const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
           const avatars = await this.userSyncService.listNotableAvatars({
-            newerThan: dayjs().subtract(1, 'month').toDate(),
+            newerThan: dayjs().utc().subtract(1, 'month').toDate(),
           });
 
           this.logger.log(`Found ${avatars.length} avatar ids`);

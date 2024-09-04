@@ -35,6 +35,15 @@ export class TicketOpenPoint {
   count: number;
 }
 
+export class TicketCreatedPoint {
+  constructor(value: TicketCreatedPoint) {
+    Object.assign(this, value);
+  }
+
+  date: Date;
+  count: number;
+}
+
 export class TicketClosedPoint {
   constructor(value: TicketClosedPoint) {
     Object.assign(this, value);
@@ -44,6 +53,36 @@ export class TicketClosedPoint {
   count: number;
 }
 
+export class TicketAgeGroup {
+  constructor(value: TicketAgeGroup) {
+    Object.assign(this, value);
+  }
+
+  oneDay: number;
+  threeDays: number;
+  oneWeek: number;
+  twoWeeks: number;
+  oneMonth: number;
+  aboveOneMonth: number;
+}
+
+export class TicketAgeSeriesPoint {
+  constructor(value: TicketAgeSeriesPoint) {
+    Object.assign(this, value);
+  }
+
+  date: Date;
+  groups: TicketAgeGroup;
+}
+
+export class TicketAgeSummary {
+  constructor(value: TicketAgeSummary) {
+    Object.assign(this, value);
+  }
+
+  groups: TicketAgeGroup;
+}
+
 export class TicketerSummary {
   constructor(value: TicketerSummary) {
     Object.assign(this, value);
@@ -51,8 +90,8 @@ export class TicketerSummary {
 
   userId: number;
   head?: UserHead;
-  claimed: number;
-  handled: number;
+  total: number;
+  position: number;
   days: number;
 }
 
@@ -63,6 +102,6 @@ export class ReporterSummary {
 
   userId: number;
   head?: UserHead;
-  reported: number;
+  total: number;
   days: number;
 }

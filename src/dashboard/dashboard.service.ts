@@ -26,6 +26,18 @@ export class DashboardService {
     type: DashboardType,
     update: DashboardUpdate,
   ): Promise<DashboardEntity> {
-    return await this.dashboardRepository.save({ userId, type, ...update });
+    return await this.dashboardRepository.save({
+      userId,
+      type,
+      positions: {
+        xs: [],
+        sm: [],
+        md: [],
+        lg: [],
+        xl: [],
+      },
+      meta: {},
+      ...update,
+    });
   }
 }

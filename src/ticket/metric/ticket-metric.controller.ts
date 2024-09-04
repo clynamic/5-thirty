@@ -7,11 +7,14 @@ import {
 } from '@nestjs/swagger';
 import { AuthLevel, RolesGuard } from 'src/auth/auth.guard';
 import { UserLevel } from 'src/auth/auth.level';
-import { PartialDateRange } from 'src/utils';
+import { PaginationParams, PartialDateRange } from 'src/utils';
 
 import {
   ReporterSummary,
+  TicketAgeSeriesPoint,
+  TicketAgeSummary,
   TicketClosedPoint,
+  TicketCreatedPoint,
   TicketerSummary,
   TicketOpenPoint,
   TicketStatusSummary,
@@ -39,9 +42,9 @@ export class TicketMetricController {
     type: TicketStatusSummary,
   })
   async statusSummary(
-    @Query() params: PartialDateRange,
+    @Query() range?: PartialDateRange,
   ): Promise<TicketStatusSummary> {
-    return this.ticketMetricService.statusSummary(params);
+    return this.ticketMetricService.statusSummary(range);
   }
 
   @Get('type/summary')
@@ -55,9 +58,9 @@ export class TicketMetricController {
     type: TicketTypeSummary,
   })
   async typeSummary(
-    @Query() params: PartialDateRange,
+    @Query() range?: PartialDateRange,
   ): Promise<TicketTypeSummary> {
-    return this.ticketMetricService.typeSummary(params);
+    return this.ticketMetricService.typeSummary(range);
   }
 
   @Get('open/series')
@@ -71,9 +74,25 @@ export class TicketMetricController {
     type: [TicketOpenPoint],
   })
   async openSeries(
-    @Query() params: PartialDateRange,
+    @Query() range?: PartialDateRange,
   ): Promise<TicketOpenPoint[]> {
-    return this.ticketMetricService.openSeries(params);
+    return this.ticketMetricService.openSeries(range);
+  }
+
+  @Get('created/series')
+  @ApiOperation({
+    summary: 'Ticket created series',
+    description: 'Get a time series of created tickets for a given date range',
+    operationId: 'getTicketCreatedSeries',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [TicketCreatedPoint],
+  })
+  async createdSeries(
+    @Query() range?: PartialDateRange,
+  ): Promise<TicketCreatedPoint[]> {
+    return this.ticketMetricService.createdSeries(range);
   }
 
   @Get('closed/series')
@@ -87,9 +106,41 @@ export class TicketMetricController {
     type: [TicketClosedPoint],
   })
   async closedSeries(
-    @Query() params: PartialDateRange,
+    @Query() range?: PartialDateRange,
   ): Promise<TicketClosedPoint[]> {
-    return this.ticketMetricService.closedSeries(params);
+    return this.ticketMetricService.closedSeries(range);
+  }
+
+  @Get('age/series')
+  @ApiOperation({
+    summary: 'Ticket age series',
+    description: 'Get a time series of ticket ages for a given date range',
+    operationId: 'getTicketAgeSeries',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [TicketAgeSeriesPoint],
+  })
+  async ageSeries(
+    @Query() range?: PartialDateRange,
+  ): Promise<TicketAgeSeriesPoint[]> {
+    return this.ticketMetricService.ageSeries(range);
+  }
+
+  @Get('age/summary')
+  @ApiOperation({
+    summary: 'Ticket age summary',
+    description: 'Get a summary of ticket ages for a given date range',
+    operationId: 'getTicketAgeSummary',
+  })
+  @ApiResponse({
+    status: 200,
+    type: TicketAgeSummary,
+  })
+  async ageSummary(
+    @Query() range?: PartialDateRange,
+  ): Promise<TicketAgeSummary> {
+    return this.ticketMetricService.ageSummary(range);
   }
 
   @Get('ticketer/summary')
@@ -104,9 +155,10 @@ export class TicketMetricController {
     type: [TicketerSummary],
   })
   async ticketerSummary(
-    @Query() params: PartialDateRange,
+    @Query() range?: PartialDateRange,
+    @Query() pages?: PaginationParams,
   ): Promise<TicketerSummary[]> {
-    return this.ticketMetricService.ticketerSummary(params);
+    return this.ticketMetricService.ticketerSummary(range, pages);
   }
 
   @Get('reporter/summary')
@@ -121,8 +173,9 @@ export class TicketMetricController {
     type: [ReporterSummary],
   })
   async reporterSummary(
-    @Query() params: PartialDateRange,
+    @Query() range?: PartialDateRange,
+    @Query() pages?: PaginationParams,
   ): Promise<ReporterSummary[]> {
-    return this.ticketMetricService.reporterSummary(params);
+    return this.ticketMetricService.reporterSummary(range, pages);
   }
 }

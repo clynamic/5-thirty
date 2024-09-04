@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TicketStatus } from 'src/api/e621';
-import { DateRange, PartialDateRange } from 'src/utils';
+import { DateRange } from 'src/utils';
 import { LessThan, Not, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
 
-export class FindIncompleteParams extends PartialDateRange {
+export class FindIncompleteParams {
   constructor(partial?: Partial<FindIncompleteParams>) {
-    super(partial);
     if (partial) {
       Object.assign(this, partial);
     }
@@ -33,7 +32,6 @@ export class TicketSyncService {
     return this.ticketRepository
       .find({
         where: {
-          ...params?.toWhereOptions(),
           status: Not(TicketStatus.approved),
           cache: params?.staleness
             ? {

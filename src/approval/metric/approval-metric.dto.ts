@@ -25,5 +25,6 @@ export class ApproverSummary {
   userId: number;
   head?: UserHead;
   total: number;
+  position: number;
   days: number;
 }
