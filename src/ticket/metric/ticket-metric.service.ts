@@ -9,7 +9,7 @@ import {
   PaginationParams,
   PartialDateRange,
 } from 'src/utils';
-import { Not, Repository } from 'typeorm';
+import { LessThan, MoreThan, Not, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
 import {
@@ -88,6 +88,10 @@ export class TicketMetricService {
           updatedAt: range.toFindOptions(),
         },
         {
+          createdAt: LessThan(range.startDate!),
+          updatedAt: MoreThan(range.endDate!),
+        },
+        {
           status: Not(TicketStatus.approved),
         },
       ],
@@ -107,7 +111,7 @@ export class TicketMetricService {
 
       for (
         let date = createdDate;
-        !date.isAfter(endDate);
+        !date.isAfter(endDate) && !date.isAfter(range.endDate);
         date = date.add(1, 'day')
       ) {
         const formattedDate = date.format('YYYY-MM-DD');
