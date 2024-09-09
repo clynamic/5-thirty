@@ -7,9 +7,9 @@
   "author": "binaryfloof",
   "scripts": {
     "dev": "nest start --watch",
+    "build": "nest build",
     "lint": "eslint src --fix",
     "format": "prettier --write src",
-    "build": "nest build",
     "generate": "orval"
   },
   "dependencies": {
@@ -67,5 +67,9 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.1.3",
     "webpack": "^5.94.0"
+  },
+  "engines": {
+    "node": ">=20",
+    "npm": "please-use-yarn"
   }
 }
