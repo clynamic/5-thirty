@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import dayjs from 'dayjs';
+import { DateTime } from 'luxon';
 import { TicketQtype, TicketStatus } from 'src/api/e621';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import {
@@ -100,33 +100,37 @@ export class TicketMetricService {
     const openTicketCounts: Record<string, number> = {};
 
     tickets.forEach((ticket) => {
-      const createdDate = dayjs.max(
-        dayjs(ticket.createdAt),
-        dayjs(range.startDate),
+      const createdDate = DateTime.max(
+        DateTime.fromJSDate(ticket.createdAt),
+        DateTime.fromJSDate(range.startDate!).startOf('day'),
       );
-      const endDate =
-        ticket.status === TicketStatus.approved
-          ? dayjs(ticket.updatedAt)
-          : dayjs().utc();
+      const endDate = DateTime.min(
+        (ticket.status === TicketStatus.approved
+          ? DateTime.fromJSDate(ticket.updatedAt)
+          : DateTime.now()
+        ).endOf('day'),
+        DateTime.fromJSDate(range.endDate!),
+      );
 
       for (
         let date = createdDate;
-        !date.isAfter(endDate) && !date.isAfter(range.endDate);
-        date = date.add(1, 'day')
+        date <= endDate;
+        date = date.plus({ days: 1 })
       ) {
-        const formattedDate = date.format('YYYY-MM-DD');
+        const formattedDate = date.toISODate()!;
         openTicketCounts[formattedDate] =
           (openTicketCounts[formattedDate] || 0) + 1;
       }
     });
 
     return Object.keys(openTicketCounts)
-      .sort((a, b) => dayjs(a).unix() - dayjs(b).unix())
+      .map((date) => DateTime.fromISO(date))
+      .sort()
       .map(
         (date) =>
           new TicketOpenPoint({
-            date: new Date(date),
-            count: openTicketCounts[date]!,
+            date: date.toJSDate(),
+            count: openTicketCounts[date.toISODate()!]!,
           }),
       );
   }
@@ -139,18 +143,19 @@ export class TicketMetricService {
     const createdTicketCounts: Record<string, number> = {};
 
     tickets.forEach((ticket) => {
-      const createdDate = dayjs(ticket.createdAt).format('YYYY-MM-DD');
+      const createdDate = DateTime.fromJSDate(ticket.createdAt).toISODate()!;
       createdTicketCounts[createdDate] =
         (createdTicketCounts[createdDate] || 0) + 1;
     });
 
     return Object.keys(createdTicketCounts)
-      .sort((a, b) => dayjs(a).unix() - dayjs(b).unix())
+      .map((date) => DateTime.fromISO(date))
+      .sort()
       .map(
         (date) =>
           new TicketCreatedPoint({
-            date: new Date(date),
-            count: createdTicketCounts[date]!,
+            date: date.toJSDate(),
+            count: createdTicketCounts[date.toISODate()!]!,
           }),
       );
   }
@@ -173,18 +178,19 @@ export class TicketMetricService {
     const closedTicketCounts: Record<string, number> = {};
 
     tickets.forEach((ticket) => {
-      const closedDate = dayjs(ticket.updatedAt).format('YYYY-MM-DD');
+      const closedDate = DateTime.fromJSDate(ticket.updatedAt).toISODate()!;
       closedTicketCounts[closedDate] =
         (closedTicketCounts[closedDate] || 0) + 1;
     });
 
     return Object.keys(closedTicketCounts)
-      .sort((a, b) => dayjs(a).unix() - dayjs(b).unix())
+      .map((date) => DateTime.fromISO(date))
+      .sort()
       .map(
         (date) =>
           new TicketClosedPoint({
-            date: new Date(date),
-            count: closedTicketCounts[date]!,
+            date: date.toJSDate(),
+            count: closedTicketCounts[date.toISODate()!]!,
           }),
       );
   }
@@ -198,13 +204,16 @@ export class TicketMetricService {
     const series: Record<string, TicketAgeGroup> = {};
 
     tickets.forEach((ticket) => {
-      const endDate = dayjs(
+      const endDate = DateTime.fromJSDate(
         ticket.status === TicketStatus.approved
           ? ticket.updatedAt
           : range.endDate!,
       );
-      const ageInDays = endDate.diff(dayjs(ticket.createdAt), 'day');
-      const closedDate = endDate.format('YYYY-MM-DD');
+      const ageInDays = endDate.diff(
+        DateTime.fromJSDate(ticket.createdAt),
+        'day',
+      ).days;
+      const closedDate = endDate.toISODate()!;
 
       let ageGroup: keyof TicketAgeGroup;
 
@@ -237,14 +246,15 @@ export class TicketMetricService {
     });
 
     return Object.keys(series)
+      .map((date) => DateTime.fromISO(date))
+      .sort()
       .map(
         (date) =>
           new TicketAgeSeriesPoint({
-            date: new Date(date),
-            groups: series[date]!,
+            date: date.toJSDate(),
+            groups: series[date.toISODate()!]!,
           }),
-      )
-      .sort((a, b) => dayjs(a.date).unix() - dayjs(b.date).unix());
+      );
   }
 
   async ageSummary(range?: PartialDateRange): Promise<TicketAgeSummary> {
@@ -263,12 +273,15 @@ export class TicketMetricService {
     });
 
     tickets.forEach((ticket) => {
-      const endDate = dayjs(
+      const endDate = DateTime.fromJSDate(
         ticket.status === TicketStatus.approved
           ? ticket.updatedAt
           : range.endDate!,
       );
-      const ageInDays = endDate.diff(dayjs(ticket.createdAt), 'day');
+      const ageInDays = endDate.diff(
+        DateTime.fromJSDate(ticket.createdAt),
+        'day',
+      ).days;
 
       let ageGroup: keyof TicketAgeGroup;
 

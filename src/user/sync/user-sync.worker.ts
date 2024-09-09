@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import dayjs from 'dayjs';
 import _ from 'lodash';
+import { DateTime } from 'luxon';
 import { users } from 'src/api/e621';
 import { UserLevel } from 'src/auth/auth.level';
 import { AxiosAuthService } from 'src/auth/axios-auth.service';
@@ -95,7 +95,7 @@ export class UserSyncWorker {
             type: Object.values(NotabilityType).filter(
               (type) => type !== NotabilityType.staff,
             ),
-            newerThan: dayjs().utc().subtract(1, 'month').toDate(),
+            newerThan: DateTime.now().minus({ months: 1 }).toJSDate(),
           });
 
           const chunks = _.chunk(

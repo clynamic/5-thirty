@@ -1,4 +1,4 @@
-import dayjs from 'dayjs';
+import { DateTime } from 'luxon';
 
 import { DateRange, PartialDateRange } from './date-range.dto';
 
@@ -6,10 +6,10 @@ import { DateRange, PartialDateRange } from './date-range.dto';
  * Gets the range for the current month.
  */
 export const getCurrentMonthRange = (): DateRange => {
-  const now = dayjs().utc();
+  const now = DateTime.now();
   return new DateRange({
-    startDate: now.startOf('month').toDate(),
-    endDate: now.endOf('month').toDate(),
+    startDate: now.startOf('month').toJSDate(),
+    endDate: now.endOf('month').toJSDate(),
   });
 };
 
@@ -18,10 +18,15 @@ export const getCurrentMonthRange = (): DateRange => {
  * This is defined as the current month plus the 3 previous months.
  */
 export const getRecentDateRange = (): DateRange => {
-  const now = dayjs().utc();
+  const now = DateTime.now();
   return new DateRange({
-    startDate: now.subtract(3, 'month').startOf('month').toDate(),
-    endDate: now.endOf('month').toDate(),
+    startDate: now
+      .minus({
+        months: 3,
+      })
+      .startOf('month')
+      .toJSDate(),
+    endDate: now.endOf('month').toJSDate(),
   });
 };
 
@@ -34,11 +39,19 @@ export const getDateRangeString = (range: PartialDateRange): string => {
   let end = '';
 
   if (range.startDate) {
-    start = dayjs(range.startDate).subtract(1, 'day').format('YYYY-MM-DD');
+    start = DateTime.fromJSDate(range.startDate)
+      .minus({
+        days: 1,
+      })
+      .toISODate()!;
   }
 
   if (range.endDate) {
-    end = dayjs(range.endDate).add(1, 'day').format('YYYY-MM-DD');
+    end = DateTime.fromJSDate(range.endDate)
+      .plus({
+        days: 1,
+      })
+      .toISODate()!;
   }
 
   if (start && !end) {
@@ -120,7 +133,9 @@ export const findLowestDate = <T extends WithCreationDate>(
 ): T | undefined => {
   if (items === undefined || items.length === 0) return undefined;
   return items.reduce((prev, current) =>
-    dayjs(prev.createdAt).isBefore(current.createdAt) ? prev : current,
+    DateTime.fromJSDate(prev.createdAt) < DateTime.fromJSDate(current.createdAt)
+      ? prev
+      : current,
   );
 };
 
@@ -132,7 +147,9 @@ export const findHighestDate = <T extends WithCreationDate>(
 ): T | undefined => {
   if (items === undefined || items.length === 0) return undefined;
   return items.reduce((prev, current) =>
-    dayjs(prev.createdAt).isAfter(current.createdAt) ? prev : current,
+    DateTime.fromJSDate(prev.createdAt) > DateTime.fromJSDate(current.createdAt)
+      ? prev
+      : current,
   );
 };
 

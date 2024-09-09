@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import dayjs from 'dayjs';
+import { DateTime } from 'luxon';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import {
   convertKeysToCamelCase,
@@ -41,13 +41,16 @@ export class ApprovalMetricService {
       .where(DateRange.orCurrentMonth(range).toWhereOptions()!)
       .groupBy('date')
       .orderBy('date', 'ASC')
-      .getRawMany();
+      .getRawMany<{
+        date: string;
+        count: number;
+      }>();
 
     return points.map(
       (point) =>
         new ApprovalCountPoint({
-          date: dayjs(point.date).toDate(),
-          count: parseInt(point.count),
+          date: DateTime.fromISO(point.date).toJSDate(),
+          count: point.count,
         }),
     );
   }

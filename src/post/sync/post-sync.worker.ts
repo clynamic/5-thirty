@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import dayjs from 'dayjs';
 import _ from 'lodash';
+import { DateTime } from 'luxon';
 import { posts } from 'src/api';
 import { AxiosAuthService } from 'src/auth/axios-auth.service';
 import { Job } from 'src/job/job.entity';
@@ -34,7 +34,7 @@ export class PostSyncWorker {
           const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
           const avatars = await this.userSyncService.listNotableAvatars({
-            newerThan: dayjs().utc().subtract(1, 'month').toDate(),
+            newerThan: DateTime.now().minus({ months: 1 }).toJSDate(),
           });
 
           this.logger.log(`Found ${avatars.length} avatar ids`);
