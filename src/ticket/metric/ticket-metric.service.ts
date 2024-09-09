@@ -140,22 +140,21 @@ export class TicketMetricService {
       where: DateRange.orCurrentMonth(range).toWhereOptions(),
     });
 
-    const createdTicketCounts: Record<string, number> = {};
+    const counts: Record<string, number> = {};
 
-    tickets.forEach((ticket) => {
+    for (const ticket of tickets) {
       const createdDate = DateTime.fromJSDate(ticket.createdAt).toISODate()!;
-      createdTicketCounts[createdDate] =
-        (createdTicketCounts[createdDate] || 0) + 1;
-    });
+      counts[createdDate] = (counts[createdDate] || 0) + 1;
+    }
 
-    return Object.keys(createdTicketCounts)
+    return Object.keys(counts)
       .map((date) => DateTime.fromISO(date))
       .sort()
       .map(
         (date) =>
           new TicketCreatedPoint({
             date: date.toJSDate(),
-            count: createdTicketCounts[date.toISODate()!]!,
+            count: counts[date.toISODate()!]!,
           }),
       );
   }
@@ -175,22 +174,21 @@ export class TicketMetricService {
       ],
     });
 
-    const closedTicketCounts: Record<string, number> = {};
+    const counts: Record<string, number> = {};
 
-    tickets.forEach((ticket) => {
+    for (const ticket of tickets) {
       const closedDate = DateTime.fromJSDate(ticket.updatedAt).toISODate()!;
-      closedTicketCounts[closedDate] =
-        (closedTicketCounts[closedDate] || 0) + 1;
-    });
+      counts[closedDate] = (counts[closedDate] || 0) + 1;
+    }
 
-    return Object.keys(closedTicketCounts)
+    return Object.keys(counts)
       .map((date) => DateTime.fromISO(date))
       .sort()
       .map(
         (date) =>
           new TicketClosedPoint({
             date: date.toJSDate(),
-            count: closedTicketCounts[date.toISODate()!]!,
+            count: counts[date.toISODate()!]!,
           }),
       );
   }
@@ -203,7 +201,7 @@ export class TicketMetricService {
 
     const series: Record<string, TicketAgeGroup> = {};
 
-    tickets.forEach((ticket) => {
+    for (const ticket of tickets) {
       const endDate = DateTime.fromJSDate(
         ticket.status === TicketStatus.approved
           ? ticket.updatedAt
@@ -243,7 +241,7 @@ export class TicketMetricService {
       }
 
       series[closedDate][ageGroup]++;
-    });
+    }
 
     return Object.keys(series)
       .map((date) => DateTime.fromISO(date))
@@ -272,7 +270,7 @@ export class TicketMetricService {
       aboveOneMonth: 0,
     });
 
-    tickets.forEach((ticket) => {
+    for (const ticket of tickets) {
       const endDate = DateTime.fromJSDate(
         ticket.status === TicketStatus.approved
           ? ticket.updatedAt
@@ -300,7 +298,7 @@ export class TicketMetricService {
       }
 
       ageGroups[ageGroup]++;
-    });
+    }
 
     return new TicketAgeSummary({
       groups: ageGroups,

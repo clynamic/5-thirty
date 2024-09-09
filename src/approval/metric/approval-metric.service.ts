@@ -34,25 +34,27 @@ export class ApprovalMetricService {
   }
 
   async countSeries(range?: PartialDateRange): Promise<ApprovalCountPoint[]> {
-    const points = await this.approvalRepository
-      .createQueryBuilder('approval')
-      .select('DATE(approval.created_at) as date')
-      .addSelect('COUNT(*) as count')
-      .where(DateRange.orCurrentMonth(range).toWhereOptions()!)
-      .groupBy('date')
-      .orderBy('date', 'ASC')
-      .getRawMany<{
-        date: string;
-        count: number;
-      }>();
+    const approvals = await this.approvalRepository.find({
+      where: DateRange.orCurrentMonth(range).toWhereOptions(),
+    });
 
-    return points.map(
-      (point) =>
-        new ApprovalCountPoint({
-          date: DateTime.fromISO(point.date).toJSDate(),
-          count: point.count,
-        }),
-    );
+    const counts: Record<string, number> = {};
+
+    for (const approval of approvals) {
+      const date = DateTime.fromJSDate(approval.createdAt).toISODate()!;
+      counts[date] = (counts[date] || 0) + 1;
+    }
+
+    return Object.keys(counts)
+      .map((date) => DateTime.fromISO(date))
+      .sort()
+      .map(
+        (date) =>
+          new ApprovalCountPoint({
+            date: date.toJSDate(),
+            count: counts[date.toISODate()!]!,
+          }),
+      );
   }
 
   async approverSummary(
