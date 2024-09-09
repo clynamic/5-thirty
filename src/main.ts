@@ -1,12 +1,13 @@
 import { ValidationPipe } from '@nestjs/common';
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app/app.module';
+import { CorsConfigModule } from './app/cors.module';
 import { DocsModule } from './app/docs.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const corsConfig = app.get(CorsConfigModule);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -16,24 +17,7 @@ async function bootstrap() {
 
   DocsModule.setupSwagger(app);
 
-  const corsOptions: CorsOptions = {
-    origin: (origin, callback) => {
-      const regexes = [
-        /^(https?:\/\/)?(localhost)(:\d+)?(\/.*)?$/,
-        /^(https?:\/\/)?(127\.\d+\.\d+\.\d+)(:\d+)?(\/.*)?$/,
-        /^(https?:\/\/)?(0:0:0:0:0:0:0:1)(:\d+)?(\/.*)?$/,
-      ];
-
-      if (!origin || regexes.some((regex) => regex.test(origin))) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-  };
-
-  app.enableCors(corsOptions);
+  app.enableCors(corsConfig.createCorsOptions());
 
   await app.listen(3000);
 }

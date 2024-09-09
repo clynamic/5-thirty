@@ -14,12 +14,14 @@ import { TicketModule } from 'src/ticket/ticket.module';
 import { UserModule } from 'src/user/user.module';
 
 import { AppConfigModule } from './config.module';
+import { CorsConfigModule } from './cors.module';
 import { DatabaseModule } from './database.module';
 
 @Module({
   imports: [
     AppConfigModule,
     ScheduleModule.forRoot(),
+    CorsConfigModule,
     DatabaseModule,
     AuthModule,
     JobModule,
