@@ -11,7 +11,6 @@ export class DashboardConfig {
     }
   }
 
-  id: string;
   type: DashboardType;
   userId: number;
   positions: DashboardPositions;
