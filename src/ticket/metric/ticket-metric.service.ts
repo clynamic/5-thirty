@@ -177,10 +177,13 @@ export class TicketMetricService {
     });
 
     const counts: Record<string, number> = {};
+    const endDate = DateTime.fromJSDate(range.endDate!);
 
     for (const ticket of tickets) {
-      const closedDate = DateTime.fromJSDate(ticket.updatedAt).toISODate()!;
-      counts[closedDate] = (counts[closedDate] || 0) + 1;
+      const closedDate = DateTime.fromJSDate(ticket.updatedAt);
+      if (closedDate > endDate) continue;
+      const dateString = closedDate.toISODate()!;
+      counts[dateString] = (counts[dateString] || 0) + 1;
     }
 
     return Object.keys(counts)
