@@ -1,14 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import _ from 'lodash';
 import { DateTime } from 'luxon';
-import { posts } from 'src/api';
+import { postsMany } from 'src/api';
 import { AxiosAuthService } from 'src/auth/axios-auth.service';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
 import { ManifestType } from 'src/manifest/manifest.entity';
 import { UserSyncService } from 'src/user/sync/user-sync.service';
-import { rateLimit } from 'src/utils';
 
 import { PostEntity } from '../post.entity';
 import { PostSyncService } from './post-sync.service';
@@ -42,28 +40,13 @@ export class PostSyncWorker {
           const notStoredIds =
             await this.postSyncService.findNotStored(avatars);
 
-          const chunks = _.chunk(notStoredIds, 40);
-
-          for (const chunk of chunks) {
-            cancelToken.ensureRunning();
-
-            const result = await rateLimit(
-              posts(
-                {
-                  page: 1,
-                  limit: 40,
-                  tags: `id:${chunk.join(',')}`,
-                },
-                axiosConfig,
-              ),
-            );
-
-            this.logger.log(`Found ${result.length} avatars`);
-
+          postsMany(notStoredIds, axiosConfig, async (result) => {
             await this.postSyncService.create(
               result.map((post) => PostEntity.fromPost(post)),
             );
-          }
+
+            cancelToken.ensureRunning();
+          });
         },
       }),
     );

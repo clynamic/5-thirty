@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import _ from 'lodash';
 import { DateTime } from 'luxon';
+import { usersMany } from 'src/api';
 import { users } from 'src/api/e621';
 import { UserLevel } from 'src/auth/auth.level';
 import { AxiosAuthService } from 'src/auth/axios-auth.service';
@@ -88,8 +88,6 @@ export class UserSyncWorker {
         title: 'User Notable Sync',
         key: `/${ManifestType.users}/notable`,
         execute: async ({ cancelToken }) => {
-          const axiosConfig = this.axiosAuthService.getGlobalConfig();
-
           const notable = await this.userSyncService.listNotable({
             // staff are already handled by the staff sync
             type: Object.values(NotabilityType).filter(
@@ -98,37 +96,25 @@ export class UserSyncWorker {
             newerThan: DateTime.now().minus({ months: 1 }).toJSDate(),
           });
 
-          const chunks = _.chunk(
+          await usersMany(
             notable.map((notable) => notable.id),
-            100,
+            this.axiosAuthService.getGlobalConfig(),
+            async (result) => {
+              this.logger.log(`Found ${result.length} notable users`);
+
+              await this.userSyncService.create(
+                result.map(
+                  (user) =>
+                    new UserEntity({
+                      ...convertKeysToCamelCase(user),
+                      cache: new UserCacheEntity(user),
+                    }),
+                ),
+              );
+
+              cancelToken.ensureRunning();
+            },
           );
-
-          for (const chunk of chunks) {
-            cancelToken.ensureRunning();
-
-            const result = await rateLimit(
-              users(
-                {
-                  page: 1,
-                  limit: 100,
-                  'search[id]': chunk.join(','),
-                },
-                axiosConfig,
-              ),
-            );
-
-            this.logger.log(`Found ${result.length} notable users`);
-
-            await this.userSyncService.create(
-              result.map(
-                (user) =>
-                  new UserEntity({
-                    ...convertKeysToCamelCase(user),
-                    cache: new UserCacheEntity(user),
-                  }),
-              ),
-            );
-          }
         },
       }),
     );

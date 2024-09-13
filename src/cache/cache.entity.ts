@@ -32,5 +32,5 @@ export class CacheEntity {
 export class CacheLink {
   @OneToOne(() => CacheEntity, { eager: false, cascade: true })
   @JoinColumn({ name: 'cache_id' })
-  cache: CacheEntity | null;
+  cache: CacheEntity;
 }
