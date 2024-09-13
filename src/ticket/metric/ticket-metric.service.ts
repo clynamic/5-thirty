@@ -107,6 +107,8 @@ export class TicketMetricService {
       const endDate = DateTime.min(
         (ticket.status === TicketStatus.approved
           ? DateTime.fromJSDate(ticket.updatedAt)
+              // we exclude the day the ticket was closed
+              .minus({ days: 1 })
           : DateTime.now()
         ).endOf('day'),
         DateTime.fromJSDate(range.endDate!),
