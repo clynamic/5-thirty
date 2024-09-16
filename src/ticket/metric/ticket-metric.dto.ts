@@ -101,6 +101,31 @@ export class TicketClosedPoint {
   count: number;
 }
 
+export class TicketActivityUserQuery {
+  constructor(value: Raw<TicketActivityUserQuery>) {
+    Object.assign(this, value);
+  }
+
+  claimantId?: number;
+  reporterId?: number;
+
+  toWhereOptions(): FindOptionsWhere<TicketEntity> {
+    return {
+      ...(this.claimantId && { claimantId: this.claimantId }),
+      ...(this.reporterId && { reporterId: this.reporterId }),
+    };
+  }
+}
+
+export class TicketActivityPoint {
+  constructor(value: TicketActivityPoint) {
+    Object.assign(this, value);
+  }
+
+  date: Date;
+  count: number;
+}
+
 export class TicketAgeGroup {
   constructor(value: TicketAgeGroup) {
     Object.assign(this, value);
@@ -131,8 +156,8 @@ export class TicketAgeSummary {
   groups: TicketAgeGroup;
 }
 
-export class TicketerSummary {
-  constructor(value: TicketerSummary) {
+export class TicketHandlerSummary {
+  constructor(value: TicketHandlerSummary) {
     Object.assign(this, value);
   }
 
@@ -143,8 +168,8 @@ export class TicketerSummary {
   days: number;
 }
 
-export class ReporterSummary {
-  constructor(value: ReporterSummary) {
+export class TicketReporterSummary {
+  constructor(value: TicketReporterSummary) {
     Object.assign(this, value);
   }
 

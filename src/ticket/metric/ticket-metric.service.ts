@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DateTime } from 'luxon';
-import { TicketQtype, TicketStatus } from 'src/api/e621';
+import { TicketQtype, tickets, TicketStatus } from 'src/api/e621';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import {
   convertKeysToCamelCase,
@@ -13,7 +13,9 @@ import { LessThan, MoreThan, Not, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
 import {
-  ReporterSummary,
+  TicketReporterSummary,
+  TicketActivityPoint,
+  TicketActivityUserQuery,
   TicketAgeGroup,
   TicketAgeSeriesPoint,
   TicketAgeSummary,
@@ -21,12 +23,13 @@ import {
   TicketClosedUserQuery,
   TicketCreatedPoint,
   TicketCreatedUserQuery,
-  TicketerSummary,
+  TicketHandlerSummary,
   TicketOpenPoint,
   TicketStatusSummary,
   TicketTypeSummary,
   TicketTypeSummaryUserQuery,
 } from './ticket-metric.dto';
+import { async } from 'rxjs';
 
 @Injectable()
 export class TicketMetricService {
@@ -216,6 +219,85 @@ export class TicketMetricService {
       );
   }
 
+  async activitySummary(
+    range?: PartialDateRange,
+    user?: TicketActivityUserQuery,
+  ): Promise<TicketActivityPoint[]> {
+    range = DateRange.orCurrentMonth(range);
+
+    const tickets = await this.ticketRepository.find({
+      where: [
+        {
+          createdAt: range.toFindOptions(),
+          ...user?.toWhereOptions(),
+        },
+        {
+          updatedAt: range.toFindOptions(),
+          ...user?.toWhereOptions(),
+        },
+      ],
+    });
+
+    const activityCounts: Record<string, number> = {};
+
+    for (const ticket of tickets) {
+      const createdDate = DateTime.fromJSDate(ticket.createdAt)
+        .set({ year: 1970, month: 1, day: 1 })
+        .startOf('hour');
+      const updatedDate = ticket.updatedAt
+        ? DateTime.fromJSDate(ticket.updatedAt)
+            .set({ year: 1970, month: 1, day: 1 })
+            .startOf('hour')
+        : null;
+
+      const createdHour = createdDate.toISO()!;
+      activityCounts[createdHour] = (activityCounts[createdHour] || 0) + 1;
+
+      if (updatedDate) {
+        const updatedHour = updatedDate.toISO()!;
+        activityCounts[updatedHour] = (activityCounts[updatedHour] || 0) + 1;
+      }
+    }
+
+    if (tickets.length > 0) {
+      const hours = Object.keys(activityCounts).map((hour) =>
+        DateTime.fromISO(hour),
+      );
+      const minHour =
+        hours.length > 0
+          ? hours.reduce((a, b) => (a < b ? a : b))
+          : DateTime.now()
+              .set({ year: 1970, month: 1, day: 1 })
+              .startOf('hour');
+      const maxHour =
+        hours.length > 0
+          ? hours.reduce((a, b) => (a > b ? a : b))
+          : DateTime.now().set({ year: 1970, month: 1, day: 1 }).endOf('hour');
+
+      for (
+        let currentHour = minHour;
+        currentHour <= maxHour;
+        currentHour = currentHour.plus({ hours: 1 })
+      ) {
+        const isoHour = currentHour.toISO()!;
+        if (!activityCounts[isoHour]) {
+          activityCounts[isoHour] = 0;
+        }
+      }
+    }
+
+    return Object.keys(activityCounts)
+      .map((hour) => DateTime.fromISO(hour))
+      .sort()
+      .map(
+        (dateTime) =>
+          new TicketActivityPoint({
+            date: dateTime.toJSDate(),
+            count: activityCounts[dateTime.toISO()!]!,
+          }),
+      );
+  }
+
   async ageSeries(range?: PartialDateRange): Promise<TicketAgeSeriesPoint[]> {
     range = DateRange.orCurrentMonth(range);
     const tickets = await this.ticketRepository.find({
@@ -328,10 +410,10 @@ export class TicketMetricService {
     });
   }
 
-  async ticketerSummary(
+  async handlerSummary(
     range?: PartialDateRange,
     pages?: PaginationParams,
-  ): Promise<TicketerSummary[]> {
+  ): Promise<TicketHandlerSummary[]> {
     const results = await this.ticketRepository
       .createQueryBuilder('ticket')
       .where({
@@ -359,7 +441,7 @@ export class TicketMetricService {
 
     return results.map(
       (row) =>
-        new TicketerSummary({
+        new TicketHandlerSummary({
           ...convertKeysToCamelCase(row),
           head: heads.find((head) => head.id === row.user_id),
         }),
@@ -369,7 +451,7 @@ export class TicketMetricService {
   async reporterSummary(
     range?: PartialDateRange,
     pages?: PaginationParams,
-  ): Promise<ReporterSummary[]> {
+  ): Promise<TicketReporterSummary[]> {
     const results = await this.ticketRepository
       .createQueryBuilder('ticket')
       .select('ticket.creator_id', 'user_id')
@@ -387,7 +469,7 @@ export class TicketMetricService {
       }>();
 
     const counts = results.map(
-      (row) => new ReporterSummary(convertKeysToCamelCase(row)),
+      (row) => new TicketReporterSummary(convertKeysToCamelCase(row)),
     );
 
     const heads = await this.userHeadService.get(counts.map((c) => c.userId));

@@ -10,14 +10,16 @@ import { UserLevel } from 'src/auth/auth.level';
 import { PaginationParams, PartialDateRange } from 'src/utils';
 
 import {
-  ReporterSummary,
+  TicketReporterSummary,
+  TicketActivityPoint,
+  TicketActivityUserQuery,
   TicketAgeSeriesPoint,
   TicketAgeSummary,
   TicketClosedPoint,
   TicketClosedUserQuery,
   TicketCreatedPoint,
   TicketCreatedUserQuery,
-  TicketerSummary,
+  TicketHandlerSummary,
   TicketOpenPoint,
   TicketStatusSummary,
   TicketTypeSummary,
@@ -66,18 +68,18 @@ export class TicketMetricController {
     return this.ticketMetricService.typeSummary(range);
   }
 
-  @Get('type/summary/claimed/:claimantId')
+  @Get('type/summary/handler/:claimantId')
   @ApiOperation({
-    summary: 'Ticket type summary for a ticketer',
+    summary: 'Ticket type summary for a handler',
     description:
-      'Get ticket types counts for a given date range for a specific ticketer',
-    operationId: 'getTicketTypeSummaryForTicketer',
+      'Get ticket types counts for a given date range for a specific handler',
+    operationId: 'getTicketTypeSummaryForHandler',
   })
   @ApiResponse({
     status: 200,
     type: TicketTypeSummary,
   })
-  async typeSummaryForTicketer(
+  async typeSummaryForHandler(
     @Param('claimantId') claimantId: number,
     @Query() range?: PartialDateRange,
   ): Promise<TicketTypeSummary> {
@@ -158,22 +160,60 @@ export class TicketMetricController {
 
   @Get('closed/series/:handlerId')
   @ApiOperation({
-    summary: 'Ticket closed series for a ticketer',
+    summary: 'Ticket closed series for a handler',
     description:
-      'Get a time series of closed tickets for a given date range for a specific ticketer',
-    operationId: 'getTicketClosedSeriesForTicketer',
+      'Get a time series of closed tickets for a given date range for a specific handler',
+    operationId: 'getTicketClosedSeriesForHandler',
   })
   @ApiResponse({
     status: 200,
     type: [TicketClosedPoint],
   })
-  async closedSeriesForTicketer(
+  async closedSeriesForHandler(
     @Param('handlerId') handlerId: number,
     @Query() range?: PartialDateRange,
   ): Promise<TicketClosedPoint[]> {
     return this.ticketMetricService.closedSeries(
       range,
       new TicketClosedUserQuery({ handlerId }),
+    );
+  }
+
+  @Get('activity/summary')
+  @ApiOperation({
+    summary: 'Ticket activity summary',
+    description:
+      'Get a summary of ticket activity per hour for a given date range',
+    operationId: 'getTicketActivitySummary',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [TicketActivityPoint],
+  })
+  async activitySummary(
+    @Query() range?: PartialDateRange,
+  ): Promise<TicketActivityPoint[]> {
+    return this.ticketMetricService.activitySummary(range);
+  }
+
+  @Get('activity/summary/handler/:claimantId')
+  @ApiOperation({
+    summary: 'Ticket activity summary for a handler',
+    description:
+      'Get a summary of ticket activity per hour for a given date range for a specific handler',
+    operationId: 'getTicketActivitySummaryForHandler',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [TicketActivityPoint],
+  })
+  async activitySummaryForHandler(
+    @Param('claimantId') claimantId: number,
+    @Query() range?: PartialDateRange,
+  ): Promise<TicketActivityPoint[]> {
+    return this.ticketMetricService.activitySummary(
+      range,
+      new TicketActivityUserQuery({ claimantId }),
     );
   }
 
@@ -209,22 +249,22 @@ export class TicketMetricController {
     return this.ticketMetricService.ageSummary(range);
   }
 
-  @Get('ticketer/summary')
+  @Get('handler/summary')
   @ApiOperation({
-    summary: 'Ticketer summary',
+    summary: 'Handler summary',
     description:
       'Get a summary of the top 20 ticket handlers (claimed and handled tickets) for a given date range',
-    operationId: 'getTicketerSummary',
+    operationId: 'getHandlerSummary',
   })
   @ApiResponse({
     status: 200,
-    type: [TicketerSummary],
+    type: [TicketHandlerSummary],
   })
-  async ticketerSummary(
+  async handlerSummary(
     @Query() range?: PartialDateRange,
     @Query() pages?: PaginationParams,
-  ): Promise<TicketerSummary[]> {
-    return this.ticketMetricService.ticketerSummary(range, pages);
+  ): Promise<TicketHandlerSummary[]> {
+    return this.ticketMetricService.handlerSummary(range, pages);
   }
 
   @Get('reporter/summary')
@@ -236,12 +276,12 @@ export class TicketMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [ReporterSummary],
+    type: [TicketReporterSummary],
   })
   async reporterSummary(
     @Query() range?: PartialDateRange,
     @Query() pages?: PaginationParams,
-  ): Promise<ReporterSummary[]> {
+  ): Promise<TicketReporterSummary[]> {
     return this.ticketMetricService.reporterSummary(range, pages);
   }
 }
