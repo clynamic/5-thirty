@@ -135,16 +135,30 @@ export class TicketMetricService {
       }
     });
 
-    return Object.keys(openTicketCounts)
+    const dates = Object.keys(openTicketCounts)
       .map((date) => DateTime.fromISO(date))
-      .sort()
-      .map(
-        (date) =>
-          new TicketOpenPoint({
-            date: date.toJSDate(),
-            count: openTicketCounts[date.toISODate()!]!,
-          }),
-      );
+      .sort();
+
+    if (dates.length > 0) {
+      const minDate = dates[0]!;
+      const maxDate = dates[dates.length - 1]!;
+
+      for (
+        let current = minDate;
+        current <= maxDate;
+        current = current.plus({ days: 1 })
+      ) {
+        dates.push(current);
+      }
+    }
+
+    return dates.sort().map(
+      (date) =>
+        new TicketOpenPoint({
+          date: date.toJSDate(),
+          count: openTicketCounts[date.toISODate()!] ?? 0,
+        }),
+    );
   }
 
   async createdSeries(
@@ -165,16 +179,30 @@ export class TicketMetricService {
       counts[createdDate] = (counts[createdDate] || 0) + 1;
     }
 
-    return Object.keys(counts)
+    const dates = Object.keys(counts)
       .map((date) => DateTime.fromISO(date))
-      .sort()
-      .map(
-        (date) =>
-          new TicketCreatedPoint({
-            date: date.toJSDate(),
-            count: counts[date.toISODate()!]!,
-          }),
-      );
+      .sort();
+
+    if (dates.length > 0) {
+      const minDate = dates[0]!;
+      const maxDate = dates[dates.length - 1]!;
+
+      for (
+        let current = minDate;
+        current <= maxDate;
+        current = current.plus({ days: 1 })
+      ) {
+        dates.push(current);
+      }
+    }
+
+    return dates.sort().map(
+      (date) =>
+        new TicketCreatedPoint({
+          date: date.toJSDate(),
+          count: counts[date.toISODate()!] ?? 0,
+        }),
+    );
   }
 
   async closedSeries(
@@ -207,16 +235,30 @@ export class TicketMetricService {
       counts[dateString] = (counts[dateString] || 0) + 1;
     }
 
-    return Object.keys(counts)
+    const dates = Object.keys(counts)
       .map((date) => DateTime.fromISO(date))
-      .sort()
-      .map(
-        (date) =>
-          new TicketClosedPoint({
-            date: date.toJSDate(),
-            count: counts[date.toISODate()!]!,
-          }),
-      );
+      .sort();
+
+    if (dates.length > 0) {
+      const minDate = dates[0]!;
+      const maxDate = dates[dates.length - 1]!;
+
+      for (
+        let current = minDate;
+        current <= maxDate;
+        current = current.plus({ days: 1 })
+      ) {
+        dates.push(current);
+      }
+    }
+
+    return dates.sort().map(
+      (date) =>
+        new TicketClosedPoint({
+          date: date.toJSDate(),
+          count: counts[date.toISODate()!] ?? 0,
+        }),
+    );
   }
 
   async activitySummary(
@@ -259,43 +301,30 @@ export class TicketMetricService {
       }
     }
 
-    if (tickets.length > 0) {
-      const hours = Object.keys(activityCounts).map((hour) =>
-        DateTime.fromISO(hour),
-      );
-      const minHour =
-        hours.length > 0
-          ? hours.reduce((a, b) => (a < b ? a : b))
-          : DateTime.now()
-              .set({ year: 1970, month: 1, day: 1 })
-              .startOf('hour');
-      const maxHour =
-        hours.length > 0
-          ? hours.reduce((a, b) => (a > b ? a : b))
-          : DateTime.now().set({ year: 1970, month: 1, day: 1 }).endOf('hour');
+    const dates = Object.keys(activityCounts)
+      .map((date) => DateTime.fromISO(date))
+      .sort();
+
+    if (dates.length > 0) {
+      const minHour = dates[0]!;
+      const maxHour = dates[dates.length - 1]!.endOf('hour');
 
       for (
         let currentHour = minHour;
         currentHour <= maxHour;
         currentHour = currentHour.plus({ hours: 1 })
       ) {
-        const isoHour = currentHour.toISO()!;
-        if (!activityCounts[isoHour]) {
-          activityCounts[isoHour] = 0;
-        }
+        dates.push(currentHour);
       }
     }
 
-    return Object.keys(activityCounts)
-      .map((hour) => DateTime.fromISO(hour))
-      .sort()
-      .map(
-        (dateTime) =>
-          new TicketActivityPoint({
-            date: dateTime.toJSDate(),
-            count: activityCounts[dateTime.toISO()!]!,
-          }),
-      );
+    return dates.sort().map(
+      (dateTime) =>
+        new TicketActivityPoint({
+          date: dateTime.toJSDate(),
+          count: activityCounts[dateTime.toISO()!] ?? 0,
+        }),
+    );
   }
 
   async ageSeries(range?: PartialDateRange): Promise<TicketAgeSeriesPoint[]> {

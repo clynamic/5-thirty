@@ -14,6 +14,7 @@ import {
   WithCreationDate,
 } from './range';
 import { Raw } from './raw';
+import { DateTime } from 'luxon';
 
 /**
  * A range of dates, inclusive on both ends.
@@ -110,3 +111,16 @@ export class DateRange extends PartialDateRange {
     return super.toWhereOptions()!;
   }
 }
+
+export const dateRangeBetween = (dates: DateTime[]): DateTime[] => {
+  if (dates.length === 0) return [];
+
+  const minDate = DateTime.min(...dates).startOf('day');
+  const maxDate = DateTime.max(...dates).startOf('day');
+
+  const daysDiff = maxDate.diff(minDate, 'days').days;
+
+  return Array.from({ length: daysDiff + 1 }, (_, i) =>
+    minDate.plus({ days: i }),
+  );
+};
