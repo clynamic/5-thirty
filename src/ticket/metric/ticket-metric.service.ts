@@ -197,8 +197,6 @@ export class TicketMetricService {
     const counts: Record<string, number> = {};
     const endDate = DateTime.fromJSDate(range.endDate!);
 
-    console.log(tickets);
-
     for (const ticket of tickets) {
       const closedDate = DateTime.fromJSDate(ticket.updatedAt);
       if (closedDate > endDate) continue;
