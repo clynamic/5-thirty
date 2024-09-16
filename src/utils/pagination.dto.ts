@@ -3,10 +3,12 @@ import { Type } from 'class-transformer';
 import { IsInt, IsOptional, Max, Min } from 'class-validator';
 import { MAX_API_LIMIT } from 'src/api/http/params';
 
+import { Raw } from './raw';
+
 export class PaginationParams {
-  constructor(partial?: Partial<PaginationParams>) {
-    if (partial) {
-      Object.assign(this, partial);
+  constructor(value?: Raw<PaginationParams>) {
+    if (value) {
+      Object.assign(this, value);
     }
   }
 

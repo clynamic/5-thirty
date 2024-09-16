@@ -1,4 +1,8 @@
 import { UserHead } from 'src/user/head/user-head.dto';
+import { Raw } from 'src/utils';
+import { FindOptionsWhere } from 'typeorm';
+
+import { ApprovalEntity } from '../approval.entity';
 
 export class ApprovalCountSummary {
   constructor(value: ApprovalCountSummary) {
@@ -6,6 +10,20 @@ export class ApprovalCountSummary {
   }
 
   total: number;
+}
+
+export class ApprovalCountUserQuery {
+  constructor(value: Raw<ApprovalCountUserQuery>) {
+    Object.assign(this, value);
+  }
+
+  userId: number;
+
+  toWhereOptions(): FindOptionsWhere<ApprovalEntity> {
+    return {
+      ...(this.userId && { userId: this.userId }),
+    };
+  }
 }
 
 export class ApprovalCountPoint {

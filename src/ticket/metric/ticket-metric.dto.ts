@@ -1,4 +1,8 @@
 import { UserHead } from 'src/user/head/user-head.dto';
+import { Raw } from 'src/utils';
+import { FindOptionsWhere } from 'typeorm';
+
+import { TicketEntity } from '../ticket.entity';
 
 export class TicketStatusSummary {
   constructor(value: TicketStatusSummary) {
@@ -8,6 +12,22 @@ export class TicketStatusSummary {
   pending: number;
   approved: number;
   partial: number;
+}
+
+export class TicketTypeSummaryUserQuery {
+  constructor(value: Raw<TicketTypeSummaryUserQuery>) {
+    Object.assign(this, value);
+  }
+
+  claimantId?: number;
+  reporterId?: number;
+
+  toWhereOptions(): FindOptionsWhere<TicketEntity> {
+    return {
+      ...(this.claimantId && { claimantId: this.claimantId }),
+      ...(this.reporterId && { reporterId: this.reporterId }),
+    };
+  }
 }
 
 export class TicketTypeSummary {
@@ -35,6 +55,20 @@ export class TicketOpenPoint {
   count: number;
 }
 
+export class TicketCreatedUserQuery {
+  constructor(value: Raw<TicketCreatedUserQuery>) {
+    Object.assign(this, value);
+  }
+
+  creatorId?: number;
+
+  toWhereOptions(): FindOptionsWhere<TicketEntity> {
+    return {
+      ...(this.creatorId && { creatorId: this.creatorId }),
+    };
+  }
+}
+
 export class TicketCreatedPoint {
   constructor(value: TicketCreatedPoint) {
     Object.assign(this, value);
@@ -42,6 +76,20 @@ export class TicketCreatedPoint {
 
   date: Date;
   count: number;
+}
+
+export class TicketClosedUserQuery {
+  constructor(value: Raw<TicketClosedUserQuery>) {
+    Object.assign(this, value);
+  }
+
+  handlerId?: number;
+
+  toWhereOptions(): FindOptionsWhere<TicketEntity> {
+    return {
+      ...(this.handlerId && { handlerId: this.handlerId }),
+    };
+  }
 }
 
 export class TicketClosedPoint {

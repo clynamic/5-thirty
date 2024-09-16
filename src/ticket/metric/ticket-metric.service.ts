@@ -18,11 +18,14 @@ import {
   TicketAgeSeriesPoint,
   TicketAgeSummary,
   TicketClosedPoint,
+  TicketClosedUserQuery,
   TicketCreatedPoint,
+  TicketCreatedUserQuery,
   TicketerSummary,
   TicketOpenPoint,
   TicketStatusSummary,
   TicketTypeSummary,
+  TicketTypeSummaryUserQuery,
 } from './ticket-metric.dto';
 
 @Injectable()
@@ -59,7 +62,10 @@ export class TicketMetricService {
     });
   }
 
-  async typeSummary(range?: PartialDateRange): Promise<TicketTypeSummary> {
+  async typeSummary(
+    range?: PartialDateRange,
+    user?: TicketTypeSummaryUserQuery,
+  ): Promise<TicketTypeSummary> {
     return new TicketTypeSummary({
       ...Object.fromEntries(
         await Promise.all(
@@ -69,6 +75,7 @@ export class TicketMetricService {
               where: {
                 ...DateRange.orCurrentMonth(range).toWhereOptions(),
                 qtype: type,
+                ...user?.toWhereOptions(),
               },
             }),
           ]),
@@ -137,9 +144,15 @@ export class TicketMetricService {
       );
   }
 
-  async createdSeries(range?: PartialDateRange): Promise<TicketCreatedPoint[]> {
+  async createdSeries(
+    range?: PartialDateRange,
+    user?: TicketCreatedUserQuery,
+  ): Promise<TicketCreatedPoint[]> {
     const tickets = await this.ticketRepository.find({
-      where: DateRange.orCurrentMonth(range).toWhereOptions(),
+      where: {
+        ...DateRange.orCurrentMonth(range).toWhereOptions(),
+        ...user?.toWhereOptions(),
+      },
     });
 
     const counts: Record<string, number> = {};
@@ -161,23 +174,30 @@ export class TicketMetricService {
       );
   }
 
-  async closedSeries(range?: PartialDateRange): Promise<TicketClosedPoint[]> {
+  async closedSeries(
+    range?: PartialDateRange,
+    user?: TicketClosedUserQuery,
+  ): Promise<TicketClosedPoint[]> {
     range = DateRange.orCurrentMonth(range);
     const tickets = await this.ticketRepository.find({
       where: [
         {
           createdAt: range.toFindOptions(),
           status: TicketStatus.approved,
+          ...user?.toWhereOptions(),
         },
         {
           updatedAt: range.toFindOptions(),
           status: TicketStatus.approved,
+          ...user?.toWhereOptions(),
         },
       ],
     });
 
     const counts: Record<string, number> = {};
     const endDate = DateTime.fromJSDate(range.endDate!);
+
+    console.log(tickets);
 
     for (const ticket of tickets) {
       const closedDate = DateTime.fromJSDate(ticket.updatedAt);

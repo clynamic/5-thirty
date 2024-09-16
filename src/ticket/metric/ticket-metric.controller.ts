@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -14,11 +14,14 @@ import {
   TicketAgeSeriesPoint,
   TicketAgeSummary,
   TicketClosedPoint,
+  TicketClosedUserQuery,
   TicketCreatedPoint,
+  TicketCreatedUserQuery,
   TicketerSummary,
   TicketOpenPoint,
   TicketStatusSummary,
   TicketTypeSummary,
+  TicketTypeSummaryUserQuery,
 } from './ticket-metric.dto';
 import { TicketMetricService } from './ticket-metric.service';
 
@@ -63,6 +66,27 @@ export class TicketMetricController {
     return this.ticketMetricService.typeSummary(range);
   }
 
+  @Get('type/summary/claimed/:claimantId')
+  @ApiOperation({
+    summary: 'Ticket type summary for a ticketer',
+    description:
+      'Get ticket types counts for a given date range for a specific ticketer',
+    operationId: 'getTicketTypeSummaryForTicketer',
+  })
+  @ApiResponse({
+    status: 200,
+    type: TicketTypeSummary,
+  })
+  async typeSummaryForTicketer(
+    @Param('claimantId') claimantId: number,
+    @Query() range?: PartialDateRange,
+  ): Promise<TicketTypeSummary> {
+    return this.ticketMetricService.typeSummary(
+      range,
+      new TicketTypeSummaryUserQuery({ claimantId }),
+    );
+  }
+
   @Get('open/series')
   @ApiOperation({
     summary: 'Ticket open series',
@@ -95,6 +119,27 @@ export class TicketMetricController {
     return this.ticketMetricService.createdSeries(range);
   }
 
+  @Get('created/series/:repoterId')
+  @ApiOperation({
+    summary: 'Ticket created series for a reporter',
+    description:
+      'Get a time series of created tickets for a given date range for a specific reporter',
+    operationId: 'getTicketCreatedSeriesForReporter',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [TicketCreatedPoint],
+  })
+  async createdSeriesForReporter(
+    @Param('repoterId') reporterId: number,
+    @Query() range?: PartialDateRange,
+  ): Promise<TicketCreatedPoint[]> {
+    return this.ticketMetricService.createdSeries(
+      range,
+      new TicketCreatedUserQuery({ creatorId: reporterId }),
+    );
+  }
+
   @Get('closed/series')
   @ApiOperation({
     summary: 'Ticket closed series',
@@ -109,6 +154,27 @@ export class TicketMetricController {
     @Query() range?: PartialDateRange,
   ): Promise<TicketClosedPoint[]> {
     return this.ticketMetricService.closedSeries(range);
+  }
+
+  @Get('closed/series/:handlerId')
+  @ApiOperation({
+    summary: 'Ticket closed series for a ticketer',
+    description:
+      'Get a time series of closed tickets for a given date range for a specific ticketer',
+    operationId: 'getTicketClosedSeriesForTicketer',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [TicketClosedPoint],
+  })
+  async closedSeriesForTicketer(
+    @Param('handlerId') handlerId: number,
+    @Query() range?: PartialDateRange,
+  ): Promise<TicketClosedPoint[]> {
+    return this.ticketMetricService.closedSeries(
+      range,
+      new TicketClosedUserQuery({ handlerId }),
+    );
   }
 
   @Get('age/series')

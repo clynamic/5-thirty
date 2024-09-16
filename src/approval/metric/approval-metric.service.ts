@@ -14,6 +14,7 @@ import { ApprovalEntity } from '../approval.entity';
 import {
   ApprovalCountPoint,
   ApprovalCountSummary,
+  ApprovalCountUserQuery,
   ApproverSummary,
 } from './approval-metric.dto';
 
@@ -33,9 +34,15 @@ export class ApprovalMetricService {
     });
   }
 
-  async countSeries(range?: PartialDateRange): Promise<ApprovalCountPoint[]> {
+  async countSeries(
+    range?: PartialDateRange,
+    user?: ApprovalCountUserQuery,
+  ): Promise<ApprovalCountPoint[]> {
     const approvals = await this.approvalRepository.find({
-      where: DateRange.orCurrentMonth(range).toWhereOptions(),
+      where: {
+        ...DateRange.orCurrentMonth(range).toWhereOptions(),
+        ...user?.toWhereOptions(),
+      },
     });
 
     const counts: Record<string, number> = {};

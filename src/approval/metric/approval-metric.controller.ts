@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -12,6 +12,7 @@ import { PaginationParams, PartialDateRange } from 'src/utils';
 import {
   ApprovalCountPoint,
   ApprovalCountSummary,
+  ApprovalCountUserQuery,
   ApproverSummary,
 } from './approval-metric.dto';
 import { ApprovalMetricService } from './approval-metric.service';
@@ -54,6 +55,27 @@ export class ApprovalMetricController {
     @Query() range?: PartialDateRange,
   ): Promise<ApprovalCountPoint[]> {
     return this.approvalMetricService.countSeries(range);
+  }
+
+  @Get('count/series/:approverId')
+  @ApiOperation({
+    summary: 'Approval count series by approver',
+    description:
+      'Get a time series of approval counts for a given date range by approver',
+    operationId: 'getApprovalCountSeriesByApprover',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [ApprovalCountPoint],
+  })
+  async countSeriesByApprover(
+    @Param('approverId') approverId: number,
+    @Query() range?: PartialDateRange,
+  ): Promise<ApprovalCountPoint[]> {
+    return this.approvalMetricService.countSeries(
+      range,
+      new ApprovalCountUserQuery({ userId: approverId }),
+    );
   }
 
   @Get('approver/summary')

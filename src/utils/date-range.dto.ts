@@ -13,15 +13,16 @@ import {
   getDateRangeString,
   WithCreationDate,
 } from './range';
+import { Raw } from './raw';
 
 /**
  * A range of dates, inclusive on both ends.
  * May be missing one or both ends.
  */
 export class PartialDateRange {
-  constructor(partial?: Partial<PartialDateRange>) {
-    if (partial) {
-      Object.assign(this, partial);
+  constructor(value?: Raw<PartialDateRange>) {
+    if (value) {
+      Object.assign(this, value);
     }
   }
 
@@ -70,8 +71,8 @@ export class PartialDateRange {
  * A range of dates, inclusive on both ends.
  */
 export class DateRange extends PartialDateRange {
-  constructor(partial?: Partial<DateRange>) {
-    super(partial);
+  constructor(value: Raw<DateRange>) {
+    super(value);
   }
 
   @IsDate()

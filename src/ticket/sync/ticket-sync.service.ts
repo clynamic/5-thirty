@@ -7,9 +7,9 @@ import { LessThan, Not, Repository } from 'typeorm';
 import { TicketEntity } from '../ticket.entity';
 
 export class FindIncompleteParams {
-  constructor(partial?: Partial<FindIncompleteParams>) {
-    if (partial) {
-      Object.assign(this, partial);
+  constructor(value?: FindIncompleteParams) {
+    if (value) {
+      Object.assign(this, value);
     }
   }
 
