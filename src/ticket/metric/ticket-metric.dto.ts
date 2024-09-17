@@ -22,7 +22,7 @@ export class TicketTypeSummaryUserQuery {
   claimantId?: number;
   reporterId?: number;
 
-  toWhereOptions(): FindOptionsWhere<TicketEntity> {
+  where(): FindOptionsWhere<TicketEntity> {
     return {
       ...(this.claimantId && { claimantId: this.claimantId }),
       ...(this.reporterId && { reporterId: this.reporterId }),
@@ -62,7 +62,7 @@ export class TicketCreatedUserQuery {
 
   creatorId?: number;
 
-  toWhereOptions(): FindOptionsWhere<TicketEntity> {
+  where(): FindOptionsWhere<TicketEntity> {
     return {
       ...(this.creatorId && { creatorId: this.creatorId }),
     };
@@ -85,7 +85,7 @@ export class TicketClosedUserQuery {
 
   handlerId?: number;
 
-  toWhereOptions(): FindOptionsWhere<TicketEntity> {
+  where(): FindOptionsWhere<TicketEntity> {
     return {
       ...(this.handlerId && { handlerId: this.handlerId }),
     };
@@ -109,7 +109,7 @@ export class TicketActivityUserQuery {
   claimantId?: number;
   reporterId?: number;
 
-  toWhereOptions(): FindOptionsWhere<TicketEntity> {
+  where(): FindOptionsWhere<TicketEntity> {
     return {
       ...(this.claimantId && { claimantId: this.claimantId }),
       ...(this.reporterId && { reporterId: this.reporterId }),

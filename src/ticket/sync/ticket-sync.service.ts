@@ -51,7 +51,7 @@ export class TicketSyncService {
         .createQueryBuilder('ticket')
         .select('ticket.creator_id', 'user_id')
         .addSelect('COUNT(ticket.id)', 'reported')
-        .where(DateRange.orCurrentMonth(range).toWhereOptions())
+        .where(DateRange.fill(range).where())
         .groupBy('ticket.creator_id')
         .orderBy('reported', 'DESC')
         .take(100)

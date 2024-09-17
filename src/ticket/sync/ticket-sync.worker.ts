@@ -15,14 +15,13 @@ import {
 import { UserSyncService } from 'src/user/sync/user-sync.service';
 import {
   convertKeysToCamelCase,
+  DateRange,
   findContiguityGaps,
   findHighestDate,
   findHighestId,
   findLowestDate,
   findLowestId,
-  getDateRangeString,
   getIdRangeString,
-  getRecentDateRange,
   LoopGuard,
   PartialDateRange,
   rateLimit,
@@ -52,7 +51,7 @@ export class TicketSyncWorker {
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
-          const recentlyRange = getRecentDateRange();
+          const recentlyRange = DateRange.recentMonths();
 
           const orders = ManifestService.splitLongOrders(
             await this.manifestService.listOrdersByRange(
@@ -70,7 +69,7 @@ export class TicketSyncWorker {
             const dateRange = order.toDateRange();
 
             this.logger.log(
-              `Fetching tickets for ${dateRange.toRangeString()}`,
+              `Fetching tickets for ${dateRange.toE621RangeString()}`,
             );
 
             while (true) {
@@ -85,7 +84,7 @@ export class TicketSyncWorker {
                     // the site enforces special ordering that would be useful for humans, but not for us.
                     // because of that reason, we always need to exhaust the full date range
                     // before moving on and can't use the ID range to continously glide through the data.
-                    'search[created_at]': dateRange.toRangeString(),
+                    'search[created_at]': dateRange.toE621RangeString(),
                   }),
                   axiosConfig,
                 ),
@@ -98,16 +97,13 @@ export class TicketSyncWorker {
                     findHighestId(result)?.id,
                   ) || 'none'
                 } and dates ${
-                  getDateRangeString(
-                    new PartialDateRange({
-                      startDate: findLowestDate(
-                        result.map(convertKeysToCamelCase),
-                      )?.createdAt,
-                      endDate: findHighestDate(
-                        result.map(convertKeysToCamelCase),
-                      )?.createdAt,
-                    }),
-                  ) || 'none'
+                  new PartialDateRange({
+                    startDate: findLowestDate(
+                      result.map(convertKeysToCamelCase),
+                    )?.createdAt,
+                    endDate: findHighestDate(result.map(convertKeysToCamelCase))
+                      ?.createdAt,
+                  }).toE621RangeString() || 'none'
                 }`,
               );
 

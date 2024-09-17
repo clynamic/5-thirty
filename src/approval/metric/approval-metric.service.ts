@@ -29,7 +29,7 @@ export class ApprovalMetricService {
   async countSummary(range?: PartialDateRange): Promise<ApprovalCountSummary> {
     return new ApprovalCountSummary({
       total: await this.approvalRepository.count({
-        where: DateRange.orCurrentMonth(range).toWhereOptions(),
+        where: DateRange.fill(range).where(),
       }),
     });
   }
@@ -40,7 +40,7 @@ export class ApprovalMetricService {
   ): Promise<ApprovalCountPoint[]> {
     const approvals = await this.approvalRepository.find({
       where: {
-        ...DateRange.orCurrentMonth(range).toWhereOptions(),
+        ...DateRange.fill(range).where(),
         ...user?.toWhereOptions(),
       },
     });
@@ -74,7 +74,7 @@ export class ApprovalMetricService {
       .addSelect('COUNT(*) as total')
       .addSelect('COUNT(DISTINCT DATE(approval.created_at))', 'days')
       .addSelect('RANK() OVER (ORDER BY COUNT(*) DESC)', 'position')
-      .where(DateRange.orCurrentMonth(range).toWhereOptions()!)
+      .where(DateRange.fill(range).where()!)
       .groupBy('approval.user_id')
       .orderBy('total', 'DESC')
       .take(pages?.limit || PaginationParams.DEFAULT_PAGE_SIZE)

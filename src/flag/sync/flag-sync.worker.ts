@@ -9,13 +9,12 @@ import { ManifestType } from 'src/manifest/manifest.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 import {
   convertKeysToCamelCase,
+  DateRange,
   findContiguityGaps,
   findHighestId,
   findLowestDate,
   findLowestId,
-  getDateRangeString,
   getIdRangeString,
-  getRecentDateRange,
   LoopGuard,
   PartialDateRange,
   rateLimit,
@@ -44,7 +43,7 @@ export class FlagSyncWorker {
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
-          const recentlyRange = getRecentDateRange();
+          const recentlyRange = DateRange.recentMonths();
 
           const orders = await this.manifestService.listOrdersByRange(
             ManifestType.flags,
@@ -63,7 +62,7 @@ export class FlagSyncWorker {
               const upperId = order.upperId;
 
               this.logger.log(
-                `Fetching flags for ${dateRange.toRangeString()} with ids ${getIdRangeString(
+                `Fetching flags for ${dateRange.toE621RangeString()} with ids ${getIdRangeString(
                   lowerId,
                   upperId,
                 )}`,
@@ -74,7 +73,7 @@ export class FlagSyncWorker {
                   loopGuard.iter({
                     page: 1,
                     limit: MAX_API_LIMIT,
-                    'search[created_at]': dateRange.toRangeString(),
+                    'search[created_at]': dateRange.toE621RangeString(),
                     'search[id]': getIdRangeString(lowerId, upperId),
                   }),
                   axiosConfig,
@@ -100,12 +99,10 @@ export class FlagSyncWorker {
                     findHighestId(result)?.id,
                   ) || 'none'
                 } and dates ${
-                  getDateRangeString(
-                    new PartialDateRange({
-                      startDate: findLowestDate(stored)?.createdAt,
-                      endDate: findHighestId(stored)?.createdAt,
-                    }),
-                  ) || 'none'
+                  new PartialDateRange({
+                    startDate: findLowestDate(stored)?.createdAt,
+                    endDate: findHighestId(stored)?.createdAt,
+                  }).toE621RangeString() || 'none'
                 }`,
               );
 

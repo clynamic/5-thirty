@@ -9,14 +9,13 @@ import { ManifestType } from 'src/manifest/manifest.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 import {
   convertKeysToCamelCase,
+  DateRange,
   findContiguityGaps,
   findHighestDate,
   findHighestId,
   findLowestDate,
   findLowestId,
-  getDateRangeString,
   getIdRangeString,
-  getRecentDateRange,
   LoopGuard,
   PartialDateRange,
   rateLimit,
@@ -45,7 +44,7 @@ export class ApprovalSyncWorker {
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.axiosAuthService.getGlobalConfig();
 
-          const recentlyRange = getRecentDateRange();
+          const recentlyRange = DateRange.recentMonths();
 
           const orders = await this.manifestService.listOrdersByRange(
             ManifestType.approvals,
@@ -65,7 +64,7 @@ export class ApprovalSyncWorker {
               const upperId = order.upperId;
 
               this.logger.log(
-                `Fetching approvals for ${dateRange.toRangeString()} with ids ${getIdRangeString(
+                `Fetching approvals for ${dateRange.toE621RangeString()} with ids ${getIdRangeString(
                   lowerId,
                   upperId,
                 )}`,
@@ -76,7 +75,7 @@ export class ApprovalSyncWorker {
                   loopGuard.iter({
                     page: 1,
                     limit: MAX_API_LIMIT,
-                    'search[created_at]': dateRange.toRangeString(),
+                    'search[created_at]': dateRange.toE621RangeString(),
                     // because post_approvals are ordered properly id descending,
                     // we can rely on always getting (almost) contiguous results
                     // some approval IDs seem to just not exist, but that's fine for this use case
@@ -105,12 +104,10 @@ export class ApprovalSyncWorker {
                     findHighestId(stored)?.id,
                   ) || 'none'
                 } and dates ${
-                  getDateRangeString(
-                    new PartialDateRange({
-                      startDate: findLowestDate(stored)?.createdAt,
-                      endDate: findHighestDate(stored)?.createdAt,
-                    }),
-                  ) || 'none'
+                  new PartialDateRange({
+                    startDate: findLowestDate(stored)?.createdAt,
+                    endDate: findHighestDate(stored)?.createdAt,
+                  }).toE621RangeString() || 'none'
                 }`,
               );
 

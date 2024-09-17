@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DateTime } from 'luxon';
-import { TicketQtype, tickets, TicketStatus } from 'src/api/e621';
+import { TicketQtype, TicketStatus } from 'src/api/e621';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import {
   convertKeysToCamelCase,
@@ -9,11 +9,10 @@ import {
   PaginationParams,
   PartialDateRange,
 } from 'src/utils';
-import { LessThan, MoreThan, Not, Repository } from 'typeorm';
+import { FindOptionsWhere, LessThan, MoreThan, Not, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
 import {
-  TicketReporterSummary,
   TicketActivityPoint,
   TicketActivityUserQuery,
   TicketAgeGroup,
@@ -25,11 +24,11 @@ import {
   TicketCreatedUserQuery,
   TicketHandlerSummary,
   TicketOpenPoint,
+  TicketReporterSummary,
   TicketStatusSummary,
   TicketTypeSummary,
   TicketTypeSummaryUserQuery,
 } from './ticket-metric.dto';
-import { async } from 'rxjs';
 
 @Injectable()
 export class TicketMetricService {
@@ -39,8 +38,25 @@ export class TicketMetricService {
     private readonly userHeadService: UserHeadService,
   ) {}
 
+  private whereCreatedOrUpdated<T>(
+    range?: PartialDateRange,
+    options?: FindOptionsWhere<T>,
+  ) {
+    range = DateRange.fill(range);
+    return [
+      {
+        createdAt: range.find(),
+        ...options,
+      },
+      {
+        updatedAt: range.find(),
+        ...options,
+      },
+    ];
+  }
+
   async statusSummary(range?: PartialDateRange): Promise<TicketStatusSummary> {
-    range = DateRange.orCurrentMonth(range);
+    range = DateRange.fill(range);
     return new TicketStatusSummary({
       ...Object.fromEntries(
         await Promise.all(
@@ -48,15 +64,15 @@ export class TicketMetricService {
             status,
             await this.ticketRepository.count({
               where: [
-                {
-                  createdAt: range.toFindOptions(),
-                  status,
-                },
-                {
-                  updatedAt: range.toFindOptions(),
-                  status,
-                },
-                ...(status !== TicketStatus.approved ? [{ status }] : []),
+                ...this.whereCreatedOrUpdated(range, { status }),
+                ...(status !== TicketStatus.approved
+                  ? [
+                      {
+                        createdAt: LessThan(range.endDate!),
+                        status,
+                      },
+                    ]
+                  : []),
               ],
             }),
           ]),
@@ -76,9 +92,9 @@ export class TicketMetricService {
             type,
             await this.ticketRepository.count({
               where: {
-                ...DateRange.orCurrentMonth(range).toWhereOptions(),
+                createdAt: DateRange.fill(range).find(),
                 qtype: type,
-                ...user?.toWhereOptions(),
+                ...user?.where(),
               },
             }),
           ]),
@@ -88,28 +104,26 @@ export class TicketMetricService {
   }
 
   async openSeries(range?: PartialDateRange): Promise<TicketOpenPoint[]> {
-    range = DateRange.orCurrentMonth(range);
+    range = DateRange.fill(range);
     const tickets = await this.ticketRepository.find({
       where: [
-        {
-          createdAt: range.toFindOptions(),
-        },
-        {
-          updatedAt: range.toFindOptions(),
-        },
+        ...this.whereCreatedOrUpdated(range),
         {
           createdAt: LessThan(range.startDate!),
           updatedAt: MoreThan(range.endDate!),
         },
         {
+          createdAt: LessThan(range.endDate!),
           status: Not(TicketStatus.approved),
         },
       ],
     });
 
-    const openTicketCounts: Record<string, number> = {};
+    const counts: Record<string, number> = {};
+    let minDate: DateTime | null = null;
+    let maxDate: DateTime | null = null;
 
-    tickets.forEach((ticket) => {
+    for (const ticket of tickets) {
       const createdDate = DateTime.max(
         DateTime.fromJSDate(ticket.createdAt),
         DateTime.fromJSDate(range.startDate!).startOf('day'),
@@ -130,35 +144,34 @@ export class TicketMetricService {
         date = date.plus({ days: 1 })
       ) {
         const formattedDate = date.toISODate()!;
-        openTicketCounts[formattedDate] =
-          (openTicketCounts[formattedDate] || 0) + 1;
+        counts[formattedDate] = (counts[formattedDate] || 0) + 1;
       }
-    });
+      minDate = DateTime.min(minDate ?? createdDate, createdDate);
+      maxDate = DateTime.max(maxDate ?? endDate, endDate);
+    }
 
-    const dates = Object.keys(openTicketCounts)
-      .map((date) => DateTime.fromISO(date))
-      .sort();
-
-    if (dates.length > 0) {
-      const minDate = dates[0]!;
-      const maxDate = dates[dates.length - 1]!;
-
-      for (
-        let current = minDate;
-        current <= maxDate;
-        current = current.plus({ days: 1 })
-      ) {
-        dates.push(current);
+    if (minDate && maxDate) {
+      for (const date of new DateRange({
+        startDate: minDate.toJSDate(),
+        endDate: maxDate.toJSDate(),
+      }).toDayArray()) {
+        const dateString = date.toISODate()!;
+        if (!(dateString in counts)) {
+          counts[dateString] = 0;
+        }
       }
     }
 
-    return dates.sort().map(
-      (date) =>
-        new TicketOpenPoint({
-          date: date.toJSDate(),
-          count: openTicketCounts[date.toISODate()!] ?? 0,
-        }),
-    );
+    return Object.keys(counts)
+      .map((date) => DateTime.fromISO(date))
+      .sort()
+      .map(
+        (date) =>
+          new TicketOpenPoint({
+            date: date.toJSDate(),
+            count: counts[date.toISODate()!] ?? 0,
+          }),
+      );
   }
 
   async createdSeries(
@@ -167,120 +180,108 @@ export class TicketMetricService {
   ): Promise<TicketCreatedPoint[]> {
     const tickets = await this.ticketRepository.find({
       where: {
-        ...DateRange.orCurrentMonth(range).toWhereOptions(),
-        ...user?.toWhereOptions(),
+        createdAt: DateRange.fill(range).find(),
+        ...user?.where(),
       },
     });
 
     const counts: Record<string, number> = {};
+    let minDate: DateTime | null = null;
+    let maxDate: DateTime | null = null;
 
     for (const ticket of tickets) {
-      const createdDate = DateTime.fromJSDate(ticket.createdAt).toISODate()!;
-      counts[createdDate] = (counts[createdDate] || 0) + 1;
+      const createdDate = DateTime.fromJSDate(ticket.createdAt);
+      const dateString = createdDate.toISODate()!;
+      counts[dateString] = (counts[dateString] || 0) + 1;
+      minDate = DateTime.min(minDate ?? createdDate, createdDate);
+      maxDate = DateTime.max(maxDate ?? createdDate, createdDate);
     }
 
-    const dates = Object.keys(counts)
-      .map((date) => DateTime.fromISO(date))
-      .sort();
-
-    if (dates.length > 0) {
-      const minDate = dates[0]!;
-      const maxDate = dates[dates.length - 1]!;
-
-      for (
-        let current = minDate;
-        current <= maxDate;
-        current = current.plus({ days: 1 })
-      ) {
-        dates.push(current);
+    if (minDate && maxDate) {
+      for (const date of new DateRange({
+        startDate: minDate.toJSDate(),
+        endDate: maxDate.toJSDate(),
+      }).toDayArray()) {
+        const dateString = date.toISODate()!;
+        if (!(dateString in counts)) {
+          counts[dateString] = 0;
+        }
       }
     }
 
-    return dates.sort().map(
-      (date) =>
-        new TicketCreatedPoint({
-          date: date.toJSDate(),
-          count: counts[date.toISODate()!] ?? 0,
-        }),
-    );
+    return Object.keys(counts)
+      .map((date) => DateTime.fromISO(date))
+      .sort()
+      .map(
+        (date) =>
+          new TicketCreatedPoint({
+            date: date.toJSDate(),
+            count: counts[date.toISODate()!] ?? 0,
+          }),
+      );
   }
 
   async closedSeries(
     range?: PartialDateRange,
     user?: TicketClosedUserQuery,
   ): Promise<TicketClosedPoint[]> {
-    range = DateRange.orCurrentMonth(range);
+    range = DateRange.fill(range);
     const tickets = await this.ticketRepository.find({
-      where: [
-        {
-          createdAt: range.toFindOptions(),
-          status: TicketStatus.approved,
-          ...user?.toWhereOptions(),
-        },
-        {
-          updatedAt: range.toFindOptions(),
-          status: TicketStatus.approved,
-          ...user?.toWhereOptions(),
-        },
-      ],
+      where: this.whereCreatedOrUpdated(range, user?.where()),
     });
 
     const counts: Record<string, number> = {};
     const endDate = DateTime.fromJSDate(range.endDate!);
+    let minDate: DateTime | null = null;
+    let maxDate: DateTime | null = null;
 
     for (const ticket of tickets) {
       const closedDate = DateTime.fromJSDate(ticket.updatedAt);
       if (closedDate > endDate) continue;
       const dateString = closedDate.toISODate()!;
       counts[dateString] = (counts[dateString] || 0) + 1;
+      minDate = DateTime.min(minDate ?? closedDate, closedDate);
+      maxDate = DateTime.max(maxDate ?? closedDate, closedDate);
     }
 
-    const dates = Object.keys(counts)
-      .map((date) => DateTime.fromISO(date))
-      .sort();
-
-    if (dates.length > 0) {
-      const minDate = dates[0]!;
-      const maxDate = dates[dates.length - 1]!;
-
+    if (minDate && maxDate) {
       for (
-        let current = minDate;
-        current <= maxDate;
-        current = current.plus({ days: 1 })
+        let currentDate = minDate;
+        currentDate <= maxDate;
+        currentDate = currentDate.plus({ days: 1 })
       ) {
-        dates.push(current);
+        const dateString = currentDate.toISODate()!;
+        if (!(dateString in counts)) {
+          counts[dateString] = 0;
+        }
       }
     }
 
-    return dates.sort().map(
-      (date) =>
-        new TicketClosedPoint({
-          date: date.toJSDate(),
-          count: counts[date.toISODate()!] ?? 0,
-        }),
-    );
+    return Object.keys(counts)
+      .map((date) => DateTime.fromISO(date))
+      .sort()
+      .map(
+        (date) =>
+          new TicketClosedPoint({
+            date: date.toJSDate(),
+            count: counts[date.toISODate()!] ?? 0,
+          }),
+      );
   }
 
   async activitySummary(
     range?: PartialDateRange,
     user?: TicketActivityUserQuery,
   ): Promise<TicketActivityPoint[]> {
-    range = DateRange.orCurrentMonth(range);
+    range = DateRange.fill(range);
 
     const tickets = await this.ticketRepository.find({
-      where: [
-        {
-          createdAt: range.toFindOptions(),
-          ...user?.toWhereOptions(),
-        },
-        {
-          updatedAt: range.toFindOptions(),
-          ...user?.toWhereOptions(),
-        },
-      ],
+      where: this.whereCreatedOrUpdated(range, user?.where()),
     });
 
     const activityCounts: Record<string, number> = {};
+    let minDate: DateTime | null = null;
+    let maxDate: DateTime | null = null;
 
     for (const ticket of tickets) {
       const createdDate = DateTime.fromJSDate(ticket.createdAt)
@@ -299,38 +300,43 @@ export class TicketMetricService {
         const updatedHour = updatedDate.toISO()!;
         activityCounts[updatedHour] = (activityCounts[updatedHour] || 0) + 1;
       }
+
+      minDate = DateTime.min(minDate ?? createdDate, createdDate);
+      maxDate = DateTime.max(
+        maxDate ?? updatedDate ?? createdDate,
+        updatedDate ?? createdDate,
+      );
     }
 
-    const dates = Object.keys(activityCounts)
-      .map((date) => DateTime.fromISO(date))
-      .sort();
-
-    if (dates.length > 0) {
-      const minHour = dates[0]!;
-      const maxHour = dates[dates.length - 1]!.endOf('hour');
-
+    if (minDate && maxDate) {
       for (
-        let currentHour = minHour;
-        currentHour <= maxHour;
-        currentHour = currentHour.plus({ hours: 1 })
+        let currentDate = minDate;
+        currentDate <= maxDate;
+        currentDate = currentDate.plus({ hours: 1 })
       ) {
-        dates.push(currentHour);
+        const dateString = currentDate.toISO()!;
+        if (!(dateString in activityCounts)) {
+          activityCounts[dateString] = 0;
+        }
       }
     }
 
-    return dates.sort().map(
-      (dateTime) =>
-        new TicketActivityPoint({
-          date: dateTime.toJSDate(),
-          count: activityCounts[dateTime.toISO()!] ?? 0,
-        }),
-    );
+    return Object.keys(activityCounts)
+      .map((date) => DateTime.fromISO(date))
+      .sort()
+      .map(
+        (dateTime) =>
+          new TicketActivityPoint({
+            date: dateTime.toJSDate(),
+            count: activityCounts[dateTime.toISO()!] ?? 0,
+          }),
+      );
   }
 
   async ageSeries(range?: PartialDateRange): Promise<TicketAgeSeriesPoint[]> {
-    range = DateRange.orCurrentMonth(range);
+    range = DateRange.fill(range);
     const tickets = await this.ticketRepository.find({
-      where: range.toWhereOptions(),
+      where: range.where(),
     });
 
     const series: Record<string, TicketAgeGroup> = {};
@@ -390,9 +396,9 @@ export class TicketMetricService {
   }
 
   async ageSummary(range?: PartialDateRange): Promise<TicketAgeSummary> {
-    range = DateRange.orCurrentMonth(range);
+    range = DateRange.fill(range);
     const tickets = await this.ticketRepository.find({
-      where: range.toWhereOptions(),
+      where: range.where(),
     });
 
     const ageGroups = new TicketAgeGroup({
@@ -446,7 +452,7 @@ export class TicketMetricService {
     const results = await this.ticketRepository
       .createQueryBuilder('ticket')
       .where({
-        ...DateRange.orCurrentMonth(range).toWhereOptions(),
+        createdAt: DateRange.fill(range).find(),
         handlerId: Not(0),
       })
       .select('ticket.handler_id', 'user_id')
@@ -486,7 +492,7 @@ export class TicketMetricService {
       .select('ticket.creator_id', 'user_id')
       .addSelect('COUNT(ticket.id)', 'total')
       .addSelect('COUNT(DISTINCT DATE(ticket.updated_at))', 'days')
-      .where(DateRange.orCurrentMonth(range).toWhereOptions())
+      .where(DateRange.fill(range).where())
       .groupBy('ticket.creator_id')
       .orderBy('total', 'DESC')
       .take(pages?.limit || PaginationParams.DEFAULT_PAGE_SIZE)

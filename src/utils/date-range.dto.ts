@@ -1,5 +1,6 @@
-import { Type } from 'class-transformer';
-import { IsDate, IsOptional } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsDate, IsOptional, IsTimeZone } from 'class-validator';
+import { DateTime } from 'luxon';
 import {
   Between,
   FindOperator,
@@ -8,46 +9,52 @@ import {
   MoreThanOrEqual,
 } from 'typeorm';
 
-import {
-  getCurrentMonthRange,
-  getDateRangeString,
-  WithCreationDate,
-} from './range';
-import { Raw } from './raw';
-import { DateTime } from 'luxon';
+import { PartialBy, Raw } from './raw';
 
 /**
  * A range of dates, inclusive on both ends.
  * May be missing one or both ends.
  */
 export class PartialDateRange {
-  constructor(value?: Raw<PartialDateRange>) {
-    if (value) {
-      Object.assign(this, value);
-    }
+  constructor(value: Raw<PartialDateRange> = {}) {
+    Object.assign(this, value);
   }
 
   /**
-   * start date for the range, inclusive.
+   * Start date for the range, inclusive.
    */
   @IsOptional()
   @IsDate()
-  @Type(() => Date)
+  @Transform((opts) =>
+    opts.value
+      ? DateTime.fromISO(opts.value, {
+          zone: opts.obj.timezone ?? 'UTC',
+        }).toJSDate()
+      : undefined,
+  )
   startDate?: Date;
 
   /**
-   * end date for the range, inclusive
+   * End date for the range, inclusive
    */
   @IsOptional()
   @IsDate()
-  @Type(() => Date)
+  @Transform((opts) =>
+    opts.value
+      ? DateTime.fromISO(opts.value, {
+          zone: opts.obj.timezone ?? 'UTC',
+        }).toJSDate()
+      : undefined,
+  )
   endDate?: Date;
 
-  static currentMonth(): DateRange {
-    return getCurrentMonthRange();
-  }
+  /**
+   * Target timezone for the date range.
+   */
+  @IsOptional()
+  timezone?: string;
 
-  toFindOptions(): FindOperator<Date> | undefined {
+  find(): FindOperator<Date> | undefined {
     return this.startDate
       ? this.endDate
         ? Between(this.startDate, this.endDate)
@@ -57,14 +64,49 @@ export class PartialDateRange {
         : undefined;
   }
 
-  toWhereOptions(): FindOptionsWhere<WithCreationDate> | undefined {
+  where(): FindOptionsWhere<WithCreationDate> | undefined {
     return {
-      createdAt: this.toFindOptions(),
+      createdAt: this.find(),
     };
   }
 
-  toRangeString(): string {
-    return getDateRangeString(this);
+  /**
+   * Turns a date range into a string fit for an e621 search query.
+   * Inclusive on both ends.
+   */
+  toE621RangeString(): string {
+    let start = '';
+    let end = '';
+
+    if (this.startDate) {
+      start = DateTime.fromJSDate(this.startDate)
+        .minus({
+          days: 1,
+        })
+        // TODO: e6 uses the request timezone, not UTC.
+        // but how would we which timezone that is?
+        .toUTC()
+        .toISODate()!;
+    }
+
+    if (this.endDate) {
+      end = DateTime.fromJSDate(this.endDate)
+        .plus({
+          days: 1,
+        })
+        .toUTC()
+        .toISODate()!;
+    }
+
+    if (start && !end) {
+      return `>${start}`;
+    } else if (!start && end) {
+      return `<${end}`;
+    } else if (start && end) {
+      return `${start}..${end}`;
+    } else {
+      return '';
+    }
   }
 }
 
@@ -72,45 +114,142 @@ export class PartialDateRange {
  * A range of dates, inclusive on both ends.
  */
 export class DateRange extends PartialDateRange {
-  constructor(value: Raw<DateRange>) {
-    super(value);
-  }
-
-  @IsDate()
-  @Type(() => Date)
-  override startDate: Date;
-
-  @IsDate()
-  @Type(() => Date)
-  override endDate: Date;
-
-  /**
-   * Returns the date range, or, if no range is provided, the current month.
-   */
-  static orCurrentMonth(range?: PartialDateRange): DateRange {
-    return new DateRange({
-      ...getCurrentMonthRange(),
-      ...range,
+  constructor(value: PartialBy<Raw<DateRange>, 'timezone'>) {
+    super({
+      timezone: 'UTC',
+      ...value,
     });
   }
 
-  static whereOrCurrentMonth(
-    other?: FindOptionsWhere<WithCreationDate>,
-  ): FindOptionsWhere<WithCreationDate> {
-    return {
-      ...getCurrentMonthRange().toWhereOptions(),
-      ...other,
-    };
+  @IsDate()
+  @Transform((opts) =>
+    DateTime.fromISO(opts.value, {
+      zone: opts.obj.timezone ?? 'UTC',
+    }).toJSDate(),
+  )
+  override startDate: Date;
+
+  @IsDate()
+  @Transform((opts) =>
+    DateTime.fromISO(opts.value, {
+      zone: opts.obj.timezone ?? 'UTC',
+    }).toJSDate(),
+  )
+  override endDate: Date;
+
+  @IsTimeZone()
+  override timezone: string;
+
+  /**
+   * Fills in missing dates in a partial date range.
+   * If both dates are missing, defaults to the current month.
+   * If only one date is missing, defaults to the start or end of the month.
+   */
+  static fill(range?: Raw<PartialDateRange>): DateRange {
+    if (range?.startDate && range?.endDate) {
+      return new DateRange({
+        startDate: range.startDate,
+        endDate: range.endDate,
+        timezone: range.timezone,
+      });
+    } else if (range?.startDate) {
+      return new DateRange({
+        startDate: range.startDate,
+        endDate: DateTime.fromJSDate(range.startDate, {
+          zone: range.timezone ?? 'UTC',
+        })
+          .endOf('month')
+          .toJSDate(),
+        timezone: range.timezone,
+      });
+    } else if (range?.endDate) {
+      return new DateRange({
+        startDate: DateTime.fromJSDate(range.endDate, {
+          zone: range.timezone ?? 'UTC',
+        })
+          .startOf('month')
+          .toJSDate(),
+        endDate: range.endDate,
+        timezone: range.timezone,
+      });
+    }
+
+    return DateRange.currentMonth();
   }
 
-  override toFindOptions(): FindOperator<Date> {
-    return super.toFindOptions()!;
+  /**
+   * Returns a date range for the last `months` months.
+   */
+  static recentMonths(months: number = 3): DateRange {
+    const now = DateTime.now();
+    return new DateRange({
+      startDate: now
+        .minus({
+          months,
+        })
+        .startOf('month')
+        .toJSDate(),
+      endDate: now.endOf('month').toJSDate(),
+    });
   }
 
-  override toWhereOptions(): FindOptionsWhere<WithCreationDate> {
-    return super.toWhereOptions()!;
+  /**
+   * Returns a date range for the current month.
+   */
+  static currentMonth(): DateRange {
+    return new DateRange(DateRange.recentMonths(0));
+  }
+
+  toDayArray(): DateTime[] {
+    const startDate = DateTime.fromJSDate(this.startDate);
+    const endDate = DateTime.fromJSDate(this.endDate);
+    const range = [];
+    for (let date = startDate; date <= endDate; date = date.plus({ days: 1 })) {
+      range.push(date);
+    }
+    return range;
+  }
+
+  override find(): FindOperator<Date> {
+    return super.find()!;
+  }
+
+  override where(): FindOptionsWhere<WithCreationDate> {
+    return super.where()!;
   }
 }
+
+export interface WithCreationDate {
+  createdAt: Date;
+}
+
+/**
+ * Finds the least recent creation date in a list of items.
+ */
+export const findLowestDate = <T extends WithCreationDate>(
+  items: T[] | undefined,
+): T | undefined => {
+  if (items === undefined || items.length === 0) return undefined;
+  return items.reduce((prev, current) =>
+    DateTime.fromJSDate(prev.createdAt) < DateTime.fromJSDate(current.createdAt)
+      ? prev
+      : current,
+  );
+};
+
+/**
+ * Finds the most recent creation date in a list of items.
+ */
+export const findHighestDate = <T extends WithCreationDate>(
+  items: T[] | undefined,
+): T | undefined => {
+  if (items === undefined || items.length === 0) return undefined;
+  return items.reduce((prev, current) =>
+    DateTime.fromJSDate(prev.createdAt) > DateTime.fromJSDate(current.createdAt)
+      ? prev
+      : current,
+  );
+};
 
 export const dateRangeBetween = (dates: DateTime[]): DateTime[] => {
   if (dates.length === 0) return [];
