@@ -1,7 +1,7 @@
 import {
-  LoggerService,
-  Injectable,
   ConsoleLogger,
+  Injectable,
+  LoggerService,
   LogLevel,
 } from '@nestjs/common';
 
