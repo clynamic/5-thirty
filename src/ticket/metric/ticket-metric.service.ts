@@ -289,7 +289,7 @@ export class TicketMetricService {
     }
 
     return Object.keys(activityCounts)
-      .map((date) => DateTime.fromISO(date))
+      .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
       .sort()
       .map(
         (dateTime) =>
