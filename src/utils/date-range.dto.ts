@@ -200,16 +200,6 @@ export class DateRange extends PartialDateRange {
     return new DateRange(DateRange.recentMonths(0));
   }
 
-  toDayArray(): DateTime[] {
-    const startDate = DateTime.fromJSDate(this.startDate);
-    const endDate = DateTime.fromJSDate(this.endDate);
-    const range = [];
-    for (let date = startDate; date <= endDate; date = date.plus({ days: 1 })) {
-      range.push(date);
-    }
-    return range;
-  }
-
   override find(): FindOperator<Date> {
     return super.find()!;
   }
@@ -251,15 +241,27 @@ export const findHighestDate = <T extends WithCreationDate>(
   );
 };
 
-export const dateRangeBetween = (dates: DateTime[]): DateTime[] => {
-  if (dates.length === 0) return [];
-
-  const minDate = DateTime.min(...dates).startOf('day');
-  const maxDate = DateTime.max(...dates).startOf('day');
-
-  const daysDiff = maxDate.diff(minDate, 'days').days;
-
-  return Array.from({ length: daysDiff + 1 }, (_, i) =>
-    minDate.plus({ days: i }),
+export const fillDateCounts = (
+  range: PartialDateRange,
+  counts: Record<string, number>,
+): void => {
+  const dates = Object.keys(counts).map((date) =>
+    DateTime.fromISO(date, { zone: range.timezone }),
   );
+
+  if (dates.length === 0) return;
+
+  const minDate = DateTime.min(...dates);
+  const maxDate = DateTime.max(...dates);
+
+  for (
+    let currentDate = minDate;
+    currentDate <= maxDate;
+    currentDate = currentDate.plus({ days: 1 })
+  ) {
+    const dateString = currentDate.toISODate()!;
+    if (!(dateString in counts)) {
+      counts[dateString] = 0;
+    }
+  }
 };

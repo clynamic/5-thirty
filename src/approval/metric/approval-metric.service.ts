@@ -5,6 +5,7 @@ import { UserHeadService } from 'src/user/head/user-head.service';
 import {
   convertKeysToCamelCase,
   DateRange,
+  fillDateCounts,
   PaginationParams,
   PartialDateRange,
 } from 'src/utils';
@@ -38,9 +39,10 @@ export class ApprovalMetricService {
     range?: PartialDateRange,
     user?: ApprovalCountUserQuery,
   ): Promise<ApprovalCountPoint[]> {
+    range = DateRange.fill(range);
     const approvals = await this.approvalRepository.find({
       where: {
-        ...DateRange.fill(range).where(),
+        ...range.where(),
         ...user?.toWhereOptions(),
       },
     });
@@ -48,12 +50,17 @@ export class ApprovalMetricService {
     const counts: Record<string, number> = {};
 
     for (const approval of approvals) {
-      const date = DateTime.fromJSDate(approval.createdAt).toISODate()!;
-      counts[date] = (counts[date] || 0) + 1;
+      const createdDate = DateTime.fromJSDate(approval.createdAt, {
+        zone: range.timezone,
+      });
+      const dateString = createdDate.toISODate()!;
+      counts[dateString] = (counts[dateString] || 0) + 1;
     }
 
+    fillDateCounts(range, counts);
+
     return Object.keys(counts)
-      .map((date) => DateTime.fromISO(date))
+      .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
       .sort()
       .map(
         (date) =>

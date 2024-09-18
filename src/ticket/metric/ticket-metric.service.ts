@@ -6,6 +6,7 @@ import { UserHeadService } from 'src/user/head/user-head.service';
 import {
   convertKeysToCamelCase,
   DateRange,
+  fillDateCounts,
   PaginationParams,
   PartialDateRange,
 } from 'src/utils';
@@ -120,20 +121,20 @@ export class TicketMetricService {
     });
 
     const counts: Record<string, number> = {};
-    let minDate: DateTime | null = null;
-    let maxDate: DateTime | null = null;
 
     for (const ticket of tickets) {
       const createdDate = DateTime.max(
-        DateTime.fromJSDate(ticket.createdAt),
+        DateTime.fromJSDate(ticket.createdAt, { zone: range.timezone }).startOf(
+          'day',
+        ),
         DateTime.fromJSDate(range.startDate!).startOf('day'),
       );
       const endDate = DateTime.min(
         (ticket.status === TicketStatus.approved
-          ? DateTime.fromJSDate(ticket.updatedAt)
+          ? DateTime.fromJSDate(ticket.updatedAt, { zone: range.timezone })
               // we exclude the day the ticket was closed
               .minus({ days: 1 })
-          : DateTime.now()
+          : DateTime.now().setZone(range.timezone)
         ).endOf('day'),
         DateTime.fromJSDate(range.endDate!),
       );
@@ -146,24 +147,12 @@ export class TicketMetricService {
         const formattedDate = date.toISODate()!;
         counts[formattedDate] = (counts[formattedDate] || 0) + 1;
       }
-      minDate = DateTime.min(minDate ?? createdDate, createdDate);
-      maxDate = DateTime.max(maxDate ?? endDate, endDate);
     }
 
-    if (minDate && maxDate) {
-      for (const date of new DateRange({
-        startDate: minDate.toJSDate(),
-        endDate: maxDate.toJSDate(),
-      }).toDayArray()) {
-        const dateString = date.toISODate()!;
-        if (!(dateString in counts)) {
-          counts[dateString] = 0;
-        }
-      }
-    }
+    fillDateCounts(range, counts);
 
     return Object.keys(counts)
-      .map((date) => DateTime.fromISO(date))
+      .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
       .sort()
       .map(
         (date) =>
@@ -178,39 +167,28 @@ export class TicketMetricService {
     range?: PartialDateRange,
     user?: TicketCreatedUserQuery,
   ): Promise<TicketCreatedPoint[]> {
+    range = DateRange.fill(range);
     const tickets = await this.ticketRepository.find({
       where: {
-        createdAt: DateRange.fill(range).find(),
+        createdAt: range.find(),
         ...user?.where(),
       },
     });
 
     const counts: Record<string, number> = {};
-    let minDate: DateTime | null = null;
-    let maxDate: DateTime | null = null;
 
     for (const ticket of tickets) {
-      const createdDate = DateTime.fromJSDate(ticket.createdAt);
+      const createdDate = DateTime.fromJSDate(ticket.createdAt, {
+        zone: range.timezone,
+      });
       const dateString = createdDate.toISODate()!;
       counts[dateString] = (counts[dateString] || 0) + 1;
-      minDate = DateTime.min(minDate ?? createdDate, createdDate);
-      maxDate = DateTime.max(maxDate ?? createdDate, createdDate);
     }
 
-    if (minDate && maxDate) {
-      for (const date of new DateRange({
-        startDate: minDate.toJSDate(),
-        endDate: maxDate.toJSDate(),
-      }).toDayArray()) {
-        const dateString = date.toISODate()!;
-        if (!(dateString in counts)) {
-          counts[dateString] = 0;
-        }
-      }
-    }
+    fillDateCounts(range, counts);
 
     return Object.keys(counts)
-      .map((date) => DateTime.fromISO(date))
+      .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
       .sort()
       .map(
         (date) =>
@@ -232,33 +210,20 @@ export class TicketMetricService {
 
     const counts: Record<string, number> = {};
     const endDate = DateTime.fromJSDate(range.endDate!);
-    let minDate: DateTime | null = null;
-    let maxDate: DateTime | null = null;
 
     for (const ticket of tickets) {
-      const closedDate = DateTime.fromJSDate(ticket.updatedAt);
+      const closedDate = DateTime.fromJSDate(ticket.updatedAt, {
+        zone: range.timezone,
+      });
       if (closedDate > endDate) continue;
       const dateString = closedDate.toISODate()!;
       counts[dateString] = (counts[dateString] || 0) + 1;
-      minDate = DateTime.min(minDate ?? closedDate, closedDate);
-      maxDate = DateTime.max(maxDate ?? closedDate, closedDate);
     }
 
-    if (minDate && maxDate) {
-      for (
-        let currentDate = minDate;
-        currentDate <= maxDate;
-        currentDate = currentDate.plus({ days: 1 })
-      ) {
-        const dateString = currentDate.toISODate()!;
-        if (!(dateString in counts)) {
-          counts[dateString] = 0;
-        }
-      }
-    }
+    fillDateCounts(range, counts);
 
     return Object.keys(counts)
-      .map((date) => DateTime.fromISO(date))
+      .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
       .sort()
       .map(
         (date) =>
@@ -284,11 +249,13 @@ export class TicketMetricService {
     let maxDate: DateTime | null = null;
 
     for (const ticket of tickets) {
-      const createdDate = DateTime.fromJSDate(ticket.createdAt)
+      const createdDate = DateTime.fromJSDate(ticket.createdAt, {
+        zone: range.timezone,
+      })
         .set({ year: 1970, month: 1, day: 1 })
         .startOf('hour');
       const updatedDate = ticket.updatedAt
-        ? DateTime.fromJSDate(ticket.updatedAt)
+        ? DateTime.fromJSDate(ticket.updatedAt, { zone: range.timezone })
             .set({ year: 1970, month: 1, day: 1 })
             .startOf('hour')
         : null;
@@ -346,10 +313,11 @@ export class TicketMetricService {
         ticket.status === TicketStatus.approved
           ? ticket.updatedAt
           : range.endDate!,
+        { zone: range.timezone },
       );
       const ageInDays = endDate.diff(
         DateTime.fromJSDate(ticket.createdAt),
-        'day',
+        'days',
       ).days;
       const closedDate = endDate.toISODate()!;
 
@@ -384,7 +352,7 @@ export class TicketMetricService {
     }
 
     return Object.keys(series)
-      .map((date) => DateTime.fromISO(date))
+      .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
       .sort()
       .map(
         (date) =>
@@ -415,6 +383,7 @@ export class TicketMetricService {
         ticket.status === TicketStatus.approved
           ? ticket.updatedAt
           : range.endDate!,
+        { zone: range.timezone },
       );
       const ageInDays = endDate.diff(
         DateTime.fromJSDate(ticket.createdAt),
