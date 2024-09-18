@@ -16,6 +16,7 @@ import { UserModule } from 'src/user/user.module';
 import { AppConfigModule } from './config.module';
 import { CorsConfigModule } from './cors.module';
 import { DatabaseModule } from './database.module';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -34,7 +35,7 @@ import { DatabaseModule } from './database.module';
     PostModule,
     FlagModule,
   ],
-  controllers: [],
+  controllers: [HealthController],
   providers: [],
 })
 export class AppModule {}

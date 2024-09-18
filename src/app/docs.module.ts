@@ -10,6 +10,7 @@ export class DocsModule {
       .setTitle(name)
       .setDescription(description)
       .setVersion(version)
+      .setExternalDoc('/swagger.json', '/swagger.json')
       .addBearerAuth()
       .build();
 

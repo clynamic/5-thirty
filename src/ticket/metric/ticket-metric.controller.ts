@@ -10,7 +10,6 @@ import { UserLevel } from 'src/auth/auth.level';
 import { PaginationParams, PartialDateRange } from 'src/utils';
 
 import {
-  TicketReporterSummary,
   TicketActivityPoint,
   TicketActivityUserQuery,
   TicketAgeSeriesPoint,
@@ -21,6 +20,7 @@ import {
   TicketCreatedUserQuery,
   TicketHandlerSummary,
   TicketOpenPoint,
+  TicketReporterSummary,
   TicketStatusSummary,
   TicketTypeSummary,
   TicketTypeSummaryUserQuery,
