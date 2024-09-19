@@ -1,9 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PaginationParams } from 'src/utils';
 
-import { Job, JobCancelError, JobInfo } from './job.entity';
+import { JobInfo } from './job.dto';
+import { Job, JobCancelError } from './job.entity';
 
 @Injectable()
 export class JobService {
+  private jobs: Job<unknown>[] = [];
   private queue: Job<unknown>[] = [];
   private isProcessing = false;
   private readonly logger = new Logger(JobService.name);
@@ -20,6 +23,7 @@ export class JobService {
     }
 
     this.queue.push(job as Job<unknown>);
+    this.jobs.push(job as Job<unknown>);
     this.logger.log(
       `[#${job.id}] [${job.title}] added to the queue. (${this.queue.length} jobs in queue)`,
     );
@@ -69,7 +73,13 @@ export class JobService {
     }
   }
 
-  list(): JobInfo[] {
-    return this.queue.map((job) => job.info);
+  list(pages?: PaginationParams): JobInfo[] {
+    return this.jobs
+      .map((job) => job.info)
+      .sort((a, b) => b.id - a.id)
+      .slice(
+        PaginationParams.calculateOffset(pages),
+        pages?.limit ?? PaginationParams.DEFAULT_PAGE_SIZE,
+      );
   }
 }

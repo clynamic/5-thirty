@@ -1,3 +1,5 @@
+import { JobInfo } from './job.dto';
+
 export class JobCancelError extends Error {
   constructor(reason?: string) {
     super(`Job has been cancelled${reason ? `: ${reason}` : '.'}`);
@@ -116,18 +118,4 @@ export class Job<MetadataType = undefined> {
       this._endedAt = new Date();
     }
   }
-}
-
-export class JobInfo {
-  constructor(value: JobInfo) {
-    Object.assign(this, value);
-  }
-
-  id: number;
-  title: string;
-  key?: string;
-  startedAt?: Date;
-  endedAt?: Date;
-  succeeded: boolean;
-  cancelled: boolean;
 }
