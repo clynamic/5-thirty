@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ApprovalEntity } from 'src/approval/approval.entity';
 import { ItemType } from 'src/cache/cache.entity';
+import { FlagEntity } from 'src/flag/flag.entity';
 import { ManifestEntity } from 'src/manifest/manifest.entity';
 import { TicketEntity } from 'src/ticket/ticket.entity';
 import { WithId } from 'src/utils';
@@ -18,11 +19,14 @@ export class HealthService {
     private readonly approvalRepository: Repository<ApprovalEntity>,
     @InjectRepository(TicketEntity)
     private readonly ticketRepository: Repository<TicketEntity>,
+    @InjectRepository(FlagEntity)
+    private readonly flagRepository: Repository<FlagEntity>,
   ) {}
 
   private itemRepositories: Partial<Record<ItemType, Repository<WithId>>> = {
     [ItemType.tickets]: this.ticketRepository,
     [ItemType.approvals]: this.approvalRepository,
+    [ItemType.flags]: this.flagRepository,
   };
 
   async getManifestHealth(): Promise<ManifestHealth[]> {
