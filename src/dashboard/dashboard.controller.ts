@@ -5,7 +5,7 @@ import {
   NotFoundException,
   Param,
   Post,
-  Request,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -45,7 +45,7 @@ export class DashboardController {
   })
   async get(
     @Param('type') type: DashboardType,
-    @Request() req: { user: DecodedJwt },
+    @Req() req: { user: DecodedJwt },
   ): Promise<DashboardConfig> {
     const result = await this.dashboardService.get(req.user.userId, type);
     if (!result) {
@@ -66,7 +66,7 @@ export class DashboardController {
   })
   async update(
     @Param('type') type: DashboardType,
-    @Request() req: { user: DecodedJwt },
+    @Req() req: { user: DecodedJwt },
     @Body() update: DashboardUpdate,
   ): Promise<void> {
     await this.dashboardService.update(req.user.userId, type, update);

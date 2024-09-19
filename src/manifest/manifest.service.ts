@@ -1,16 +1,24 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { DateTime } from 'luxon';
+import { ItemType } from 'src/cache/cache.entity';
 import {
   DateRange,
   findHighestId,
   findLowestDate,
   findLowestId,
 } from 'src/utils';
-import { Between, LessThan, MoreThan, Repository } from 'typeorm';
+import {
+  Between,
+  FindOptionsWhere,
+  In,
+  LessThan,
+  MoreThan,
+  Repository,
+} from 'typeorm';
 
+import { ManifestQuery } from './manifest.dto';
 import {
   ManifestEntity,
-  ManifestType,
   Order,
   OrderBoundary,
   OrderResults,
@@ -23,37 +31,66 @@ export class ManifestService {
     private readonly manifestRepository: Repository<ManifestEntity>,
   ) {}
 
+  async get(id: number): Promise<ManifestEntity | null> {
+    return this.manifestRepository.findOne({
+      where: { id },
+    });
+  }
+
   save = this.manifestRepository.save.bind(this.manifestRepository);
 
   delete = this.manifestRepository.remove.bind(this.manifestRepository);
 
-  async listByRange(
-    type: ManifestType,
-    range: DateRange,
+  private whereInRange(
+    range?: DateRange,
+    options?: FindOptionsWhere<ManifestEntity>,
+  ): FindOptionsWhere<ManifestEntity>[] {
+    return [
+      ...(range
+        ? [
+            {
+              ...options,
+              startDate: Between(range.startDate, range.endDate),
+            },
+            {
+              ...options,
+              endDate: Between(range.startDate, range.endDate),
+            },
+            {
+              ...options,
+              startDate: LessThan(range.startDate),
+              endDate: MoreThan(range.endDate),
+            },
+          ]
+        : [
+            {
+              ...options,
+            },
+          ]),
+    ];
+  }
+
+  async list(
+    range?: DateRange,
+    query?: ManifestQuery,
   ): Promise<ManifestEntity[]> {
     return this.manifestRepository.find({
-      where: [
-        {
-          type,
-          startDate: Between(range.startDate, range.endDate),
-        },
-        {
-          type,
-          endDate: Between(range.startDate, range.endDate),
-        },
-        {
-          type,
-          startDate: LessThan(range.startDate),
-          endDate: MoreThan(range.endDate),
-        },
-      ],
+      where: query?.id
+        ? { id: query.id }
+        : this.whereInRange(range, query?.type ? { type: In(query.type) } : {}),
     });
   }
 
-  async listOrdersByRange(
-    type: ManifestType,
+  async listByRange(
+    type: ItemType,
     range: DateRange,
-  ): Promise<Order[]> {
+  ): Promise<ManifestEntity[]> {
+    return this.manifestRepository.find({
+      where: this.whereInRange(range, { type }),
+    });
+  }
+
+  async listOrdersByRange(type: ItemType, range: DateRange): Promise<Order[]> {
     const manifests = await this.listByRange(type, range);
     return ManifestService.computeOrders(manifests, range);
   }
@@ -272,7 +309,7 @@ export class ManifestService {
     }
   }
 
-  async mergeInRange(type: ManifestType, range: DateRange): Promise<void> {
+  async mergeInRange(type: ItemType, range: DateRange): Promise<void> {
     const manifests = await this.listByRange(type, range);
 
     manifests.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());

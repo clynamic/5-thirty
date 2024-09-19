@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 import * as crypto from 'crypto';
+import { isEqual } from 'lodash';
 import { User, user } from 'src/api/e621';
+import { AppConfigKeys } from 'src/app/config.module';
 
 import { UserCredentials } from './auth.dto';
 import { encodeCredentials, readJwtSecret } from './auth.utils';
@@ -87,4 +89,18 @@ export class AuthService {
       throw error;
     }
   }
+
+  readServerAdminCredentials = (): UserCredentials => ({
+    username: this.configService.getOrThrow(AppConfigKeys.E621_GLOBAL_USERNAME),
+    password: this.configService.getOrThrow(AppConfigKeys.E621_GLOBAL_API_KEY),
+  });
+
+  isServerAdmin = (user: DecodedJwt): boolean =>
+    isEqual(user.credentials, this.readServerAdminCredentials());
+
+  getServerAxiosConfig = (): AxiosRequestConfig => ({
+    headers: {
+      Authorization: encodeCredentials(this.readServerAdminCredentials()),
+    },
+  });
 }

@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DateTime } from 'luxon';
 import { postsMany, usersMany } from 'src/api';
-import { AxiosAuthService } from 'src/auth/axios-auth.service';
+import { AuthService } from 'src/auth/auth.service';
 import { PostEntity } from 'src/post/post.entity';
 import { convertKeysToCamelCase } from 'src/utils';
 import { In, IsNull, MoreThan, Not, Repository } from 'typeorm';
@@ -22,7 +22,7 @@ export class UserHeadService {
     private readonly userRepository: Repository<UserEntity>,
     @InjectRepository(PostEntity)
     private readonly postRepository: Repository<PostEntity>,
-    private readonly axiosAuthService: AxiosAuthService,
+    private readonly authService: AuthService,
   ) {}
 
   get(id: number, params?: UserHeadParams): Promise<UserHead>;
@@ -58,7 +58,7 @@ export class UserHeadService {
       if (missing.length > 0) {
         const fetched = await usersMany(
           missing,
-          this.axiosAuthService.getGlobalConfig(),
+          this.authService.getServerAxiosConfig(),
         );
 
         const rest = await this.userRepository.save(
@@ -97,7 +97,7 @@ export class UserHeadService {
       if (missing.length > 0) {
         const fetched = await postsMany(
           missing,
-          this.axiosAuthService.getGlobalConfig(),
+          this.authService.getServerAxiosConfig(),
         );
 
         const rest = await this.postRepository.save(

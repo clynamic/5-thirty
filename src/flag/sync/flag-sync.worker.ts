@@ -2,10 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PostFlag, postFlags } from 'src/api';
 import { MAX_API_LIMIT } from 'src/api/http/params';
-import { AxiosAuthService } from 'src/auth/axios-auth.service';
+import { AuthService } from 'src/auth/auth.service';
+import { ItemType } from 'src/cache/cache.entity';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
-import { ManifestType } from 'src/manifest/manifest.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 import {
   convertKeysToCamelCase,
@@ -27,7 +27,7 @@ import { FlagSyncService } from './flag-sync.service';
 export class FlagSyncWorker {
   constructor(
     private readonly jobService: JobService,
-    private readonly axiosAuthService: AxiosAuthService,
+    private readonly authService: AuthService,
     private readonly flagSyncService: FlagSyncService,
     private readonly manifestService: ManifestService,
   ) {}
@@ -39,14 +39,14 @@ export class FlagSyncWorker {
     this.jobService.add(
       new Job({
         title: 'Flag Orders Sync',
-        key: `/${ManifestType.flags}/orders`,
+        key: `/${ItemType.flags}/orders`,
         execute: async ({ cancelToken }) => {
-          const axiosConfig = this.axiosAuthService.getGlobalConfig();
+          const axiosConfig = this.authService.getServerAxiosConfig();
 
           const recentlyRange = DateRange.recentMonths();
 
           const orders = await this.manifestService.listOrdersByRange(
-            ManifestType.flags,
+            ItemType.flags,
             recentlyRange,
           );
 
@@ -107,7 +107,7 @@ export class FlagSyncWorker {
               );
 
               this.manifestService.saveResults({
-                type: ManifestType.flags,
+                type: ItemType.flags,
                 order,
                 items: stored,
               });

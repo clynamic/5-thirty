@@ -1,6 +1,5 @@
 import { UserProfile } from 'src/api';
-import { CacheEntity, CacheLink } from 'src/cache/cache.entity';
-import { ManifestType } from 'src/manifest/manifest.entity';
+import { CacheEntity, CacheLink, ItemType } from 'src/cache/cache.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('user_profiles')
@@ -94,7 +93,7 @@ export class UserProfileEntity extends CacheLink {
 export class UserProfileCacheEntity extends CacheEntity {
   constructor(value: UserProfile) {
     super({
-      id: `/${ManifestType.userProfiles}/${value.id}`,
+      id: `/${ItemType.userProfiles}/${value.id}`,
       value,
     });
   }

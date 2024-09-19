@@ -1,14 +1,6 @@
+import { ItemType } from 'src/cache/cache.entity';
 import { DateRange, WithCreationDate, WithId } from 'src/utils';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-
-export enum ManifestType {
-  approvals = 'approvals',
-  tickets = 'tickets',
-  posts = 'posts',
-  users = 'users',
-  userProfiles = 'user_profiles',
-  flags = 'flags',
-}
 
 @Entity('manifests')
 export class ManifestEntity {
@@ -21,8 +13,8 @@ export class ManifestEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ type: 'text', enum: ManifestType })
-  type: ManifestType;
+  @Column({ type: 'text', enum: ItemType })
+  type: ItemType;
 
   @Column({ type: 'datetime' })
   startDate: Date;
@@ -91,7 +83,7 @@ export type OrderBoundary = Date | ManifestEntity;
 export type OrderResult = WithId & WithCreationDate;
 
 export interface OrderResults {
-  type: ManifestType;
+  type: ItemType;
   order: Order;
   items: OrderResult[];
   exhausted?: boolean;

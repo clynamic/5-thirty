@@ -1,9 +1,23 @@
-import { Body, Controller, Post, UnauthorizedException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { JsonWebTokenError } from '@nestjs/jwt';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { TokenValidation, UserCredentials } from './auth.dto';
-import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './auth.guard';
+import { AuthService, DecodedJwt } from './auth.service';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -24,7 +38,7 @@ export class AuthController {
   async login(@Body() credentials: UserCredentials): Promise<string> {
     const user = await this.authService.getUserForCredentials(credentials);
     if (!user) throw new UnauthorizedException('Invalid credentials');
-    return await this.authService.createToken(credentials, user);
+    return this.authService.createToken(credentials, user);
   }
 
   @Post('validate')
@@ -49,5 +63,22 @@ export class AuthController {
         throw error;
       }
     }
+  }
+
+  @Get('is-admin')
+  @ApiOperation({
+    summary: 'Check if the current user is admin',
+    description: 'Check if the current user is admin',
+    operationId: 'isAdmin',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Whether the user is admin',
+    type: Boolean,
+  })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async isAdmin(@Req() req: { user: DecodedJwt }): Promise<boolean> {
+    return this.authService.isServerAdmin(req.user);
   }
 }

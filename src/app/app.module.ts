@@ -7,6 +7,7 @@ import { AuthModule } from 'src/auth/auth.module';
 import { CacheModule } from 'src/cache/cache.module';
 import { DashboardModule } from 'src/dashboard/dashboard.module';
 import { FlagModule } from 'src/flag/flag.module';
+import { HealthModule } from 'src/health/health.module';
 import { JobModule } from 'src/job/job.module';
 import { ManifestModule } from 'src/manifest/manifest.module';
 import { PostModule } from 'src/post/post.module';
@@ -16,7 +17,6 @@ import { UserModule } from 'src/user/user.module';
 import { AppConfigModule } from './config.module';
 import { CorsConfigModule } from './cors.module';
 import { DatabaseModule } from './database.module';
-import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -26,6 +26,7 @@ import { HealthController } from './health.controller';
     DatabaseModule,
     AuthModule,
     JobModule,
+    HealthModule,
     DashboardModule,
     CacheModule,
     ManifestModule,
@@ -35,7 +36,7 @@ import { HealthController } from './health.controller';
     PostModule,
     FlagModule,
   ],
-  controllers: [HealthController],
+  controllers: [],
   providers: [],
 })
 export class AppModule {}

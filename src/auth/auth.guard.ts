@@ -4,14 +4,11 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { SetMetadata } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import _ from 'lodash';
 
 import { getUserLevelFromString, UserLevel } from './auth.level';
-import { DecodedJwt } from './auth.service';
-import { readServerAdminCredentials } from './auth.utils';
+import { AuthService, DecodedJwt } from './auth.service';
 
 export const AuthLevel = (level: UserLevel) => SetMetadata('level', level);
 
@@ -48,20 +45,16 @@ export class RolesGuard extends JwtAuthGuard {
 
 @Injectable()
 export class ServerAdminGuard extends JwtAuthGuard {
-  constructor(private configService: ConfigService) {
+  constructor(private authService: AuthService) {
     super();
   }
 
   override async canActivate(context: ExecutionContext): Promise<boolean> {
     if (!(await super.canActivate(context))) return false;
 
-    const serverAdminCredentials = readServerAdminCredentials(
-      this.configService,
-    );
-
     const user = context.switchToHttp().getRequest().user as DecodedJwt;
 
-    if (_.isEqual(user.credentials, serverAdminCredentials)) {
+    if (this.authService.isServerAdmin(user)) {
       return true;
     } else {
       throw new ForbiddenException('Insufficient level');

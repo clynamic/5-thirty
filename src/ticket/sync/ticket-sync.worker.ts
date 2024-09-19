@@ -3,10 +3,10 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import _ from 'lodash';
 import { Ticket, tickets, TicketStatus } from 'src/api/e621';
 import { MAX_API_LIMIT } from 'src/api/http/params';
-import { AxiosAuthService } from 'src/auth/axios-auth.service';
+import { AuthService } from 'src/auth/auth.service';
+import { ItemType } from 'src/cache/cache.entity';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
-import { ManifestType } from 'src/manifest/manifest.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 import {
   NotabilityType,
@@ -34,7 +34,7 @@ import { FindIncompleteParams, TicketSyncService } from './ticket-sync.service';
 export class TicketSyncWorker {
   constructor(
     private readonly jobService: JobService,
-    private readonly axiosAuthService: AxiosAuthService,
+    private readonly authService: AuthService,
     private readonly ticketSyncService: TicketSyncService,
     private readonly userSyncService: UserSyncService,
     private readonly manifestService: ManifestService,
@@ -47,15 +47,15 @@ export class TicketSyncWorker {
     this.jobService.add(
       new Job({
         title: 'Ticket Orders Sync',
-        key: `/${ManifestType.tickets}/orders`,
+        key: `/${ItemType.tickets}/orders`,
         execute: async ({ cancelToken }) => {
-          const axiosConfig = this.axiosAuthService.getGlobalConfig();
+          const axiosConfig = this.authService.getServerAxiosConfig();
 
           const recentlyRange = DateRange.recentMonths();
 
           const orders = ManifestService.splitLongOrders(
             await this.manifestService.listOrdersByRange(
-              ManifestType.tickets,
+              ItemType.tickets,
               recentlyRange,
             ),
             14,
@@ -133,7 +133,7 @@ export class TicketSyncWorker {
             );
 
             this.manifestService.saveResults({
-              type: ManifestType.tickets,
+              type: ItemType.tickets,
               order,
               items: stored,
               exhausted: true,
@@ -141,7 +141,7 @@ export class TicketSyncWorker {
           }
 
           await this.manifestService.mergeInRange(
-            ManifestType.tickets,
+            ItemType.tickets,
             recentlyRange,
           );
         },
@@ -154,7 +154,7 @@ export class TicketSyncWorker {
     this.jobService.add(
       new Job({
         title: 'Ticket Incomplete Sync',
-        key: `/${ManifestType.tickets}/incomplete`,
+        key: `/${ItemType.tickets}/incomplete`,
         execute: async ({ cancelToken }) => {
           const incomplete = await this.ticketSyncService.findIncomplete(
             new FindIncompleteParams({
@@ -177,7 +177,7 @@ export class TicketSyncWorker {
                   limit: 100,
                   'search[id]': chunk.join(','),
                 },
-                this.axiosAuthService.getGlobalConfig(),
+                this.authService.getServerAxiosConfig(),
               ),
             );
 
@@ -209,7 +209,7 @@ export class TicketSyncWorker {
     this.jobService.add(
       new Job({
         title: 'Ticket Notable Sync',
-        key: `/${ManifestType.tickets}/notable`,
+        key: `/${ItemType.tickets}/notable`,
         execute: async () => {
           const reporters = await this.ticketSyncService.findReporters();
 

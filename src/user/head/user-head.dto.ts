@@ -1,8 +1,8 @@
+import { Raw } from 'src/utils';
+
 export class UserHead {
-  constructor(partial?: Partial<UserHead>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+  constructor(value: Raw<UserHead>) {
+    Object.assign(this, value);
   }
 
   /**

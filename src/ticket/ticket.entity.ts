@@ -1,6 +1,5 @@
 import { Ticket, TicketQtype, TicketStatus } from 'src/api/e621';
-import { CacheEntity, CacheLink } from 'src/cache/cache.entity';
-import { ManifestType } from 'src/manifest/manifest.entity';
+import { CacheEntity, CacheLink, ItemType } from 'src/cache/cache.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @Entity('tickets')
@@ -57,7 +56,7 @@ export class TicketEntity extends CacheLink {
 export class TicketCacheEntity extends CacheEntity {
   constructor(value: Ticket) {
     super({
-      id: `/${ManifestType.tickets}/${value.id}`,
+      id: `/${ItemType.tickets}/${value.id}`,
       value,
     });
   }

@@ -46,7 +46,7 @@ export class UserSyncService {
       });
     }
 
-    return await queryBuilder
+    return queryBuilder
       .getRawMany<{
         id: number;
         avatar_id: number;

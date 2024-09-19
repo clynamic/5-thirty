@@ -7,7 +7,6 @@ import { JwtAuthGuard, RolesGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './auth.stragety';
 import { readJwtSecret } from './auth.utils';
-import { AxiosAuthService } from './axios-auth.service';
 
 @Global()
 @Module({
@@ -21,13 +20,7 @@ import { AxiosAuthService } from './axios-auth.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    AxiosAuthService,
-    JwtStrategy,
-    JwtAuthGuard,
-    RolesGuard,
-  ],
-  exports: [JwtModule, AxiosAuthService, JwtAuthGuard, RolesGuard],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
+  exports: [AuthService, JwtModule, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}

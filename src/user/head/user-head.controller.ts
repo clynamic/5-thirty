@@ -29,7 +29,7 @@ export class UserHeadController {
     status: 200,
     type: UserHead,
   })
-  getUserHead(@Param('id') id: number): Promise<UserHead> {
+  get(@Param('id') id: number): Promise<UserHead> {
     return this.userHeadService.get(id, {
       fetchMissing: true,
       staleness: 7 * 24 * 60 * 60 * 1000,

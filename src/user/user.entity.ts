@@ -1,6 +1,5 @@
 import { User } from 'src/api/e621';
-import { CacheEntity, CacheLink } from 'src/cache/cache.entity';
-import { ManifestType } from 'src/manifest/manifest.entity';
+import { CacheEntity, CacheLink, ItemType } from 'src/cache/cache.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('users')
@@ -46,7 +45,7 @@ export class UserEntity extends CacheLink {
 export class UserCacheEntity extends CacheEntity {
   constructor(value: User) {
     super({
-      id: `/${ManifestType.users}/${value.id}`,
+      id: `/${ItemType.users}/${value.id}`,
       value,
     });
   }

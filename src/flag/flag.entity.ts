@@ -1,6 +1,5 @@
 import { PostFlag, PostFlagType } from 'src/api';
-import { CacheEntity, CacheLink } from 'src/cache/cache.entity';
-import { ManifestType } from 'src/manifest/manifest.entity';
+import { CacheEntity, CacheLink, ItemType } from 'src/cache/cache.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @Entity('flags')
@@ -41,7 +40,7 @@ export class FlagEntity extends CacheLink {
 export class FlagCacheEntity extends CacheEntity {
   constructor(value: PostFlag) {
     super({
-      id: `/${ManifestType.flags}/${value.id}`,
+      id: `/${ItemType.flags}/${value.id}`,
       value,
     });
   }

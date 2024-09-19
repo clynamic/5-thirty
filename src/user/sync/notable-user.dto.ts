@@ -1,13 +1,20 @@
+import { IsNumber, IsOptional } from 'class-validator';
+import { Raw } from 'src/utils';
+
 import { NotabilityType } from './notable-user.entity';
 
 export class NotableUserQuery {
-  constructor(partial?: Partial<NotableUserQuery>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+  constructor(value: Raw<NotableUserQuery> = {}) {
+    Object.assign(this, value);
   }
 
+  @IsOptional()
+  @IsNumber()
   id?: number;
+
+  @IsOptional()
   type?: NotabilityType[];
+
+  @IsOptional()
   newerThan?: Date;
 }

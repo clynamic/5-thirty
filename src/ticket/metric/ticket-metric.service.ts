@@ -39,10 +39,10 @@ export class TicketMetricService {
     private readonly userHeadService: UserHeadService,
   ) {}
 
-  private whereCreatedOrUpdated<T>(
+  private whereCreatedOrUpdated(
     range?: PartialDateRange,
-    options?: FindOptionsWhere<T>,
-  ) {
+    options?: FindOptionsWhere<TicketEntity>,
+  ): FindOptionsWhere<TicketEntity>[] {
     range = DateRange.fill(range);
     return [
       {

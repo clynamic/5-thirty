@@ -2,10 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Approval, postApprovals } from 'src/api/e621';
 import { MAX_API_LIMIT } from 'src/api/http/params';
-import { AxiosAuthService } from 'src/auth/axios-auth.service';
+import { AuthService } from 'src/auth/auth.service';
+import { ItemType } from 'src/cache/cache.entity';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
-import { ManifestType } from 'src/manifest/manifest.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 import {
   convertKeysToCamelCase,
@@ -28,7 +28,7 @@ import { ApprovalSyncService } from './approval-sync.service';
 export class ApprovalSyncWorker {
   constructor(
     private readonly jobService: JobService,
-    private readonly axiosAuthService: AxiosAuthService,
+    private readonly authService: AuthService,
     private readonly approvalSyncService: ApprovalSyncService,
     private readonly manifestService: ManifestService,
   ) {}
@@ -40,14 +40,14 @@ export class ApprovalSyncWorker {
     this.jobService.add(
       new Job({
         title: 'Approval Orders Sync',
-        key: `/${ManifestType.approvals}/orders`,
+        key: `/${ItemType.approvals}/orders`,
         execute: async ({ cancelToken }) => {
-          const axiosConfig = this.axiosAuthService.getGlobalConfig();
+          const axiosConfig = this.authService.getServerAxiosConfig();
 
           const recentlyRange = DateRange.recentMonths();
 
           const orders = await this.manifestService.listOrdersByRange(
-            ManifestType.approvals,
+            ItemType.approvals,
             recentlyRange,
           );
 
@@ -112,7 +112,7 @@ export class ApprovalSyncWorker {
               );
 
               await this.manifestService.saveResults({
-                type: ManifestType.approvals,
+                type: ItemType.approvals,
                 order,
                 items: stored,
               });

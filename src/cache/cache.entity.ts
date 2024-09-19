@@ -7,6 +7,15 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export enum ItemType {
+  approvals = 'approvals',
+  tickets = 'tickets',
+  posts = 'posts',
+  users = 'users',
+  userProfiles = 'user_profiles',
+  flags = 'flags',
+}
+
 export interface CacheValue {
   [key: string]: any;
 }

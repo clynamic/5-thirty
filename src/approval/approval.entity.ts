@@ -1,6 +1,5 @@
 import { Approval } from 'src/api/e621';
-import { CacheEntity, CacheLink } from 'src/cache/cache.entity';
-import { ManifestType } from 'src/manifest/manifest.entity';
+import { CacheEntity, CacheLink, ItemType } from 'src/cache/cache.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @Entity('approvals')
@@ -29,7 +28,7 @@ export class ApprovalEntity extends CacheLink {
 export class ApprovalCacheEntity extends CacheEntity {
   constructor(value: Approval) {
     super({
-      id: `/${ManifestType.approvals}/${value.id}`,
+      id: `/${ItemType.approvals}/${value.id}`,
       value,
     });
   }
