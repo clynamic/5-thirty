@@ -236,8 +236,6 @@ export class ManifestService {
   }: OrderResults): Promise<void> {
     const currentDate = DateTime.now().startOf('day');
 
-    exhausted = exhausted ?? items.length === 0;
-
     if (!exhausted) {
       // we assume that data is paginated newest to oldest,
       // therefore we create an upper boundary.

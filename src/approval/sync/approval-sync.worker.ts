@@ -111,13 +111,16 @@ export class ApprovalSyncWorker {
                 }`,
               );
 
+              const exhausted = result.length < MAX_API_LIMIT;
+
               await this.manifestService.saveResults({
                 type: ItemType.approvals,
                 order,
                 items: stored,
+                exhausted,
               });
 
-              if (result.length === 0) {
+              if (exhausted) {
                 const gaps = findContiguityGaps(results);
                 // as long as the gaps are not too big, one or two IDs, we can ignore them
                 // these can be accounted for by the deleted (?) approvals

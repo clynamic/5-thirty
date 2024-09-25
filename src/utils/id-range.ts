@@ -15,7 +15,7 @@ export const getIdRangeString = (
   } else if (!start && end) {
     return `<${end}`;
   } else if (start && end) {
-    return `${start}...${end}`;
+    return `${start}..${end}`;
   }
   return '';
 };

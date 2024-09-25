@@ -106,13 +106,16 @@ export class FlagSyncWorker {
                 }`,
               );
 
+              const exhausted = result.length < MAX_API_LIMIT;
+
               this.manifestService.saveResults({
                 type: ItemType.flags,
                 order,
                 items: stored,
+                exhausted,
               });
 
-              if (result.length === 0) {
+              if (exhausted) {
                 const gaps = findContiguityGaps(results);
                 if (gaps.length > 0) {
                   this.logger.warn(

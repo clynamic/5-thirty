@@ -86,7 +86,7 @@ export interface OrderResults {
   type: ItemType;
   order: Order;
   items: OrderResult[];
-  exhausted?: boolean;
+  exhausted: boolean;
 }
 
 export type OrderSide = 'start' | 'end';
