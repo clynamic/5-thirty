@@ -11,15 +11,9 @@ export class ApprovalSyncService {
     private readonly approvalRepository: Repository<ApprovalEntity>,
   ) {}
 
-  create(value: ApprovalEntity): Promise<ApprovalEntity>;
-  create(value: ApprovalEntity[]): Promise<ApprovalEntity[]>;
-
-  async create(
-    value: ApprovalEntity | ApprovalEntity[],
-  ): Promise<ApprovalEntity | ApprovalEntity[]> {
-    if (Array.isArray(value)) {
-      return this.approvalRepository.save(value);
-    }
-    return this.approvalRepository.save(value);
+  async get(id: number): Promise<ApprovalEntity | null> {
+    return this.approvalRepository.findOneBy({ id });
   }
+
+  save = this.approvalRepository.save.bind(this.approvalRepository);
 }

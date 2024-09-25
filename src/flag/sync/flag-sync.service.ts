@@ -11,5 +11,5 @@ export class FlagSyncService {
     private readonly flagRepository: Repository<FlagEntity>,
   ) {}
 
-  create = this.flagRepository.save.bind(this.flagRepository);
+  save = this.flagRepository.save.bind(this.flagRepository);
 }

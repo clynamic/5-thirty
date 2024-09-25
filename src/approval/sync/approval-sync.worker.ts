@@ -87,7 +87,7 @@ export class ApprovalSyncWorker {
 
               results.push(...result);
 
-              const stored = await this.approvalSyncService.create(
+              const stored = await this.approvalSyncService.save(
                 result.map(
                   (approval) =>
                     new ApprovalEntity({

@@ -76,6 +76,6 @@ export class ManifestController {
   async delete(@Param('id') id: number) {
     const item = await this.manifestService.get(id);
     if (!item) return;
-    return this.manifestService.delete([item]);
+    return this.manifestService.remove([item]);
   }
 }

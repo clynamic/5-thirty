@@ -82,7 +82,7 @@ export class FlagSyncWorker {
 
               results.push(...result);
 
-              const stored = await this.flagSyncService.create(
+              const stored = await this.flagSyncService.save(
                 result.map(
                   (flag) =>
                     new FlagEntity({

@@ -39,7 +39,7 @@ export class ManifestService {
 
   save = this.manifestRepository.save.bind(this.manifestRepository);
 
-  delete = this.manifestRepository.remove.bind(this.manifestRepository);
+  remove = this.manifestRepository.remove.bind(this.manifestRepository);
 
   private whereInRange(
     range?: DateRange,
@@ -324,7 +324,7 @@ export class ManifestService {
           DateTime.fromJSDate(manifestB.endDate) <
           DateTime.fromJSDate(manifestA.endDate)
         ) {
-          await this.delete(manifestB);
+          await this.remove(manifestB);
           i++;
         } else if (
           DateTime.fromJSDate(manifestB.startDate) <
