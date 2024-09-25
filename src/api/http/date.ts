@@ -1,19 +1,13 @@
 import { AxiosResponse } from 'axios';
-
-// year-month-day or full ISO 8601
-const dateStringFormat = new RegExp(
-  '^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,3})?Z?)?$',
-);
-
-const isDateString = (value: unknown): boolean =>
-  typeof value === 'string' && dateStringFormat.test(value);
+import { DateTime } from 'luxon';
 
 const deserializeDates = <T>(body: T): T => {
   if (body === null || (typeof body !== 'object' && typeof body !== 'string'))
     return body;
 
   if (typeof body === 'string') {
-    if (isDateString(body)) return new Date(body) as unknown as T;
+    const date = DateTime.fromISO(body);
+    if (date.isValid) return date.toJSDate() as unknown as T;
     return body;
   }
 
