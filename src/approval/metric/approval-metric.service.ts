@@ -13,6 +13,8 @@ import { Repository } from 'typeorm';
 
 import { ApprovalEntity } from '../approval.entity';
 import {
+  ApprovalActivityPoint,
+  ApprovalActivityUserQuery,
   ApprovalCountPoint,
   ApprovalCountSummary,
   ApprovalCountUserQuery,
@@ -43,7 +45,7 @@ export class ApprovalMetricService {
     const approvals = await this.approvalRepository.find({
       where: {
         ...range.where(),
-        ...user?.toWhereOptions(),
+        ...user?.where(),
       },
     });
 
@@ -67,6 +69,62 @@ export class ApprovalMetricService {
           new ApprovalCountPoint({
             date: date.toJSDate(),
             count: counts[date.toISODate()!]!,
+          }),
+      );
+  }
+
+  async approvalActivity(
+    range?: PartialDateRange,
+    user?: ApprovalActivityUserQuery,
+  ): Promise<ApprovalActivityPoint[]> {
+    range = DateRange.fill(range);
+
+    const approvals = await this.approvalRepository.find({
+      where: {
+        ...range.where(),
+        ...user?.where(),
+      },
+    });
+
+    const counts: Record<string, number> = {};
+    let minDate: DateTime | null = null;
+    let maxDate: DateTime | null = null;
+
+    for (const approval of approvals) {
+      const createdDate = DateTime.fromJSDate(approval.createdAt, {
+        zone: range.timezone,
+      })
+        .set({ year: 1970, month: 1, day: 1 })
+        .startOf('hour');
+
+      const createdHour = createdDate.toISO()!;
+      counts[createdHour] = (counts[createdHour] || 0) + 1;
+
+      minDate = DateTime.min(minDate ?? createdDate, createdDate);
+      maxDate = DateTime.max(maxDate ?? createdDate, createdDate);
+    }
+
+    if (minDate && maxDate) {
+      for (
+        let currentDate = minDate;
+        currentDate <= maxDate;
+        currentDate = currentDate.plus({ hours: 1 })
+      ) {
+        const dateString = currentDate.toISO()!;
+        if (!(dateString in counts)) {
+          counts[dateString] = 0;
+        }
+      }
+    }
+
+    return Object.keys(counts)
+      .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
+      .sort()
+      .map(
+        (dateTime) =>
+          new ApprovalActivityPoint({
+            date: dateTime.toJSDate(),
+            count: counts[dateTime.toISO()!] ?? 0,
           }),
       );
   }

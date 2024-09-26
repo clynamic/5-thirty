@@ -19,7 +19,7 @@ export class ApprovalCountUserQuery {
 
   userId: number;
 
-  toWhereOptions(): FindOptionsWhere<ApprovalEntity> {
+  where(): FindOptionsWhere<ApprovalEntity> {
     return {
       ...(this.userId && { userId: this.userId }),
     };
@@ -28,6 +28,29 @@ export class ApprovalCountUserQuery {
 
 export class ApprovalCountPoint {
   constructor(value: ApprovalCountPoint) {
+    Object.assign(this, value);
+  }
+
+  date: Date;
+  count: number;
+}
+
+export class ApprovalActivityUserQuery {
+  constructor(value: Raw<ApprovalActivityUserQuery>) {
+    Object.assign(this, value);
+  }
+
+  userId: number;
+
+  where(): FindOptionsWhere<ApprovalEntity> {
+    return {
+      ...(this.userId && { userId: this.userId }),
+    };
+  }
+}
+
+export class ApprovalActivityPoint {
+  constructor(value: ApprovalActivityPoint) {
     Object.assign(this, value);
   }
 

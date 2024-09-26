@@ -9,7 +9,11 @@ import { AuthLevel, RolesGuard } from 'src/auth/auth.guard';
 import { UserLevel } from 'src/auth/auth.level';
 import { PartialDateRange } from 'src/utils';
 
-import { PostDeletedPoint, PostDeletedUserQuery } from './flag-metric.dto';
+import {
+  PostDeletedActivityPoint,
+  PostDeletedPoint,
+  PostDeletedUserQuery,
+} from './flag-metric.dto';
 import { FlagMetricService } from './flag-metric.service';
 
 @ApiTags('Flags')
@@ -19,6 +23,43 @@ import { FlagMetricService } from './flag-metric.service';
 @ApiBearerAuth()
 export class FlagMetricController {
   constructor(private readonly flagMetricService: FlagMetricService) {}
+
+  @Get('deletion/activity/summary')
+  @ApiOperation({
+    summary: 'Post deletion activity summary',
+    description: 'Get total post deletion counts for a given date range',
+    operationId: 'getDeletionActivitySummary',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [PostDeletedActivityPoint],
+  })
+  async deletionActivity(
+    @Query() range?: PartialDateRange,
+  ): Promise<PostDeletedActivityPoint[]> {
+    return this.flagMetricService.deletionActivity(range);
+  }
+
+  @Get('deletion/activity/summary/:userId')
+  @ApiOperation({
+    summary: 'Post deletion activity summary by deleter',
+    description:
+      'Get total post deletion counts for a given date range by deleter',
+    operationId: 'getDeletionActivitySummaryByDeleter',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [PostDeletedActivityPoint],
+  })
+  async deletionActivityByDeleter(
+    @Param('userId') userId: number,
+    @Query() range?: PartialDateRange,
+  ): Promise<PostDeletedActivityPoint[]> {
+    return this.flagMetricService.deletionActivity(
+      range,
+      new PostDeletedUserQuery({ creatorId: userId }),
+    );
+  }
 
   @Get('deletion/series')
   @ApiOperation({

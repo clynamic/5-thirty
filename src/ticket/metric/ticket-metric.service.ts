@@ -244,7 +244,7 @@ export class TicketMetricService {
       where: this.whereCreatedOrUpdated(range, user?.where()),
     });
 
-    const activityCounts: Record<string, number> = {};
+    const counts: Record<string, number> = {};
     let minDate: DateTime | null = null;
     let maxDate: DateTime | null = null;
 
@@ -261,11 +261,11 @@ export class TicketMetricService {
         : null;
 
       const createdHour = createdDate.toISO()!;
-      activityCounts[createdHour] = (activityCounts[createdHour] || 0) + 1;
+      counts[createdHour] = (counts[createdHour] || 0) + 1;
 
       if (updatedDate) {
         const updatedHour = updatedDate.toISO()!;
-        activityCounts[updatedHour] = (activityCounts[updatedHour] || 0) + 1;
+        counts[updatedHour] = (counts[updatedHour] || 0) + 1;
       }
 
       minDate = DateTime.min(minDate ?? createdDate, createdDate);
@@ -282,20 +282,20 @@ export class TicketMetricService {
         currentDate = currentDate.plus({ hours: 1 })
       ) {
         const dateString = currentDate.toISO()!;
-        if (!(dateString in activityCounts)) {
-          activityCounts[dateString] = 0;
+        if (!(dateString in counts)) {
+          counts[dateString] = 0;
         }
       }
     }
 
-    return Object.keys(activityCounts)
+    return Object.keys(counts)
       .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
       .sort()
       .map(
         (dateTime) =>
           new TicketActivityPoint({
             date: dateTime.toJSDate(),
-            count: activityCounts[dateTime.toISO()!] ?? 0,
+            count: counts[dateTime.toISO()!] ?? 0,
           }),
       );
   }

@@ -10,6 +10,7 @@ import { UserLevel } from 'src/auth/auth.level';
 import { PaginationParams, PartialDateRange } from 'src/utils';
 
 import {
+  ApprovalActivityPoint,
   ApprovalCountPoint,
   ApprovalCountSummary,
   ApprovalCountUserQuery,
@@ -73,6 +74,43 @@ export class ApprovalMetricController {
     @Query() range?: PartialDateRange,
   ): Promise<ApprovalCountPoint[]> {
     return this.approvalMetricService.countSeries(
+      range,
+      new ApprovalCountUserQuery({ userId: approverId }),
+    );
+  }
+
+  @Get('activity/summary')
+  @ApiOperation({
+    summary: 'Approval activity summary',
+    description: 'Get total approval activity counts for a given date range',
+    operationId: 'getApprovalActivitySummary',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [ApprovalActivityPoint],
+  })
+  async activitySummary(
+    @Query() range?: PartialDateRange,
+  ): Promise<ApprovalActivityPoint[]> {
+    return this.approvalMetricService.approvalActivity(range);
+  }
+
+  @Get('activity/summary/:approverId')
+  @ApiOperation({
+    summary: 'Approval activity summary by approver',
+    description:
+      'Get total approval activity counts for a given date range by approver',
+    operationId: 'getApprovalActivitySummaryByApprover',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [ApprovalActivityPoint],
+  })
+  async activitySummaryByApprover(
+    @Param('approverId') approverId: number,
+    @Query() range?: PartialDateRange,
+  ): Promise<ApprovalActivityPoint[]> {
+    return this.approvalMetricService.approvalActivity(
       range,
       new ApprovalCountUserQuery({ userId: approverId }),
     );
