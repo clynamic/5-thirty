@@ -260,10 +260,12 @@ export class TicketMetricService {
             .startOf('hour')
         : null;
 
-      const createdHour = createdDate.toISO()!;
-      counts[createdHour] = (counts[createdHour] || 0) + 1;
+      if (!user || ticket.creatorId === user.reporterId) {
+        const createdHour = createdDate.toISO()!;
+        counts[createdHour] = (counts[createdHour] || 0) + 1;
+      }
 
-      if (updatedDate) {
+      if (updatedDate && (!user || ticket.handlerId === user.claimantId)) {
         const updatedHour = updatedDate.toISO()!;
         counts[updatedHour] = (counts[updatedHour] || 0) + 1;
       }
