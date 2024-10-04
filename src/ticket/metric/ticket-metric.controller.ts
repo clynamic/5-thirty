@@ -28,7 +28,7 @@ import {
 import { TicketMetricService } from './ticket-metric.service';
 
 @ApiTags('Tickets')
-@Controller('tickets/metrics')
+@Controller('metrics/tickets')
 @UseGuards(RolesGuard)
 @AuthLevel(UserLevel.Janitor)
 @ApiBearerAuth()
@@ -68,18 +68,18 @@ export class TicketMetricController {
     return this.ticketMetricService.typeSummary(range);
   }
 
-  @Get('type/summary/handler/:claimantId')
+  @Get('type/summary/by/handler/:claimantId')
   @ApiOperation({
     summary: 'Ticket type summary for a handler',
     description:
       'Get ticket types counts for a given date range for a specific handler',
-    operationId: 'getTicketTypeSummaryForHandler',
+    operationId: 'getTicketTypeSummaryByHandler',
   })
   @ApiResponse({
     status: 200,
     type: TicketTypeSummary,
   })
-  async typeSummaryForHandler(
+  async typeSummaryByHandler(
     @Param('claimantId') claimantId: number,
     @Query() range?: PartialDateRange,
   ): Promise<TicketTypeSummary> {
@@ -121,18 +121,18 @@ export class TicketMetricController {
     return this.ticketMetricService.createdSeries(range);
   }
 
-  @Get('created/series/:repoterId')
+  @Get('created/series/by/reporter/:repoterId')
   @ApiOperation({
-    summary: 'Ticket created series for a reporter',
+    summary: 'Ticket created series by reporter',
     description:
       'Get a time series of created tickets for a given date range for a specific reporter',
-    operationId: 'getTicketCreatedSeriesForReporter',
+    operationId: 'getTicketCreatedSeriesByReporter',
   })
   @ApiResponse({
     status: 200,
     type: [SeriesCountPoint],
   })
-  async createdSeriesForReporter(
+  async createdSeriesByReporter(
     @Param('repoterId') reporterId: number,
     @Query() range?: PartialDateRange,
   ): Promise<SeriesCountPoint[]> {
@@ -158,12 +158,12 @@ export class TicketMetricController {
     return this.ticketMetricService.closedSeries(range);
   }
 
-  @Get('closed/series/:handlerId')
+  @Get('closed/series/by/handler/:handlerId')
   @ApiOperation({
-    summary: 'Ticket closed series for a handler',
+    summary: 'Ticket closed series by handler',
     description:
       'Get a time series of closed tickets for a given date range for a specific handler',
-    operationId: 'getTicketClosedSeriesForHandler',
+    operationId: 'getTicketClosedSeriesByHandler',
   })
   @ApiResponse({
     status: 200,
@@ -181,9 +181,9 @@ export class TicketMetricController {
 
   @Get('activity/summary')
   @ApiOperation({
-    summary: 'Ticket activity summary',
+    summary: 'Ticket summary series',
     description:
-      'Get a summary of ticket activity per hour for a given date range',
+      'Get a hourly summary of ticket activity for a given date range',
     operationId: 'getTicketActivitySummary',
   })
   @ApiResponse({
@@ -196,18 +196,18 @@ export class TicketMetricController {
     return this.ticketMetricService.activitySummary(range);
   }
 
-  @Get('activity/summary/handler/:claimantId')
+  @Get('activity/summary/by/handler/:claimantId')
   @ApiOperation({
-    summary: 'Ticket activity summary for a handler',
+    summary: 'Ticket activity summary by handler',
     description:
-      'Get a summary of ticket activity per hour for a given date range for a specific handler',
-    operationId: 'getTicketActivitySummaryForHandler',
+      'Get a hourly summary of ticket activity for a given date range for a specific handler',
+    operationId: 'getTicketActivitySummaryByHandler',
   })
   @ApiResponse({
     status: 200,
     type: [SeriesCountPoint],
   })
-  async activitySummaryForHandler(
+  async activitySummaryByHandler(
     @Param('claimantId') claimantId: number,
     @Query() range?: PartialDateRange,
   ): Promise<SeriesCountPoint[]> {
@@ -253,8 +253,8 @@ export class TicketMetricController {
   @ApiOperation({
     summary: 'Handler summary',
     description:
-      'Get a summary of the top 20 ticket handlers (claimed and handled tickets) for a given date range',
-    operationId: 'getHandlerSummary',
+      'Get a summary of ticket handling counts for a given date range',
+    operationId: 'getTicketHandlerSummary',
   })
   @ApiResponse({
     status: 200,
@@ -271,8 +271,8 @@ export class TicketMetricController {
   @ApiOperation({
     summary: 'Reporter summary',
     description:
-      'Get a summary of the top 20 reporters (submitted tickets) for a given date range',
-    operationId: 'getReporterSummary',
+      'Get a summary of ticket reporting counts for a given date range',
+    operationId: 'getTicketReporterSummary',
   })
   @ApiResponse({
     status: 200,

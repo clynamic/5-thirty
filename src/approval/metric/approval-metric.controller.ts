@@ -24,7 +24,7 @@ import { ApprovalMetricService } from './approval-metric.service';
 @UseGuards(RolesGuard)
 @AuthLevel(UserLevel.Janitor)
 @ApiBearerAuth()
-@Controller('approvals/metrics')
+@Controller('metrics/approvals')
 export class ApprovalMetricController {
   constructor(private readonly approvalMetricService: ApprovalMetricService) {}
 
@@ -60,7 +60,7 @@ export class ApprovalMetricController {
     return this.approvalMetricService.countSeries(range);
   }
 
-  @Get('count/series/:approverId')
+  @Get('count/series/by/approver/:approverId')
   @ApiOperation({
     summary: 'Approval count series by approver',
     description:
@@ -84,8 +84,9 @@ export class ApprovalMetricController {
   @Get('activity/summary')
   @ApiOperation({
     summary: 'Approval activity summary',
-    description: 'Get total approval activity counts for a given date range',
-    operationId: 'getApprovalActivitySummary',
+    description:
+      'Get a hourly summary of approval activity for a given date range',
+    operationId: 'getApprovalActivitySeries',
   })
   @ApiResponse({
     status: 200,
@@ -94,14 +95,14 @@ export class ApprovalMetricController {
   async activitySummary(
     @Query() range?: PartialDateRange,
   ): Promise<SeriesCountPoint[]> {
-    return this.approvalMetricService.approvalActivity(range);
+    return this.approvalMetricService.activitySummary(range);
   }
 
-  @Get('activity/summary/:approverId')
+  @Get('activity/summary/by/approver/:approverId')
   @ApiOperation({
     summary: 'Approval activity summary by approver',
     description:
-      'Get total approval activity counts for a given date range by approver',
+      'Get a hourly summary of approval activity for a given date range by approver',
     operationId: 'getApprovalActivitySummaryByApprover',
   })
   @ApiResponse({
@@ -112,7 +113,7 @@ export class ApprovalMetricController {
     @Param('approverId') approverId: number,
     @Query() range?: PartialDateRange,
   ): Promise<SeriesCountPoint[]> {
-    return this.approvalMetricService.approvalActivity(
+    return this.approvalMetricService.activitySummary(
       range,
       new ApprovalCountUserQuery({ userId: approverId }),
     );
@@ -122,7 +123,7 @@ export class ApprovalMetricController {
   @ApiOperation({
     summary: 'Approver summary',
     description:
-      'Get a summary of the top 20 approvers by approval count for a given date range',
+      'Get a summary of approvals by approver for a given date range',
     operationId: 'getApproverSummary',
   })
   @ApiResponse({

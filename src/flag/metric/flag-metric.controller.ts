@@ -13,49 +13,12 @@ import { PostDeletedUserQuery } from './flag-metric.dto';
 import { FlagMetricService } from './flag-metric.service';
 
 @ApiTags('Flags')
-@Controller('flags/metric')
+@Controller('metrics/flags')
 @UseGuards(RolesGuard)
 @AuthLevel(UserLevel.Janitor)
 @ApiBearerAuth()
 export class FlagMetricController {
   constructor(private readonly flagMetricService: FlagMetricService) {}
-
-  @Get('deletion/activity/summary')
-  @ApiOperation({
-    summary: 'Post deletion activity summary',
-    description: 'Get total post deletion counts for a given date range',
-    operationId: 'getDeletionActivitySummary',
-  })
-  @ApiResponse({
-    status: 200,
-    type: [SeriesCountPoint],
-  })
-  async deletionActivity(
-    @Query() range?: PartialDateRange,
-  ): Promise<SeriesCountPoint[]> {
-    return this.flagMetricService.deletionActivity(range);
-  }
-
-  @Get('deletion/activity/summary/:userId')
-  @ApiOperation({
-    summary: 'Post deletion activity summary by deleter',
-    description:
-      'Get total post deletion counts for a given date range by deleter',
-    operationId: 'getDeletionActivitySummaryByDeleter',
-  })
-  @ApiResponse({
-    status: 200,
-    type: [SeriesCountPoint],
-  })
-  async deletionActivityByDeleter(
-    @Param('userId') userId: number,
-    @Query() range?: PartialDateRange,
-  ): Promise<SeriesCountPoint[]> {
-    return this.flagMetricService.deletionActivity(
-      range,
-      new PostDeletedUserQuery({ creatorId: userId }),
-    );
-  }
 
   @Get('deletion/series')
   @ApiOperation({
@@ -74,22 +37,60 @@ export class FlagMetricController {
     return this.flagMetricService.deletionSeries(range);
   }
 
-  @Get('deletion/series/:userId')
+  @Get('deletion/series/by/deleter/:userId')
   @ApiOperation({
-    summary: 'Post deletion series by user',
+    summary: 'Post deletion series by deleter',
     description:
-      'Get a time series of post deletion counts for a given date range by user',
-    operationId: 'getDeletionSeriesByUser',
+      'Get a time series of post deletion counts for a given date range by deleter',
+    operationId: 'getDeletionSeriesByDeleter',
   })
   @ApiResponse({
     status: 200,
     type: [SeriesCountPoint],
   })
-  async deletionSeriesByUser(
+  async deletionSeriesByDeleter(
     @Param('userId') userId: number,
     @Query() range?: PartialDateRange,
   ): Promise<SeriesCountPoint[]> {
     return this.flagMetricService.deletionSeries(
+      range,
+      new PostDeletedUserQuery({ creatorId: userId }),
+    );
+  }
+
+  @Get('deletion/activity/summary')
+  @ApiOperation({
+    summary: 'Post deletion activity summary',
+    description:
+      'Get a hourly summary of post deletion counts for a given date range',
+    operationId: 'getDeletionActivitySummary',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [SeriesCountPoint],
+  })
+  async deletionActivitySummary(
+    @Query() range?: PartialDateRange,
+  ): Promise<SeriesCountPoint[]> {
+    return this.flagMetricService.deletionActivitySummary(range);
+  }
+
+  @Get('deletion/activity/summary/by/deleter/:userId')
+  @ApiOperation({
+    summary: 'Post deletion activity summary by deleter',
+    description:
+      'Get a hourly summary of post deletion counts for a given date range by deleter',
+    operationId: 'getDeletionActivitySummaryByDeleter',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [SeriesCountPoint],
+  })
+  async deletionActivitySummaryByDeleter(
+    @Param('userId') userId: number,
+    @Query() range?: PartialDateRange,
+  ): Promise<SeriesCountPoint[]> {
+    return this.flagMetricService.deletionActivitySummary(
       range,
       new PostDeletedUserQuery({ creatorId: userId }),
     );

@@ -11,7 +11,7 @@ import { PaginationParams } from 'src/utils';
 import { JobInfo } from './job.dto';
 import { JobService } from './job.service';
 
-@ApiTags('Job')
+@ApiTags('Jobs')
 @Controller('jobs')
 @UseGuards(ServerAdminGuard)
 @ApiBearerAuth()

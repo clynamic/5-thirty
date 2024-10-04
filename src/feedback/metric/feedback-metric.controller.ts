@@ -15,11 +15,11 @@ import {
 } from './feedback-metric.dto';
 import { FeedbackMetricService } from './feedback-metric.service';
 
-@ApiTags('Feedback')
+@ApiTags('Feedbacks')
 @UseGuards(RolesGuard)
 @AuthLevel(UserLevel.Janitor)
 @ApiBearerAuth()
-@Controller('feedback/metrics')
+@Controller('metrics/feedbacks')
 export class FeedbackMetricController {
   constructor(private readonly feedbackMetricService: FeedbackMetricService) {}
 

@@ -21,8 +21,8 @@ import { DashboardConfig, DashboardUpdate } from './dashboard.dto';
 import { DashboardType } from './dashboard.entity';
 import { DashboardService } from './dashboard.service';
 
-@ApiTags('Dashboard')
-@Controller('dashboard')
+@ApiTags('Dashboards')
+@Controller('dashboards')
 @UseGuards(RolesGuard)
 @ApiBearerAuth()
 export class DashboardController {

@@ -21,7 +21,7 @@ export class FlagMetricService {
     private readonly flagRepository: Repository<FlagEntity>,
   ) {}
 
-  async deletionActivity(
+  async deletionActivitySummary(
     range?: PartialDateRange,
     user?: PostDeletedUserQuery,
   ): Promise<SeriesCountPoint[]> {

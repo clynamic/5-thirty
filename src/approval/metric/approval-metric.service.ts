@@ -73,7 +73,7 @@ export class ApprovalMetricService {
       );
   }
 
-  async approvalActivity(
+  async activitySummary(
     range?: PartialDateRange,
     user?: ApprovalActivityUserQuery,
   ): Promise<SeriesCountPoint[]> {

@@ -19,7 +19,7 @@ import { DateRange } from 'src/utils';
 import { Manifest, ManifestQuery } from './manifest.dto';
 import { ManifestService } from './manifest.service';
 
-@ApiTags('Manifest')
+@ApiTags('Manifests')
 @Controller('manifests')
 @UseGuards(ServerAdminGuard)
 @ApiBearerAuth()
