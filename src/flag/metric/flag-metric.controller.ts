@@ -7,13 +7,9 @@ import {
 } from '@nestjs/swagger';
 import { AuthLevel, RolesGuard } from 'src/auth/auth.guard';
 import { UserLevel } from 'src/auth/auth.level';
-import { PartialDateRange } from 'src/utils';
+import { PartialDateRange, SeriesCountPoint } from 'src/utils';
 
-import {
-  PostDeletedActivityPoint,
-  PostDeletedPoint,
-  PostDeletedUserQuery,
-} from './flag-metric.dto';
+import { PostDeletedUserQuery } from './flag-metric.dto';
 import { FlagMetricService } from './flag-metric.service';
 
 @ApiTags('Flags')
@@ -32,11 +28,11 @@ export class FlagMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [PostDeletedActivityPoint],
+    type: [SeriesCountPoint],
   })
   async deletionActivity(
     @Query() range?: PartialDateRange,
-  ): Promise<PostDeletedActivityPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.flagMetricService.deletionActivity(range);
   }
 
@@ -49,12 +45,12 @@ export class FlagMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [PostDeletedActivityPoint],
+    type: [SeriesCountPoint],
   })
   async deletionActivityByDeleter(
     @Param('userId') userId: number,
     @Query() range?: PartialDateRange,
-  ): Promise<PostDeletedActivityPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.flagMetricService.deletionActivity(
       range,
       new PostDeletedUserQuery({ creatorId: userId }),
@@ -70,11 +66,11 @@ export class FlagMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [PostDeletedPoint],
+    type: [SeriesCountPoint],
   })
   async deletionSeries(
     @Query() range?: PartialDateRange,
-  ): Promise<PostDeletedPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.flagMetricService.deletionSeries(range);
   }
 
@@ -87,12 +83,12 @@ export class FlagMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [PostDeletedPoint],
+    type: [SeriesCountPoint],
   })
   async deletionSeriesByUser(
     @Param('userId') userId: number,
     @Query() range?: PartialDateRange,
-  ): Promise<PostDeletedPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.flagMetricService.deletionSeries(
       range,
       new PostDeletedUserQuery({ creatorId: userId }),

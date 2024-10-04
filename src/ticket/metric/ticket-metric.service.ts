@@ -9,22 +9,20 @@ import {
   fillDateCounts,
   PaginationParams,
   PartialDateRange,
+  SeriesCountPoint,
+  toWhere,
 } from 'src/utils';
 import { FindOptionsWhere, LessThan, MoreThan, Not, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
 import {
-  TicketActivityPoint,
   TicketActivityUserQuery,
   TicketAgeGroup,
   TicketAgeSeriesPoint,
   TicketAgeSummary,
-  TicketClosedPoint,
   TicketClosedUserQuery,
-  TicketCreatedPoint,
   TicketCreatedUserQuery,
   TicketHandlerSummary,
-  TicketOpenPoint,
   TicketReporterSummary,
   TicketStatusSummary,
   TicketTypeSummary,
@@ -95,7 +93,7 @@ export class TicketMetricService {
               where: {
                 createdAt: DateRange.fill(range).find(),
                 qtype: type,
-                ...user?.where(),
+                ...toWhere(user),
               },
             }),
           ]),
@@ -104,7 +102,7 @@ export class TicketMetricService {
     });
   }
 
-  async openSeries(range?: PartialDateRange): Promise<TicketOpenPoint[]> {
+  async openSeries(range?: PartialDateRange): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
     const tickets = await this.ticketRepository.find({
       where: [
@@ -156,7 +154,7 @@ export class TicketMetricService {
       .sort()
       .map(
         (date) =>
-          new TicketOpenPoint({
+          new SeriesCountPoint({
             date: date.toJSDate(),
             count: counts[date.toISODate()!] ?? 0,
           }),
@@ -166,12 +164,12 @@ export class TicketMetricService {
   async createdSeries(
     range?: PartialDateRange,
     user?: TicketCreatedUserQuery,
-  ): Promise<TicketCreatedPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
     const tickets = await this.ticketRepository.find({
       where: {
         createdAt: range.find(),
-        ...user?.where(),
+        ...toWhere(user),
       },
     });
 
@@ -192,7 +190,7 @@ export class TicketMetricService {
       .sort()
       .map(
         (date) =>
-          new TicketCreatedPoint({
+          new SeriesCountPoint({
             date: date.toJSDate(),
             count: counts[date.toISODate()!] ?? 0,
           }),
@@ -202,10 +200,10 @@ export class TicketMetricService {
   async closedSeries(
     range?: PartialDateRange,
     user?: TicketClosedUserQuery,
-  ): Promise<TicketClosedPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
     const tickets = await this.ticketRepository.find({
-      where: this.whereCreatedOrUpdated(range, user?.where()),
+      where: this.whereCreatedOrUpdated(range, toWhere(user)),
     });
 
     const counts: Record<string, number> = {};
@@ -227,7 +225,7 @@ export class TicketMetricService {
       .sort()
       .map(
         (date) =>
-          new TicketClosedPoint({
+          new SeriesCountPoint({
             date: date.toJSDate(),
             count: counts[date.toISODate()!] ?? 0,
           }),
@@ -237,11 +235,11 @@ export class TicketMetricService {
   async activitySummary(
     range?: PartialDateRange,
     user?: TicketActivityUserQuery,
-  ): Promise<TicketActivityPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
 
     const tickets = await this.ticketRepository.find({
-      where: this.whereCreatedOrUpdated(range, user?.where()),
+      where: this.whereCreatedOrUpdated(range, toWhere(user)),
     });
 
     const counts: Record<string, number> = {};
@@ -295,7 +293,7 @@ export class TicketMetricService {
       .sort()
       .map(
         (dateTime) =>
-          new TicketActivityPoint({
+          new SeriesCountPoint({
             date: dateTime.toJSDate(),
             count: counts[dateTime.toISO()!] ?? 0,
           }),

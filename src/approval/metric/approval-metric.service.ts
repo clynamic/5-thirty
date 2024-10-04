@@ -8,14 +8,14 @@ import {
   fillDateCounts,
   PaginationParams,
   PartialDateRange,
+  SeriesCountPoint,
+  toWhere,
 } from 'src/utils';
 import { Repository } from 'typeorm';
 
 import { ApprovalEntity } from '../approval.entity';
 import {
-  ApprovalActivityPoint,
   ApprovalActivityUserQuery,
-  ApprovalCountPoint,
   ApprovalCountSummary,
   ApprovalCountUserQuery,
   ApproverSummary,
@@ -40,12 +40,12 @@ export class ApprovalMetricService {
   async countSeries(
     range?: PartialDateRange,
     user?: ApprovalCountUserQuery,
-  ): Promise<ApprovalCountPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
     const approvals = await this.approvalRepository.find({
       where: {
         ...range.where(),
-        ...user?.where(),
+        ...toWhere(user),
       },
     });
 
@@ -66,7 +66,7 @@ export class ApprovalMetricService {
       .sort()
       .map(
         (date) =>
-          new ApprovalCountPoint({
+          new SeriesCountPoint({
             date: date.toJSDate(),
             count: counts[date.toISODate()!]!,
           }),
@@ -76,13 +76,13 @@ export class ApprovalMetricService {
   async approvalActivity(
     range?: PartialDateRange,
     user?: ApprovalActivityUserQuery,
-  ): Promise<ApprovalActivityPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
 
     const approvals = await this.approvalRepository.find({
       where: {
         ...range.where(),
-        ...user?.where(),
+        ...toWhere(user),
       },
     });
 
@@ -122,7 +122,7 @@ export class ApprovalMetricService {
       .sort()
       .map(
         (dateTime) =>
-          new ApprovalActivityPoint({
+          new SeriesCountPoint({
             date: dateTime.toJSDate(),
             count: counts[dateTime.toISO()!] ?? 0,
           }),

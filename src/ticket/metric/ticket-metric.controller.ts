@@ -7,19 +7,19 @@ import {
 } from '@nestjs/swagger';
 import { AuthLevel, RolesGuard } from 'src/auth/auth.guard';
 import { UserLevel } from 'src/auth/auth.level';
-import { PaginationParams, PartialDateRange } from 'src/utils';
+import {
+  PaginationParams,
+  PartialDateRange,
+  SeriesCountPoint,
+} from 'src/utils';
 
 import {
-  TicketActivityPoint,
   TicketActivityUserQuery,
   TicketAgeSeriesPoint,
   TicketAgeSummary,
-  TicketClosedPoint,
   TicketClosedUserQuery,
-  TicketCreatedPoint,
   TicketCreatedUserQuery,
   TicketHandlerSummary,
-  TicketOpenPoint,
   TicketReporterSummary,
   TicketStatusSummary,
   TicketTypeSummary,
@@ -97,11 +97,11 @@ export class TicketMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [TicketOpenPoint],
+    type: [SeriesCountPoint],
   })
   async openSeries(
     @Query() range?: PartialDateRange,
-  ): Promise<TicketOpenPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.ticketMetricService.openSeries(range);
   }
 
@@ -113,11 +113,11 @@ export class TicketMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [TicketCreatedPoint],
+    type: [SeriesCountPoint],
   })
   async createdSeries(
     @Query() range?: PartialDateRange,
-  ): Promise<TicketCreatedPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.ticketMetricService.createdSeries(range);
   }
 
@@ -130,12 +130,12 @@ export class TicketMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [TicketCreatedPoint],
+    type: [SeriesCountPoint],
   })
   async createdSeriesForReporter(
     @Param('repoterId') reporterId: number,
     @Query() range?: PartialDateRange,
-  ): Promise<TicketCreatedPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.ticketMetricService.createdSeries(
       range,
       new TicketCreatedUserQuery({ creatorId: reporterId }),
@@ -150,11 +150,11 @@ export class TicketMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [TicketClosedPoint],
+    type: [SeriesCountPoint],
   })
   async closedSeries(
     @Query() range?: PartialDateRange,
-  ): Promise<TicketClosedPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.ticketMetricService.closedSeries(range);
   }
 
@@ -167,12 +167,12 @@ export class TicketMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [TicketClosedPoint],
+    type: [SeriesCountPoint],
   })
   async closedSeriesForHandler(
     @Param('handlerId') handlerId: number,
     @Query() range?: PartialDateRange,
-  ): Promise<TicketClosedPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.ticketMetricService.closedSeries(
       range,
       new TicketClosedUserQuery({ handlerId }),
@@ -188,11 +188,11 @@ export class TicketMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [TicketActivityPoint],
+    type: [SeriesCountPoint],
   })
   async activitySummary(
     @Query() range?: PartialDateRange,
-  ): Promise<TicketActivityPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.ticketMetricService.activitySummary(range);
   }
 
@@ -205,12 +205,12 @@ export class TicketMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [TicketActivityPoint],
+    type: [SeriesCountPoint],
   })
   async activitySummaryForHandler(
     @Param('claimantId') claimantId: number,
     @Query() range?: PartialDateRange,
-  ): Promise<TicketActivityPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.ticketMetricService.activitySummary(
       range,
       new TicketActivityUserQuery({ claimantId }),

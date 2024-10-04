@@ -2,15 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DateTime } from 'luxon';
 import { PostFlagType } from 'src/api';
-import { DateRange, fillDateCounts, PartialDateRange } from 'src/utils';
+import {
+  DateRange,
+  fillDateCounts,
+  PartialDateRange,
+  SeriesCountPoint,
+  toWhere,
+} from 'src/utils';
 import { Repository } from 'typeorm';
 
 import { FlagEntity } from '../flag.entity';
-import {
-  PostDeletedActivityPoint,
-  PostDeletedPoint,
-  PostDeletedUserQuery,
-} from './flag-metric.dto';
+import { PostDeletedUserQuery } from './flag-metric.dto';
 
 @Injectable()
 export class FlagMetricService {
@@ -22,14 +24,14 @@ export class FlagMetricService {
   async deletionActivity(
     range?: PartialDateRange,
     user?: PostDeletedUserQuery,
-  ): Promise<PostDeletedActivityPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
 
     const flags = await this.flagRepository.find({
       where: {
         type: PostFlagType.deletion,
         ...range?.where(),
-        ...user?.where(),
+        ...toWhere(user),
       },
     });
 
@@ -69,7 +71,7 @@ export class FlagMetricService {
       .sort()
       .map(
         (dateTime) =>
-          new PostDeletedActivityPoint({
+          new SeriesCountPoint({
             date: dateTime.toJSDate(),
             count: deletionCounts[dateTime.toISO()!] ?? 0,
           }),
@@ -79,13 +81,13 @@ export class FlagMetricService {
   async deletionSeries(
     range?: PartialDateRange,
     user?: PostDeletedUserQuery,
-  ): Promise<PostDeletedPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
     const flags = await this.flagRepository.find({
       where: {
         type: PostFlagType.deletion,
         ...range?.where(),
-        ...user?.where(),
+        ...toWhere(user),
       },
     });
 
@@ -98,9 +100,12 @@ export class FlagMetricService {
 
     fillDateCounts(range, counts);
 
-    return Object.entries(counts).map(([date, count]) => ({
-      date: new Date(date),
-      count,
-    }));
+    return Object.entries(counts).map(
+      ([date, count]) =>
+        new SeriesCountPoint({
+          date: new Date(date),
+          count,
+        }),
+    );
   }
 }

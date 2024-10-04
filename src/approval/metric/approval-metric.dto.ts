@@ -1,8 +1,5 @@
 import { UserHead } from 'src/user/head/user-head.dto';
 import { Raw } from 'src/utils';
-import { FindOptionsWhere } from 'typeorm';
-
-import { ApprovalEntity } from '../approval.entity';
 
 export class ApprovalCountSummary {
   constructor(value: ApprovalCountSummary) {
@@ -18,21 +15,6 @@ export class ApprovalCountUserQuery {
   }
 
   userId: number;
-
-  where(): FindOptionsWhere<ApprovalEntity> {
-    return {
-      ...(this.userId && { userId: this.userId }),
-    };
-  }
-}
-
-export class ApprovalCountPoint {
-  constructor(value: ApprovalCountPoint) {
-    Object.assign(this, value);
-  }
-
-  date: Date;
-  count: number;
 }
 
 export class ApprovalActivityUserQuery {
@@ -41,21 +23,6 @@ export class ApprovalActivityUserQuery {
   }
 
   userId: number;
-
-  where(): FindOptionsWhere<ApprovalEntity> {
-    return {
-      ...(this.userId && { userId: this.userId }),
-    };
-  }
-}
-
-export class ApprovalActivityPoint {
-  constructor(value: ApprovalActivityPoint) {
-    Object.assign(this, value);
-  }
-
-  date: Date;
-  count: number;
 }
 
 export class ApproverSummary {

@@ -7,11 +7,13 @@ import {
 } from '@nestjs/swagger';
 import { AuthLevel, RolesGuard } from 'src/auth/auth.guard';
 import { UserLevel } from 'src/auth/auth.level';
-import { PaginationParams, PartialDateRange } from 'src/utils';
+import {
+  PaginationParams,
+  PartialDateRange,
+  SeriesCountPoint,
+} from 'src/utils';
 
 import {
-  ApprovalActivityPoint,
-  ApprovalCountPoint,
   ApprovalCountSummary,
   ApprovalCountUserQuery,
   ApproverSummary,
@@ -50,11 +52,11 @@ export class ApprovalMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [ApprovalCountPoint],
+    type: [SeriesCountPoint],
   })
   async countSeries(
     @Query() range?: PartialDateRange,
-  ): Promise<ApprovalCountPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.approvalMetricService.countSeries(range);
   }
 
@@ -67,12 +69,12 @@ export class ApprovalMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [ApprovalCountPoint],
+    type: [SeriesCountPoint],
   })
   async countSeriesByApprover(
     @Param('approverId') approverId: number,
     @Query() range?: PartialDateRange,
-  ): Promise<ApprovalCountPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.approvalMetricService.countSeries(
       range,
       new ApprovalCountUserQuery({ userId: approverId }),
@@ -87,11 +89,11 @@ export class ApprovalMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [ApprovalActivityPoint],
+    type: [SeriesCountPoint],
   })
   async activitySummary(
     @Query() range?: PartialDateRange,
-  ): Promise<ApprovalActivityPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.approvalMetricService.approvalActivity(range);
   }
 
@@ -104,12 +106,12 @@ export class ApprovalMetricController {
   })
   @ApiResponse({
     status: 200,
-    type: [ApprovalActivityPoint],
+    type: [SeriesCountPoint],
   })
   async activitySummaryByApprover(
     @Param('approverId') approverId: number,
     @Query() range?: PartialDateRange,
-  ): Promise<ApprovalActivityPoint[]> {
+  ): Promise<SeriesCountPoint[]> {
     return this.approvalMetricService.approvalActivity(
       range,
       new ApprovalCountUserQuery({ userId: approverId }),
