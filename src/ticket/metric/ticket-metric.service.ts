@@ -87,7 +87,7 @@ export class TicketMetricService {
     return new TicketTypeSummary({
       ...Object.fromEntries(
         await Promise.all(
-          Object.entries(TicketQtype).map(async ([, type]) => [
+          Object.values(TicketQtype).map(async (type) => [
             type,
             await this.ticketRepository.count({
               where: {

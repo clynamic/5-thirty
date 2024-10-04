@@ -13,7 +13,7 @@ export class ManifestEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ type: 'text', enum: ItemType })
+  @Column({ type: 'simple-enum', enum: ItemType })
   type: ItemType;
 
   @Column({ type: 'datetime' })

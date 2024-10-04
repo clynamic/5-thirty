@@ -14,6 +14,7 @@ export enum ItemType {
   users = 'users',
   userProfiles = 'user_profiles',
   flags = 'flags',
+  feedbacks = 'feedbacks',
 }
 
 export interface CacheValue {

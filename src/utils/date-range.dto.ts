@@ -265,3 +265,35 @@ export const fillDateCounts = (
     }
   }
 };
+
+export const fillStackedDateCounts = (
+  range: PartialDateRange,
+  counts: Record<string, Record<string, number>>,
+  keys: string[],
+): void => {
+  const dates = Object.keys(counts).map((date) =>
+    DateTime.fromISO(date, { zone: range.timezone }),
+  );
+
+  if (dates.length === 0) return;
+
+  const minDate = DateTime.min(...dates);
+  const maxDate = DateTime.max(...dates);
+
+  for (
+    let currentDate = minDate;
+    currentDate <= maxDate;
+    currentDate = currentDate.plus({ days: 1 })
+  ) {
+    const dateString = currentDate.toISODate()!;
+    if (!(dateString in counts)) {
+      counts[dateString] = {};
+    }
+
+    for (const key of keys) {
+      if (!(key in counts[dateString]!)) {
+        counts[dateString]![key] = 0;
+      }
+    }
+  }
+};

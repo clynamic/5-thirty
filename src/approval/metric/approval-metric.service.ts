@@ -121,10 +121,10 @@ export class ApprovalMetricService {
       .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
       .sort()
       .map(
-        (dateTime) =>
+        (date) =>
           new SeriesCountPoint({
-            date: dateTime.toJSDate(),
-            count: counts[dateTime.toISO()!] ?? 0,
+            date: date.toJSDate(),
+            count: counts[date.toISO()!] ?? 0,
           }),
       );
   }
