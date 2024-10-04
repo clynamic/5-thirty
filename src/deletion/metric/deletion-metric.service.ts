@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DateTime } from 'luxon';
 import { PostFlagType } from 'src/api';
+import { FlagEntity } from 'src/flag/flag.entity';
 import {
   DateRange,
   fillDateCounts,
@@ -11,17 +12,52 @@ import {
 } from 'src/utils';
 import { Repository } from 'typeorm';
 
-import { FlagEntity } from '../flag.entity';
-import { PostDeletedUserQuery } from './flag-metric.dto';
+import { PostDeletedUserQuery } from './deletion-metric.dto';
 
 @Injectable()
-export class FlagMetricService {
+export class DeletionMetricService {
   constructor(
     @InjectRepository(FlagEntity)
     private readonly flagRepository: Repository<FlagEntity>,
   ) {}
 
-  async deletionActivitySummary(
+  async countSeries(
+    range?: PartialDateRange,
+    user?: PostDeletedUserQuery,
+  ): Promise<SeriesCountPoint[]> {
+    range = DateRange.fill(range);
+    const flags = await this.flagRepository.find({
+      where: {
+        type: PostFlagType.deletion,
+        ...range?.where(),
+        ...toWhere(user),
+      },
+    });
+
+    const counts: Record<string, number> = {};
+
+    for (const flag of flags) {
+      const createdDate = DateTime.fromJSDate(flag.createdAt, {
+        zone: range.timezone,
+      }).toISODate()!;
+      counts[createdDate] = (counts[createdDate] || 0) + 1;
+    }
+
+    fillDateCounts(range, counts);
+
+    return Object.keys(counts)
+      .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
+      .sort()
+      .map(
+        (date) =>
+          new SeriesCountPoint({
+            date: date.toJSDate(),
+            count: counts[date.toISODate()!]!,
+          }),
+      );
+  }
+
+  async activitySummary(
     range?: PartialDateRange,
     user?: PostDeletedUserQuery,
   ): Promise<SeriesCountPoint[]> {
@@ -76,36 +112,5 @@ export class FlagMetricService {
             count: deletionCounts[dateTime.toISO()!] ?? 0,
           }),
       );
-  }
-
-  async deletionSeries(
-    range?: PartialDateRange,
-    user?: PostDeletedUserQuery,
-  ): Promise<SeriesCountPoint[]> {
-    range = DateRange.fill(range);
-    const flags = await this.flagRepository.find({
-      where: {
-        type: PostFlagType.deletion,
-        ...range?.where(),
-        ...toWhere(user),
-      },
-    });
-
-    const counts: Record<string, number> = {};
-
-    for (const flag of flags) {
-      const createdDate = DateTime.fromJSDate(flag.createdAt).toISODate()!;
-      counts[createdDate] = (counts[createdDate] || 0) + 1;
-    }
-
-    fillDateCounts(range, counts);
-
-    return Object.entries(counts).map(
-      ([date, count]) =>
-        new SeriesCountPoint({
-          date: new Date(date),
-          count,
-        }),
-    );
   }
 }

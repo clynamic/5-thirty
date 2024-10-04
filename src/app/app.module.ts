@@ -6,6 +6,7 @@ import { ApprovalModule } from 'src/approval/approval.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { CacheModule } from 'src/cache/cache.module';
 import { DashboardModule } from 'src/dashboard/dashboard.module';
+import { DeletionModule } from 'src/deletion/deletion.module';
 import { FeedbackModule } from 'src/feedback/feedback.module';
 import { FlagModule } from 'src/flag/flag.module';
 import { HealthModule } from 'src/health/health.module';
@@ -36,6 +37,7 @@ import { DatabaseModule } from './database.module';
     UserModule,
     PostModule,
     FlagModule,
+    DeletionModule,
     FeedbackModule,
   ],
   controllers: [],
