@@ -1,5 +1,3 @@
-import { FindOptionsWhere } from 'typeorm';
-
 export type Raw<T> = {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   [K in keyof T as T[K] extends Function ? never : K]: T[K];
@@ -7,20 +5,12 @@ export type Raw<T> = {
 
 export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
-export const toWhere = <T extends object, R extends Raw<T>>(
-  raw?: T,
-): FindOptionsWhere<R> => {
-  const result: FindOptionsWhere<R> = {};
-
-  for (const key in raw) {
-    if (Object.prototype.hasOwnProperty.call(raw, key)) {
-      const value = raw[key];
-
-      if (value !== undefined && typeof value !== 'function') {
-        (result as any)[key] = value;
-      }
+export const toRaws = <T extends object>(obj: T): Partial<Raw<T>> => {
+  return Object.keys(obj).reduce((acc, key) => {
+    const value = obj[key as keyof T];
+    if (value !== undefined && value !== null && typeof value !== 'function') {
+      acc[key as keyof T] = value;
     }
-  }
-
-  return result;
+    return acc;
+  }, {} as Partial<T>);
 };

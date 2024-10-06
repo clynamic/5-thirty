@@ -9,15 +9,14 @@ import {
   PaginationParams,
   PartialDateRange,
   SeriesCountPoint,
-  toWhere,
 } from 'src/utils';
 import { Repository } from 'typeorm';
 
 import { ApprovalEntity } from '../approval.entity';
 import {
-  ApprovalActivityUserQuery,
+  ApprovalActivitySummaryQuery,
+  ApprovalCountSeriesQuery,
   ApprovalCountSummary,
-  ApprovalCountUserQuery,
   ApproverSummary,
 } from './approval-metric.dto';
 
@@ -39,13 +38,13 @@ export class ApprovalMetricService {
 
   async countSeries(
     range?: PartialDateRange,
-    user?: ApprovalCountUserQuery,
+    query?: ApprovalCountSeriesQuery,
   ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
     const approvals = await this.approvalRepository.find({
       where: {
         ...range.where(),
-        ...toWhere(user),
+        ...query?.where(),
       },
     });
 
@@ -75,14 +74,14 @@ export class ApprovalMetricService {
 
   async activitySummary(
     range?: PartialDateRange,
-    user?: ApprovalActivityUserQuery,
+    query?: ApprovalActivitySummaryQuery,
   ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
 
     const approvals = await this.approvalRepository.find({
       where: {
         ...range.where(),
-        ...toWhere(user),
+        ...query?.where(),
       },
     });
 

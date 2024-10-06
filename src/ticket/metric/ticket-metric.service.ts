@@ -7,26 +7,27 @@ import {
   convertKeysToCamelCase,
   DateRange,
   fillDateCounts,
+  fillStackedDateCounts,
   PaginationParams,
   PartialDateRange,
+  Raw,
   SeriesCountPoint,
-  toWhere,
 } from 'src/utils';
 import { FindOptionsWhere, LessThan, MoreThan, Not, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
 import {
-  TicketActivityUserQuery,
-  TicketAgeGroup,
+  TicketActivitySummaryQuery,
   TicketAgeSeriesPoint,
   TicketAgeSummary,
-  TicketClosedUserQuery,
-  TicketCreatedUserQuery,
+  TicketAgeSummaryQuery,
+  TicketClosedSeriesQuery,
+  TicketCreatedSeriesQuery,
   TicketHandlerSummary,
   TicketReporterSummary,
   TicketStatusSummary,
   TicketTypeSummary,
-  TicketTypeSummaryUserQuery,
+  TicketTypeSummaryQuery,
 } from './ticket-metric.dto';
 
 @Injectable()
@@ -82,7 +83,7 @@ export class TicketMetricService {
 
   async typeSummary(
     range?: PartialDateRange,
-    user?: TicketTypeSummaryUserQuery,
+    query?: TicketTypeSummaryQuery,
   ): Promise<TicketTypeSummary> {
     return new TicketTypeSummary({
       ...Object.fromEntries(
@@ -93,7 +94,7 @@ export class TicketMetricService {
               where: {
                 createdAt: DateRange.fill(range).find(),
                 qtype: type,
-                ...toWhere(user),
+                ...query?.where(),
               },
             }),
           ]),
@@ -163,13 +164,13 @@ export class TicketMetricService {
 
   async createdSeries(
     range?: PartialDateRange,
-    user?: TicketCreatedUserQuery,
+    query?: TicketCreatedSeriesQuery,
   ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
     const tickets = await this.ticketRepository.find({
       where: {
         createdAt: range.find(),
-        ...toWhere(user),
+        ...query?.where(),
       },
     });
 
@@ -199,11 +200,11 @@ export class TicketMetricService {
 
   async closedSeries(
     range?: PartialDateRange,
-    user?: TicketClosedUserQuery,
+    query?: TicketClosedSeriesQuery,
   ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
     const tickets = await this.ticketRepository.find({
-      where: this.whereCreatedOrUpdated(range, toWhere(user)),
+      where: this.whereCreatedOrUpdated(range, query?.where()),
     });
 
     const counts: Record<string, number> = {};
@@ -234,12 +235,12 @@ export class TicketMetricService {
 
   async activitySummary(
     range?: PartialDateRange,
-    user?: TicketActivityUserQuery,
+    query?: TicketActivitySummaryQuery,
   ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
 
     const tickets = await this.ticketRepository.find({
-      where: this.whereCreatedOrUpdated(range, toWhere(user)),
+      where: this.whereCreatedOrUpdated(range, query?.where()),
     });
 
     const counts: Record<string, number> = {};
@@ -258,12 +259,12 @@ export class TicketMetricService {
             .startOf('hour')
         : null;
 
-      if (!user || ticket.creatorId === user.reporterId) {
+      if (!query || ticket.creatorId === query.reporterId) {
         const createdHour = createdDate.toISO()!;
         counts[createdHour] = (counts[createdHour] || 0) + 1;
       }
 
-      if (updatedDate && (!user || ticket.handlerId === user.claimantId)) {
+      if (updatedDate && (!query || ticket.handlerId === query.claimantId)) {
         const updatedHour = updatedDate.toISO()!;
         counts[updatedHour] = (counts[updatedHour] || 0) + 1;
       }
@@ -303,53 +304,90 @@ export class TicketMetricService {
   async ageSeries(range?: PartialDateRange): Promise<TicketAgeSeriesPoint[]> {
     range = DateRange.fill(range);
     const tickets = await this.ticketRepository.find({
-      where: range.where(),
+      where: [
+        ...this.whereCreatedOrUpdated(range),
+        {
+          createdAt: LessThan(range.startDate!),
+          updatedAt: MoreThan(range.endDate!),
+        },
+        {
+          createdAt: LessThan(range.endDate!),
+          status: Not(TicketStatus.approved),
+        },
+      ],
     });
 
-    const series: Record<string, TicketAgeGroup> = {};
+    const series: Record<string, Raw<TicketAgeSummary>> = {};
 
     for (const ticket of tickets) {
-      const endDate = DateTime.fromJSDate(
-        ticket.status === TicketStatus.approved
-          ? ticket.updatedAt
-          : range.endDate!,
-        { zone: range.timezone },
+      const createdDate = DateTime.max(
+        DateTime.fromJSDate(ticket.createdAt, { zone: range.timezone }).startOf(
+          'day',
+        ),
+        DateTime.fromJSDate(range.startDate!).startOf('day'),
       );
-      const ageInDays = endDate.diff(
-        DateTime.fromJSDate(ticket.createdAt),
-        'days',
-      ).days;
-      const closedDate = endDate.toISODate()!;
+      const endDate = DateTime.min(
+        (ticket.status === TicketStatus.approved
+          ? DateTime.fromJSDate(ticket.updatedAt, {
+              zone: range.timezone,
+            }).minus({ days: 1 })
+          : DateTime.now().setZone(range.timezone)
+        ).endOf('day'),
+        DateTime.fromJSDate(range.endDate!),
+      );
 
-      let ageGroup: keyof TicketAgeGroup;
+      for (
+        let date = createdDate;
+        date <= endDate;
+        date = date.plus({ days: 1 })
+      ) {
+        const formattedDate = date.toISODate()!;
 
-      if (ageInDays <= 1) {
-        ageGroup = 'oneDay';
-      } else if (ageInDays <= 3) {
-        ageGroup = 'threeDays';
-      } else if (ageInDays <= 7) {
-        ageGroup = 'oneWeek';
-      } else if (ageInDays <= 14) {
-        ageGroup = 'twoWeeks';
-      } else if (ageInDays <= 30) {
-        ageGroup = 'oneMonth';
-      } else {
-        ageGroup = 'aboveOneMonth';
+        if (!series[formattedDate]) {
+          series[formattedDate] = {
+            oneDay: 0,
+            threeDays: 0,
+            oneWeek: 0,
+            twoWeeks: 0,
+            oneMonth: 0,
+            aboveOneMonth: 0,
+          };
+        }
+
+        const ageInDays = date.diff(
+          DateTime.fromJSDate(ticket.createdAt),
+          'days',
+        ).days;
+
+        let ageGroup: keyof TicketAgeSummary;
+        if (ageInDays <= 1) {
+          ageGroup = 'oneDay';
+        } else if (ageInDays <= 3) {
+          ageGroup = 'threeDays';
+        } else if (ageInDays <= 7) {
+          ageGroup = 'oneWeek';
+        } else if (ageInDays <= 14) {
+          ageGroup = 'twoWeeks';
+        } else if (ageInDays <= 30) {
+          ageGroup = 'oneMonth';
+        } else {
+          ageGroup = 'aboveOneMonth';
+        }
+
+        series[formattedDate][ageGroup]++;
       }
-
-      if (!series[closedDate]) {
-        series[closedDate] = new TicketAgeGroup({
-          oneDay: 0,
-          threeDays: 0,
-          oneWeek: 0,
-          twoWeeks: 0,
-          oneMonth: 0,
-          aboveOneMonth: 0,
-        });
-      }
-
-      series[closedDate][ageGroup]++;
     }
+
+    const keys: (keyof TicketAgeSummary)[] = [
+      'oneDay',
+      'threeDays',
+      'oneWeek',
+      'twoWeeks',
+      'oneMonth',
+      'aboveOneMonth',
+    ] as const;
+
+    fillStackedDateCounts(range, series, keys);
 
     return Object.keys(series)
       .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
@@ -358,18 +396,21 @@ export class TicketMetricService {
         (date) =>
           new TicketAgeSeriesPoint({
             date: date.toJSDate(),
-            groups: series[date.toISODate()!]!,
+            ...series[date.toISODate()!]!,
           }),
       );
   }
 
-  async ageSummary(range?: PartialDateRange): Promise<TicketAgeSummary> {
+  async ageSummary(
+    range?: PartialDateRange,
+    query?: TicketAgeSummaryQuery,
+  ): Promise<TicketAgeSummary> {
     range = DateRange.fill(range);
     const tickets = await this.ticketRepository.find({
-      where: range.where(),
+      where: { ...range.where(), ...query?.where() },
     });
 
-    const ageGroups = new TicketAgeGroup({
+    const ageGroups = new TicketAgeSummary({
       oneDay: 0,
       threeDays: 0,
       oneWeek: 0,
@@ -390,7 +431,7 @@ export class TicketMetricService {
         'day',
       ).days;
 
-      let ageGroup: keyof TicketAgeGroup;
+      let ageGroup: keyof TicketAgeSummary;
 
       if (ageInDays <= 1) {
         ageGroup = 'oneDay';
@@ -409,9 +450,7 @@ export class TicketMetricService {
       ageGroups[ageGroup]++;
     }
 
-    return new TicketAgeSummary({
-      groups: ageGroups,
-    });
+    return new TicketAgeSummary(ageGroups);
   }
 
   async handlerSummary(

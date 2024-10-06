@@ -14,8 +14,9 @@ import {
 } from 'src/utils';
 
 import {
+  ApprovalActivitySummaryQuery,
+  ApprovalCountSeriesQuery,
   ApprovalCountSummary,
-  ApprovalCountUserQuery,
   ApproverSummary,
 } from './approval-metric.dto';
 import { ApprovalMetricService } from './approval-metric.service';
@@ -77,7 +78,7 @@ export class ApprovalMetricController {
   ): Promise<SeriesCountPoint[]> {
     return this.approvalMetricService.countSeries(
       range,
-      new ApprovalCountUserQuery({ userId: approverId }),
+      new ApprovalCountSeriesQuery({ userId: approverId }),
     );
   }
 
@@ -115,7 +116,7 @@ export class ApprovalMetricController {
   ): Promise<SeriesCountPoint[]> {
     return this.approvalMetricService.activitySummary(
       range,
-      new ApprovalCountUserQuery({ userId: approverId }),
+      new ApprovalActivitySummaryQuery({ userId: approverId }),
     );
   }
 

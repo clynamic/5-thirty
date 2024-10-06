@@ -9,7 +9,10 @@ import { AuthLevel, RolesGuard } from 'src/auth/auth.guard';
 import { UserLevel } from 'src/auth/auth.level';
 import { PartialDateRange, SeriesCountPoint } from 'src/utils';
 
-import { PostDeletedUserQuery } from './deletion-metric.dto';
+import {
+  DeletionActivitySummaryQuery,
+  DeletionCountSeriesQuery,
+} from './deletion-metric.dto';
 import { DeletionMetricService } from './deletion-metric.service';
 
 @ApiTags('Deletions')
@@ -54,7 +57,7 @@ export class DeletionMetricController {
   ): Promise<SeriesCountPoint[]> {
     return this.deletionMetricService.countSeries(
       range,
-      new PostDeletedUserQuery({ creatorId: userId }),
+      new DeletionCountSeriesQuery({ creatorId: userId }),
     );
   }
 
@@ -92,7 +95,7 @@ export class DeletionMetricController {
   ): Promise<SeriesCountPoint[]> {
     return this.deletionMetricService.activitySummary(
       range,
-      new PostDeletedUserQuery({ creatorId: userId }),
+      new DeletionActivitySummaryQuery({ creatorId: userId }),
     );
   }
 }

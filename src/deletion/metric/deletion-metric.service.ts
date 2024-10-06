@@ -8,11 +8,13 @@ import {
   fillDateCounts,
   PartialDateRange,
   SeriesCountPoint,
-  toWhere,
 } from 'src/utils';
 import { Repository } from 'typeorm';
 
-import { PostDeletedUserQuery } from './deletion-metric.dto';
+import {
+  DeletionActivitySummaryQuery,
+  DeletionCountSeriesQuery,
+} from './deletion-metric.dto';
 
 @Injectable()
 export class DeletionMetricService {
@@ -23,14 +25,14 @@ export class DeletionMetricService {
 
   async countSeries(
     range?: PartialDateRange,
-    user?: PostDeletedUserQuery,
+    query?: DeletionCountSeriesQuery,
   ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
     const flags = await this.flagRepository.find({
       where: {
         type: PostFlagType.deletion,
         ...range?.where(),
-        ...toWhere(user),
+        ...query?.where(),
       },
     });
 
@@ -59,7 +61,7 @@ export class DeletionMetricService {
 
   async activitySummary(
     range?: PartialDateRange,
-    user?: PostDeletedUserQuery,
+    query?: DeletionActivitySummaryQuery,
   ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
 
@@ -67,7 +69,7 @@ export class DeletionMetricService {
       where: {
         type: PostFlagType.deletion,
         ...range?.where(),
-        ...toWhere(user),
+        ...query?.where(),
       },
     });
 

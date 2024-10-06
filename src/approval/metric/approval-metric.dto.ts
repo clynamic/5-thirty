@@ -1,5 +1,8 @@
 import { UserHead } from 'src/user/head/user-head.dto';
 import { Raw } from 'src/utils';
+import { FindOptionsWhere } from 'typeorm';
+
+import { ApprovalEntity } from '../approval.entity';
 
 export class ApprovalCountSummary {
   constructor(value: ApprovalCountSummary) {
@@ -9,20 +12,28 @@ export class ApprovalCountSummary {
   total: number;
 }
 
-export class ApprovalCountUserQuery {
-  constructor(value: Raw<ApprovalCountUserQuery>) {
+export class ApprovalCountSeriesQuery {
+  constructor(value: Raw<ApprovalCountSeriesQuery>) {
     Object.assign(this, value);
   }
 
   userId: number;
+
+  where(): FindOptionsWhere<ApprovalEntity> {
+    return { userId: this.userId };
+  }
 }
 
-export class ApprovalActivityUserQuery {
-  constructor(value: Raw<ApprovalActivityUserQuery>) {
+export class ApprovalActivitySummaryQuery {
+  constructor(value: Raw<ApprovalActivitySummaryQuery>) {
     Object.assign(this, value);
   }
 
   userId: number;
+
+  where(): FindOptionsWhere<ApprovalEntity> {
+    return { userId: this.userId };
+  }
 }
 
 export class ApproverSummary {

@@ -14,16 +14,16 @@ import {
 } from 'src/utils';
 
 import {
-  TicketActivityUserQuery,
+  TicketActivitySummaryQuery,
   TicketAgeSeriesPoint,
   TicketAgeSummary,
-  TicketClosedUserQuery,
-  TicketCreatedUserQuery,
+  TicketClosedSeriesQuery,
+  TicketCreatedSeriesQuery,
   TicketHandlerSummary,
   TicketReporterSummary,
   TicketStatusSummary,
   TicketTypeSummary,
-  TicketTypeSummaryUserQuery,
+  TicketTypeSummaryQuery,
 } from './ticket-metric.dto';
 import { TicketMetricService } from './ticket-metric.service';
 
@@ -85,7 +85,7 @@ export class TicketMetricController {
   ): Promise<TicketTypeSummary> {
     return this.ticketMetricService.typeSummary(
       range,
-      new TicketTypeSummaryUserQuery({ claimantId }),
+      new TicketTypeSummaryQuery({ claimantId }),
     );
   }
 
@@ -138,7 +138,7 @@ export class TicketMetricController {
   ): Promise<SeriesCountPoint[]> {
     return this.ticketMetricService.createdSeries(
       range,
-      new TicketCreatedUserQuery({ creatorId: reporterId }),
+      new TicketCreatedSeriesQuery({ creatorId: reporterId }),
     );
   }
 
@@ -175,7 +175,7 @@ export class TicketMetricController {
   ): Promise<SeriesCountPoint[]> {
     return this.ticketMetricService.closedSeries(
       range,
-      new TicketClosedUserQuery({ handlerId }),
+      new TicketClosedSeriesQuery({ handlerId }),
     );
   }
 
@@ -213,7 +213,7 @@ export class TicketMetricController {
   ): Promise<SeriesCountPoint[]> {
     return this.ticketMetricService.activitySummary(
       range,
-      new TicketActivityUserQuery({ claimantId }),
+      new TicketActivitySummaryQuery({ claimantId }),
     );
   }
 

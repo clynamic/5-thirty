@@ -1,17 +1,31 @@
-import { Raw } from 'src/utils';
+import { FlagEntity } from 'src/flag/flag.entity';
+import { Raw, toRaws } from 'src/utils';
+import { FindOptionsWhere } from 'typeorm';
 
-export class PostDeletedActivityUserQuery {
-  constructor(value: Raw<PostDeletedActivityUserQuery>) {
-    Object.assign(this, value);
-  }
-
-  creatorId: number;
-}
-
-export class PostDeletedUserQuery {
-  constructor(value: Raw<PostDeletedUserQuery>) {
+export class DeletionCountSeriesQuery {
+  constructor(value: Raw<DeletionCountSeriesQuery>) {
     Object.assign(this, value);
   }
 
   creatorId?: number;
+
+  where(): FindOptionsWhere<FlagEntity> {
+    return toRaws({
+      creatorId: this.creatorId,
+    });
+  }
+}
+
+export class DeletionActivitySummaryQuery {
+  constructor(value: Raw<DeletionActivitySummaryQuery>) {
+    Object.assign(this, value);
+  }
+
+  creatorId: number;
+
+  where(): FindOptionsWhere<FlagEntity> {
+    return toRaws({
+      creatorId: this.creatorId,
+    });
+  }
 }

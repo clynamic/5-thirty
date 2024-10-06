@@ -1,5 +1,9 @@
+import { TicketStatus } from 'src/api';
 import { UserHead } from 'src/user/head/user-head.dto';
-import { Raw } from 'src/utils';
+import { Raw, toRaws } from 'src/utils';
+import { FindOptionsWhere, In } from 'typeorm';
+
+import { TicketEntity } from '../ticket.entity';
 
 export class TicketStatusSummary {
   constructor(value: TicketStatusSummary) {
@@ -11,13 +15,20 @@ export class TicketStatusSummary {
   partial: number;
 }
 
-export class TicketTypeSummaryUserQuery {
-  constructor(value: Raw<TicketTypeSummaryUserQuery>) {
+export class TicketTypeSummaryQuery {
+  constructor(value: Raw<TicketTypeSummaryQuery>) {
     Object.assign(this, value);
   }
 
   claimantId?: number;
   reporterId?: number;
+
+  where(): FindOptionsWhere<TicketEntity> {
+    return toRaws({
+      claimantId: this.claimantId,
+      reporterId: this.reporterId,
+    });
+  }
 }
 
 export class TicketTypeSummary {
@@ -36,31 +47,68 @@ export class TicketTypeSummary {
   dmail: number;
 }
 
-export class TicketCreatedUserQuery {
-  constructor(value: Raw<TicketCreatedUserQuery>) {
+export class TicketCreatedSeriesQuery {
+  constructor(value: Raw<TicketCreatedSeriesQuery>) {
     Object.assign(this, value);
+  }
+
+  creatorId?: number;
+
+  where(): FindOptionsWhere<TicketEntity> {
+    return toRaws({
+      creatorId: this.creatorId,
+    });
   }
 }
 
-export class TicketClosedUserQuery {
-  constructor(value: Raw<TicketClosedUserQuery>) {
+export class TicketClosedSeriesQuery {
+  constructor(value: Raw<TicketClosedSeriesQuery>) {
     Object.assign(this, value);
   }
 
   handlerId?: number;
+
+  where(): FindOptionsWhere<TicketEntity> {
+    return toRaws({
+      handlerId: this.handlerId,
+    });
+  }
 }
 
-export class TicketActivityUserQuery {
-  constructor(value: Raw<TicketActivityUserQuery>) {
+export class TicketActivitySummaryQuery {
+  constructor(value: Raw<TicketActivitySummaryQuery>) {
     Object.assign(this, value);
   }
 
   claimantId?: number;
   reporterId?: number;
+
+  where(): FindOptionsWhere<TicketEntity> {
+    return toRaws({
+      claimantId: this.claimantId,
+      reporterId: this.reporterId,
+    });
+  }
 }
 
-export class TicketAgeGroup {
-  constructor(value: TicketAgeGroup) {
+export class TicketAgeSummaryQuery {
+  constructor(value: Raw<TicketAgeSummaryQuery>) {
+    Object.assign(this, value);
+  }
+
+  claimantId?: number;
+  status?: TicketStatus[];
+
+  where(): FindOptionsWhere<TicketEntity> {
+    return toRaws({
+      claimantId: this.claimantId,
+      status: this.status ? In(this.status) : undefined,
+    });
+  }
+}
+
+export class TicketAgeSummary {
+  constructor(value: Raw<TicketAgeSummary>) {
     Object.assign(this, value);
   }
 
@@ -72,25 +120,17 @@ export class TicketAgeGroup {
   aboveOneMonth: number;
 }
 
-export class TicketAgeSeriesPoint {
-  constructor(value: TicketAgeSeriesPoint) {
+export class TicketAgeSeriesPoint extends TicketAgeSummary {
+  constructor(value: Raw<TicketAgeSeriesPoint>) {
+    super(value);
     Object.assign(this, value);
   }
 
   date: Date;
-  groups: TicketAgeGroup;
-}
-
-export class TicketAgeSummary {
-  constructor(value: TicketAgeSummary) {
-    Object.assign(this, value);
-  }
-
-  groups: TicketAgeGroup;
 }
 
 export class TicketHandlerSummary {
-  constructor(value: TicketHandlerSummary) {
+  constructor(value: Raw<TicketHandlerSummary>) {
     Object.assign(this, value);
   }
 
@@ -102,7 +142,7 @@ export class TicketHandlerSummary {
 }
 
 export class TicketReporterSummary {
-  constructor(value: TicketReporterSummary) {
+  constructor(value: Raw<TicketReporterSummary>) {
     Object.assign(this, value);
   }
 
