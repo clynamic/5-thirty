@@ -53,40 +53,51 @@ export class TicketSyncWorker {
 
           const recentlyRange = DateRange.recentMonths();
 
-          const orders = ManifestService.splitLongOrders(
-            await this.manifestService.listOrdersByRange(
-              ItemType.tickets,
-              recentlyRange,
-            ),
-            14,
+          const orders = await this.manifestService.listOrdersByRange(
+            ItemType.tickets,
+            recentlyRange,
           );
 
           for (const order of orders) {
-            let page = 1;
-            let results: Ticket[] = [];
-
+            const results: Ticket[] = [];
             const loopGuard = new LoopGuard();
-            const dateRange = order.toDateRange();
-
-            this.logger.log(
-              `Fetching tickets for ${dateRange.toE621RangeString()}`,
-            );
 
             while (true) {
               cancelToken.ensureRunning();
 
+              const dateRange = order.toDateRange();
+              const lowerId = order.lowerId;
+              const upperId = order.upperId;
+
+              this.logger.log(
+                `Fetching tickets for ${dateRange.toE621RangeString()} with ids ${getIdRangeString(
+                  lowerId,
+                  upperId,
+                )}`,
+              );
+
               const result = await rateLimit(
                 tickets(
                   loopGuard.iter({
-                    page,
+                    page: 1,
                     limit: MAX_API_LIMIT,
-                    // tickets are *not* ordered properly.
-                    // the site enforces special ordering that would be useful for humans, but not for us.
-                    // because of that reason, we always need to exhaust the full date range
-                    // before moving on and can't use the ID range to continously glide through the data.
                     'search[created_at]': dateRange.toE621RangeString(),
+                    'search[id]': getIdRangeString(lowerId, upperId),
+                    'search[order]': 'id',
                   }),
                   axiosConfig,
+                ),
+              );
+
+              results.push(...result);
+
+              const stored = await this.ticketSyncService.create(
+                result.map(
+                  (ticket) =>
+                    new TicketEntity({
+                      ...convertKeysToCamelCase(ticket),
+                      cache: new TicketCacheEntity(ticket),
+                    }),
                 ),
               );
 
@@ -98,46 +109,31 @@ export class TicketSyncWorker {
                   ) || 'none'
                 } and dates ${
                   new PartialDateRange({
-                    startDate: findLowestDate(
-                      result.map(convertKeysToCamelCase),
-                    )?.createdAt,
-                    endDate: findHighestDate(result.map(convertKeysToCamelCase))
-                      ?.createdAt,
+                    startDate: findLowestDate(stored)?.createdAt,
+                    endDate: findHighestDate(stored)?.createdAt,
                   }).toE621RangeString() || 'none'
                 }`,
               );
 
-              if (result.length === 0) break;
+              const exhausted = result.length < MAX_API_LIMIT;
 
-              results = results.concat(result);
-              page++;
+              this.manifestService.saveResults({
+                type: ItemType.tickets,
+                order,
+                items: stored,
+                exhausted,
+              });
+
+              if (exhausted) {
+                const gaps = findContiguityGaps(results);
+                if (gaps.length > 0) {
+                  this.logger.warn(
+                    `Found ${gaps.length} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
+                  );
+                }
+                break;
+              }
             }
-
-            if (results.length === 0) continue;
-
-            const gaps = findContiguityGaps(results);
-            if (gaps.length > 0) {
-              this.logger.warn(
-                `Found ${gaps.length} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
-              );
-            }
-
-            const stored = await this.ticketSyncService.create(
-              results.map(
-                (ticket) =>
-                  new TicketEntity({
-                    ...convertKeysToCamelCase(ticket),
-                    cache: new TicketCacheEntity(ticket),
-                  }),
-              ),
-            );
-
-            this.manifestService.saveResults({
-              type: ItemType.tickets,
-              order,
-              items: stored,
-              exhausted: true,
-            });
           }
 
           await this.manifestService.mergeInRange(
