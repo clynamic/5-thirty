@@ -5,14 +5,6 @@ import { Ticket, tickets, TicketStatus } from 'src/api/e621';
 import { MAX_API_LIMIT } from 'src/api/http/params';
 import { AuthService } from 'src/auth/auth.service';
 import { ItemType } from 'src/cache/cache.entity';
-import { Job } from 'src/job/job.entity';
-import { JobService } from 'src/job/job.service';
-import { ManifestService } from 'src/manifest/manifest.service';
-import {
-  NotabilityType,
-  NotableUserEntity,
-} from 'src/user/sync/notable-user.entity';
-import { UserSyncService } from 'src/user/sync/user-sync.service';
 import {
   convertKeysToCamelCase,
   DateRange,
@@ -26,6 +18,14 @@ import {
   PartialDateRange,
   rateLimit,
 } from 'src/common';
+import { Job } from 'src/job/job.entity';
+import { JobService } from 'src/job/job.service';
+import { ManifestService } from 'src/manifest/manifest.service';
+import {
+  NotabilityType,
+  NotableUserEntity,
+} from 'src/user/sync/notable-user.entity';
+import { UserSyncService } from 'src/user/sync/user-sync.service';
 
 import { TicketCacheEntity, TicketEntity } from '../ticket.entity';
 import { FindIncompleteParams, TicketSyncService } from './ticket-sync.service';
@@ -91,7 +91,7 @@ export class TicketSyncWorker {
 
               results.push(...result);
 
-              const stored = await this.ticketSyncService.create(
+              const stored = await this.ticketSyncService.save(
                 result.map(
                   (ticket) =>
                     new TicketEntity({
@@ -179,7 +179,7 @@ export class TicketSyncWorker {
 
             results.push(...result);
 
-            await this.ticketSyncService.create(
+            await this.ticketSyncService.save(
               result.map(
                 (ticket) =>
                   new TicketEntity({

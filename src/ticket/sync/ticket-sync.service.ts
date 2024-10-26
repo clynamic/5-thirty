@@ -62,15 +62,5 @@ export class TicketSyncService {
     ).map((row) => Number(row.user_id));
   }
 
-  create(value: TicketEntity): Promise<TicketEntity>;
-  create(value: TicketEntity[]): Promise<TicketEntity[]>;
-
-  async create(
-    value: TicketEntity | TicketEntity[],
-  ): Promise<TicketEntity | TicketEntity[]> {
-    if (Array.isArray(value)) {
-      return this.ticketRepository.save(value);
-    }
-    return this.ticketRepository.save(value);
-  }
+  save = this.ticketRepository.save.bind(this.ticketRepository);
 }
