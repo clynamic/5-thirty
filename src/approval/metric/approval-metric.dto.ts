@@ -1,5 +1,5 @@
 import { UserHead } from 'src/user/head/user-head.dto';
-import { Raw } from 'src/utils';
+import { Raw } from 'src/common';
 import { FindOptionsWhere } from 'typeorm';
 
 import { ApprovalEntity } from '../approval.entity';

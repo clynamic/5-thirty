@@ -1,5 +1,5 @@
 import { ItemType } from 'src/cache/cache.entity';
-import { DateRange, WithCreationDate, WithId } from 'src/utils';
+import { DateRange, WithCreationDate, WithId } from 'src/common';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('manifests')

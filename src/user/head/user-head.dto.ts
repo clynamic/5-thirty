@@ -1,4 +1,4 @@
-import { Raw } from 'src/utils';
+import { Raw } from 'src/common';
 
 export class UserHead {
   constructor(value: Raw<UserHead>) {

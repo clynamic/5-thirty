@@ -1,5 +1,5 @@
 import { IsNumber, IsOptional } from 'class-validator';
-import { Raw } from 'src/utils';
+import { Raw } from 'src/common';
 
 import { NotabilityType } from './notable-user.entity';
 

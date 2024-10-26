@@ -11,7 +11,7 @@ import {
   PaginationParams,
   PartialDateRange,
   SeriesCountPoint,
-} from 'src/utils';
+} from 'src/common';
 
 import {
   ApprovalActivitySummaryQuery,

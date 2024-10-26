@@ -8,7 +8,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { ItemType } from 'src/cache/cache.entity';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
-import { convertKeysToCamelCase, LoopGuard, rateLimit } from 'src/utils';
+import { convertKeysToCamelCase, LoopGuard, rateLimit } from 'src/common';
 
 import { UserCacheEntity, UserEntity } from '../user.entity';
 import { NotabilityType, NotableUserEntity } from './notable-user.entity';

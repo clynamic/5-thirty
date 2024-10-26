@@ -1,5 +1,5 @@
 import { chunk } from 'lodash';
-import { rateLimit } from 'src/utils';
+import { rateLimit } from 'src/common';
 
 import { User, users } from '../e621';
 

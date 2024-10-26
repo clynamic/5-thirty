@@ -9,7 +9,7 @@ import {
   PaginationParams,
   PartialDateRange,
   SeriesCountPoint,
-} from 'src/utils';
+} from 'src/common';
 import { Repository } from 'typeorm';
 
 import { ApprovalEntity } from '../approval.entity';

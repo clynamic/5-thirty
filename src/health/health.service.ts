@@ -5,7 +5,7 @@ import { ItemType } from 'src/cache/cache.entity';
 import { FlagEntity } from 'src/flag/flag.entity';
 import { ManifestEntity } from 'src/manifest/manifest.entity';
 import { TicketEntity } from 'src/ticket/ticket.entity';
-import { WithId } from 'src/utils';
+import { WithId } from 'src/common';
 import { Between, Repository } from 'typeorm';
 
 import { IdGap, ManifestCondition, ManifestHealth } from './health.dto';

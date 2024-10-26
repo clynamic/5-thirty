@@ -23,7 +23,7 @@ import {
   LoopGuard,
   PartialDateRange,
   rateLimit,
-} from 'src/utils';
+} from 'src/common';
 
 import { FeedbackCacheEntity, FeedbackEntity } from '../feedback.entity';
 import { FeedbackSyncService } from './feedback-sync.service';

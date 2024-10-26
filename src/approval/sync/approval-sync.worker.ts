@@ -19,7 +19,7 @@ import {
   LoopGuard,
   PartialDateRange,
   rateLimit,
-} from 'src/utils';
+} from 'src/common';
 
 import { ApprovalCacheEntity, ApprovalEntity } from '../approval.entity';
 import { ApprovalSyncService } from './approval-sync.service';

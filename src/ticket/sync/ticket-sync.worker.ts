@@ -25,7 +25,7 @@ import {
   LoopGuard,
   PartialDateRange,
   rateLimit,
-} from 'src/utils';
+} from 'src/common';
 
 import { TicketCacheEntity, TicketEntity } from '../ticket.entity';
 import { FindIncompleteParams, TicketSyncService } from './ticket-sync.service';

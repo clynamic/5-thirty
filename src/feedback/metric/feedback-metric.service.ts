@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DateTime } from 'luxon';
 import { UserFeedbackCategory } from 'src/api';
-import { DateRange, fillStackedDateCounts, PartialDateRange } from 'src/utils';
+import { DateRange, fillStackedDateCounts, PartialDateRange } from 'src/common';
 import { Repository } from 'typeorm';
 
 import { FeedbackEntity } from '../feedback.entity';

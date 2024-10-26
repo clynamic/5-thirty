@@ -18,7 +18,7 @@ import {
   LoopGuard,
   PartialDateRange,
   rateLimit,
-} from 'src/utils';
+} from 'src/common';
 
 import { FlagCacheEntity, FlagEntity } from '../flag.entity';
 import { FlagSyncService } from './flag-sync.service';

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthLevel, RolesGuard } from 'src/auth/auth.guard';
 import { UserLevel } from 'src/auth/auth.level';
-import { PartialDateRange } from 'src/utils';
+import { PartialDateRange } from 'src/common';
 
 import {
   FeedbackCountSeriesPoint,

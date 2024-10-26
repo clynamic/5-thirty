@@ -4,7 +4,7 @@ import { DateTime } from 'luxon';
 import { postsMany, usersMany } from 'src/api';
 import { AuthService } from 'src/auth/auth.service';
 import { PostEntity } from 'src/post/post.entity';
-import { convertKeysToCamelCase } from 'src/utils';
+import { convertKeysToCamelCase } from 'src/common';
 import { In, IsNull, MoreThan, Not, Repository } from 'typeorm';
 
 import { UserCacheEntity, UserEntity } from '../user.entity';

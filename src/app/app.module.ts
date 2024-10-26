@@ -1,4 +1,4 @@
-import '../utils/luxon';
+import '../common/luxon';
 
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';

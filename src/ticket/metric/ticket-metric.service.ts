@@ -12,7 +12,7 @@ import {
   PartialDateRange,
   Raw,
   SeriesCountPoint,
-} from 'src/utils';
+} from 'src/common';
 import { FindOptionsWhere, LessThan, MoreThan, Not, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';

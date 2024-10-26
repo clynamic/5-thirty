@@ -6,7 +6,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ServerAdminGuard } from 'src/auth/auth.guard';
-import { PaginationParams } from 'src/utils';
+import { PaginationParams } from 'src/common';
 
 import { JobInfo } from './job.dto';
 import { JobService } from './job.service';

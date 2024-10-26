@@ -8,7 +8,7 @@ import {
   fillDateCounts,
   PartialDateRange,
   SeriesCountPoint,
-} from 'src/utils';
+} from 'src/common';
 import { Repository } from 'typeorm';
 
 import {

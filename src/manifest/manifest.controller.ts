@@ -14,7 +14,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ServerAdminGuard } from 'src/auth/auth.guard';
-import { DateRange } from 'src/utils';
+import { DateRange } from 'src/common';
 
 import { Manifest, ManifestQuery } from './manifest.dto';
 import { ManifestService } from './manifest.service';

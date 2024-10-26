@@ -1,5 +1,5 @@
 import { ItemType } from 'src/cache/cache.entity';
-import { Raw } from 'src/utils';
+import { Raw } from 'src/common';
 
 export enum ManifestCondition {
   nominal = 'nominal',

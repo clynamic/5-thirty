@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PaginationParams } from 'src/utils';
+import { PaginationParams } from 'src/common';
 
 import { JobInfo } from './job.dto';
 import { Job, JobCancelError } from './job.entity';

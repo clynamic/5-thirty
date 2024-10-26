@@ -1,6 +1,6 @@
 import { IsArray, IsOptional } from 'class-validator';
 import { ItemType } from 'src/cache/cache.entity';
-import { Raw } from 'src/utils';
+import { Raw } from 'src/common';
 
 export class Manifest {
   constructor(value: Raw<Manifest>) {

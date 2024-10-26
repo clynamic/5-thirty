@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TicketStatus } from 'src/api/e621';
-import { DateRange } from 'src/utils';
+import { DateRange } from 'src/common';
 import { LessThan, Not, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
