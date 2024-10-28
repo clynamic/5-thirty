@@ -41,11 +41,19 @@ export type GetPostFlagsParams = {
    */
   'search[creator_name]'?: string;
   /**
-   * Filter by the creation date of the post flag
+   * Filter post flags by creator ID
+   */
+  'search[creator_id]'?: number;
+  /**
+   * Filter post flags by creation date
    */
   'search[created_at]'?: string;
   /**
-   * Filter by the last update date of the post flag
+   * Filter post flags by last update date
    */
   'search[updated_at]'?: string;
+  /**
+   * Filter post flags by flag ID
+   */
+  'search[id]'?: string;
 };

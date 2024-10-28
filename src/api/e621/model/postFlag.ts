@@ -8,7 +8,7 @@
 import type { PostFlagType } from './postFlagType';
 
 /**
- * A post flag object representing a user's flag or deletion request on a post.
+ * A post flag object representing a user's flag or deletion of a post.
  */
 export interface PostFlag {
   /** The timestamp when the post flag was created */

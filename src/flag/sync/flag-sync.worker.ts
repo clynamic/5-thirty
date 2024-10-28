@@ -4,9 +4,6 @@ import { PostFlag, postFlags } from 'src/api';
 import { MAX_API_LIMIT } from 'src/api/http/params';
 import { AuthService } from 'src/auth/auth.service';
 import { ItemType } from 'src/cache/cache.entity';
-import { Job } from 'src/job/job.entity';
-import { JobService } from 'src/job/job.service';
-import { ManifestService } from 'src/manifest/manifest.service';
 import {
   convertKeysToCamelCase,
   DateRange,
@@ -19,6 +16,9 @@ import {
   PartialDateRange,
   rateLimit,
 } from 'src/common';
+import { Job } from 'src/job/job.entity';
+import { JobService } from 'src/job/job.service';
+import { ManifestService } from 'src/manifest/manifest.service';
 
 import { FlagCacheEntity, FlagEntity } from '../flag.entity';
 import { FlagSyncService } from './flag-sync.service';
@@ -108,7 +108,7 @@ export class FlagSyncWorker {
 
               const exhausted = result.length < MAX_API_LIMIT;
 
-              this.manifestService.saveResults({
+              await this.manifestService.saveResults({
                 type: ItemType.flags,
                 order,
                 items: stored,

@@ -6,6 +6,7 @@ import {
   findHighestId,
   findLowestDate,
   findLowestId,
+  resolveWithDate,
 } from 'src/common';
 import {
   Between,
@@ -246,7 +247,7 @@ export class ManifestService {
         this.save(
           order.upper.extend(
             'start',
-            findLowestDate(items)?.createdAt,
+            resolveWithDate(findLowestDate(items)),
             findLowestId(items)?.id,
           ),
         );
@@ -256,7 +257,7 @@ export class ManifestService {
           type: type,
           lowerId: findLowestId(items)!.id,
           upperId: findHighestId(items)!.id,
-          startDate: findLowestDate(items)!.createdAt,
+          startDate: resolveWithDate(findLowestDate(items)!),
           endDate: DateTime.min(
             DateTime.fromJSDate(order.upper),
             currentDate,

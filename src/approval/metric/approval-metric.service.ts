@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DateTime } from 'luxon';
-import { UserHeadService } from 'src/user/head/user-head.service';
 import {
   convertKeysToCamelCase,
   DateRange,
@@ -10,6 +9,7 @@ import {
   PartialDateRange,
   SeriesCountPoint,
 } from 'src/common';
+import { UserHeadService } from 'src/user/head/user-head.service';
 import { Repository } from 'typeorm';
 
 import { ApprovalEntity } from '../approval.entity';

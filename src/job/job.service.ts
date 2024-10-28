@@ -49,8 +49,7 @@ export class JobService {
             this.logger.warn(`[#${job.id}] [${job.title}] was cancelled.`);
           } else if (error instanceof Error) {
             this.logger.error(
-              `[#${job.id}] [${job.title}] failed`,
-              error.message,
+              `[#${job.id}] [${job.title}] failed: ${error.message}`,
               error.stack,
             );
           }

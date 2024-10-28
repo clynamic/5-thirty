@@ -1,5 +1,5 @@
 import { ItemType } from 'src/cache/cache.entity';
-import { DateRange, WithCreationDate, WithId } from 'src/common';
+import { DateRange, WithDate, WithId } from 'src/common';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('manifests')
@@ -80,7 +80,7 @@ export class ManifestEntity {
 
 export type OrderBoundary = Date | ManifestEntity;
 
-export type OrderResult = WithId & WithCreationDate;
+export type OrderResult = WithId & WithDate;
 
 export interface OrderResults {
   type: ItemType;

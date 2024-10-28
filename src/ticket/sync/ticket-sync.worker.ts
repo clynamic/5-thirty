@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import _ from 'lodash';
+import { chunk } from 'lodash';
 import { Ticket, tickets, TicketStatus } from 'src/api/e621';
 import { MAX_API_LIMIT } from 'src/api/http/params';
 import { AuthService } from 'src/auth/auth.service';
@@ -117,7 +117,7 @@ export class TicketSyncWorker {
 
               const exhausted = result.length < MAX_API_LIMIT;
 
-              this.manifestService.saveResults({
+              await this.manifestService.saveResults({
                 type: ItemType.tickets,
                 order,
                 items: stored,
@@ -161,7 +161,7 @@ export class TicketSyncWorker {
 
           this.logger.log(`Found ${incomplete.length} incomplete tickets`);
 
-          const chunks = _.chunk(incomplete, 100);
+          const chunks = chunk(incomplete, 100);
           const results: Ticket[] = [];
 
           for (const chunk of chunks) {
