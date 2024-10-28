@@ -1,5 +1,5 @@
-import { FlagEntity } from 'src/flag/flag.entity';
 import { Raw, toRaws } from 'src/common';
+import { FlagEntity } from 'src/flag/flag.entity';
 import { FindOptionsWhere } from 'typeorm';
 
 export class DeletionCountSeriesQuery {

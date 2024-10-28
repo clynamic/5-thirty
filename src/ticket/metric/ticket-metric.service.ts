@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DateTime } from 'luxon';
 import { TicketQtype, TicketStatus } from 'src/api/e621';
-import { UserHeadService } from 'src/user/head/user-head.service';
 import {
   convertKeysToCamelCase,
   DateRange,
@@ -13,6 +12,7 @@ import {
   Raw,
   SeriesCountPoint,
 } from 'src/common';
+import { UserHeadService } from 'src/user/head/user-head.service';
 import { FindOptionsWhere, LessThan, MoreThan, Not, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';

@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DateTime } from 'luxon';
 import { PostFlagType } from 'src/api';
-import { FlagEntity } from 'src/flag/flag.entity';
 import {
   DateRange,
   fillDateCounts,
   PartialDateRange,
   SeriesCountPoint,
 } from 'src/common';
+import { FlagEntity } from 'src/flag/flag.entity';
 import { Repository } from 'typeorm';
 
 import {

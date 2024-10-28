@@ -1,6 +1,6 @@
 import { TicketStatus } from 'src/api';
-import { UserHead } from 'src/user/head/user-head.dto';
 import { Raw, toRaws } from 'src/common';
+import { UserHead } from 'src/user/head/user-head.dto';
 import { FindOptionsWhere, In } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
