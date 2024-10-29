@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsDate, IsOptional, IsTimeZone } from 'class-validator';
+import { IsDate, IsEnum, IsOptional, IsTimeZone } from 'class-validator';
 import { DateTime } from 'luxon';
 import {
   Between,
@@ -9,7 +9,22 @@ import {
   MoreThanOrEqual,
 } from 'typeorm';
 
+import { WithCreationDate } from './date-objects';
 import { PartialBy, Raw } from './raw';
+
+/**
+ * A time bucket for grouping dates.
+ */
+export enum TimeBucket {
+  Minute = 'minute',
+  Hour = 'hour',
+  Day = 'day',
+  Week = 'week',
+  Month = 'month',
+  Year = 'year',
+  Decade = 'decade',
+  All = 'all',
+}
 
 /**
  * A range of dates, inclusive on both ends.
@@ -52,7 +67,15 @@ export class PartialDateRange {
    * Target timezone for the date range.
    */
   @IsOptional()
+  @IsTimeZone()
   timezone?: string;
+
+  /**
+   * Size of the time bucket for the range.
+   */
+  @IsOptional()
+  @IsEnum(TimeBucket)
+  bucket?: TimeBucket;
 
   find(): FindOperator<Date> | undefined {
     return this.startDate
@@ -114,9 +137,10 @@ export class PartialDateRange {
  * A range of dates, inclusive on both ends.
  */
 export class DateRange extends PartialDateRange {
-  constructor(value: PartialBy<Raw<DateRange>, 'timezone'>) {
+  constructor(value: PartialBy<Raw<DateRange>, 'timezone' | 'bucket'>) {
     super({
       timezone: 'UTC',
+      bucket: TimeBucket.Day,
       ...value,
     });
   }
@@ -140,6 +164,9 @@ export class DateRange extends PartialDateRange {
   @IsTimeZone()
   override timezone: string;
 
+  @IsEnum(TimeBucket)
+  override bucket: TimeBucket;
+
   /**
    * Fills in missing dates in a partial date range.
    * If both dates are missing, defaults to the current month.
@@ -150,7 +177,7 @@ export class DateRange extends PartialDateRange {
       return new DateRange({
         startDate: range.startDate,
         endDate: range.endDate,
-        timezone: range.timezone,
+        ...range,
       });
     } else if (range?.startDate) {
       return new DateRange({
@@ -160,7 +187,7 @@ export class DateRange extends PartialDateRange {
         })
           .endOf('month')
           .toJSDate(),
-        timezone: range.timezone,
+        ...range,
       });
     } else if (range?.endDate) {
       return new DateRange({
@@ -170,18 +197,21 @@ export class DateRange extends PartialDateRange {
           .startOf('month')
           .toJSDate(),
         endDate: range.endDate,
-        timezone: range.timezone,
+        ...range,
       });
     }
 
-    return DateRange.currentMonth();
+    return DateRange.currentMonth(range);
   }
 
   /**
    * Returns a date range for the last `months` months.
    */
-  static recentMonths(months: number = 3): DateRange {
-    const now = DateTime.now();
+  static recentMonths(
+    months: number = 3,
+    value?: Omit<Raw<PartialDateRange>, 'startDate' | 'endDate'>,
+  ): DateRange {
+    const now = DateTime.now().setZone(value?.timezone ?? 'UTC');
     return new DateRange({
       startDate: now
         .minus({
@@ -190,14 +220,17 @@ export class DateRange extends PartialDateRange {
         .startOf('month')
         .toJSDate(),
       endDate: now.endOf('month').toJSDate(),
+      ...value,
     });
   }
 
   /**
    * Returns a date range for the current month.
    */
-  static currentMonth(): DateRange {
-    return new DateRange(DateRange.recentMonths(0));
+  static currentMonth(
+    value?: Omit<Raw<PartialDateRange>, 'startDate' | 'endDate'>,
+  ): DateRange {
+    return new DateRange(DateRange.recentMonths(0, value));
   }
 
   override find(): FindOperator<Date> {
@@ -208,70 +241,6 @@ export class DateRange extends PartialDateRange {
     return super.where()!;
   }
 }
-
-/**
- * An object with a date denoting a creation time.
- */
-export type WithDate = WithCreationDate | WithOnlyUpdateDate;
-
-/**
- * An object with a creation date.
- */
-export interface WithCreationDate {
-  createdAt: Date;
-}
-
-/**
- * An object with an update date but no creation date.
- * The update date is assumed to be the creation date.
- */
-export interface WithOnlyUpdateDate extends Exclude<object, WithCreationDate> {
-  updatedAt: Date;
-}
-
-/**
- * Resolves the date of an object with a date property.
- */
-export const resolveWithDate = <T extends WithDate | undefined>(
-  item: T,
-): T extends undefined ? undefined : Date => {
-  if (item === undefined) {
-    return undefined as T extends undefined ? undefined : never;
-  }
-  return (
-    'createdAt' in item ? item.createdAt : item.updatedAt
-  ) as T extends undefined ? never : Date;
-};
-
-/**
- * Finds the least recent creation date in a list of items.
- */
-export const findLowestDate = <T extends WithDate>(
-  items: T[] | undefined,
-): T | undefined => {
-  if (items === undefined || items.length === 0) return undefined;
-  return items.reduce((prev, current) =>
-    DateTime.fromJSDate(resolveWithDate(prev)) <
-    DateTime.fromJSDate(resolveWithDate(current))
-      ? prev
-      : current,
-  );
-};
-
-/**
- * Finds the most recent creation date in a list of items.
- */
-export const findHighestDate = <T extends WithDate>(
-  items: T[] | undefined,
-): T | undefined => {
-  if (items === undefined || items.length === 0) return undefined;
-  return items.reduce((prev, current) =>
-    DateTime.fromJSDate(resolveWithDate(prev)) >
-    DateTime.fromJSDate(resolveWithDate(current))
-      ? prev
-      : current,
-  );
-};
 
 export const fillDateCounts = (
   range: PartialDateRange,

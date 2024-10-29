@@ -7,6 +7,7 @@ import {
   DateRange,
   fillDateCounts,
   fillStackedDateCounts,
+  generateSeriesCountPoints,
   PaginationParams,
   PartialDateRange,
   Raw,
@@ -174,28 +175,9 @@ export class TicketMetricService {
       },
     });
 
-    const counts: Record<string, number> = {};
-
-    for (const ticket of tickets) {
-      const createdDate = DateTime.fromJSDate(ticket.createdAt, {
-        zone: range.timezone,
-      });
-      const dateString = createdDate.toISODate()!;
-      counts[dateString] = (counts[dateString] || 0) + 1;
-    }
-
-    fillDateCounts(range, counts);
-
-    return Object.keys(counts)
-      .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
-      .sort()
-      .map(
-        (date) =>
-          new SeriesCountPoint({
-            date: date.toJSDate(),
-            count: counts[date.toISODate()!] ?? 0,
-          }),
-      );
+    return generateSeriesCountPoints(tickets, range, (ticket) =>
+      DateTime.fromJSDate(ticket.createdAt),
+    );
   }
 
   async closedSeries(
