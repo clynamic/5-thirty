@@ -4,5 +4,5 @@ export class SeriesCountPoint {
   }
 
   date: Date;
-  count: number;
+  value: number;
 }

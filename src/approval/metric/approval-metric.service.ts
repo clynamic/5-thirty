@@ -67,7 +67,7 @@ export class ApprovalMetricService {
         (date) =>
           new SeriesCountPoint({
             date: date.toJSDate(),
-            count: counts[date.toISODate()!]!,
+            value: counts[date.toISODate()!]!,
           }),
       );
   }
@@ -123,7 +123,7 @@ export class ApprovalMetricService {
         (date) =>
           new SeriesCountPoint({
             date: date.toJSDate(),
-            count: counts[date.toISO()!] ?? 0,
+            value: counts[date.toISO()!] ?? 0,
           }),
       );
   }

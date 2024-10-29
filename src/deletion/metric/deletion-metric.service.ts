@@ -54,7 +54,7 @@ export class DeletionMetricService {
         (date) =>
           new SeriesCountPoint({
             date: date.toJSDate(),
-            count: counts[date.toISODate()!]!,
+            value: counts[date.toISODate()!]!,
           }),
       );
   }
@@ -111,7 +111,7 @@ export class DeletionMetricService {
         (dateTime) =>
           new SeriesCountPoint({
             date: dateTime.toJSDate(),
-            count: deletionCounts[dateTime.toISO()!] ?? 0,
+            value: deletionCounts[dateTime.toISO()!] ?? 0,
           }),
       );
   }

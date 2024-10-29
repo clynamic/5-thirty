@@ -13,9 +13,9 @@ import { WithCreationDate } from './date-objects';
 import { PartialBy, Raw } from './raw';
 
 /**
- * A time bucket for grouping dates.
+ * A bucket of time for grouping dates.
  */
-export enum TimeBucket {
+export enum TimeScale {
   Minute = 'minute',
   Hour = 'hour',
   Day = 'day',
@@ -74,8 +74,8 @@ export class PartialDateRange {
    * Size of the time bucket for the range.
    */
   @IsOptional()
-  @IsEnum(TimeBucket)
-  bucket?: TimeBucket;
+  @IsEnum(TimeScale)
+  scale?: TimeScale;
 
   find(): FindOperator<Date> | undefined {
     return this.startDate
@@ -131,16 +131,30 @@ export class PartialDateRange {
       return '';
     }
   }
+
+  /**
+   * Clamps a date to the range.
+   * The returned date will be within the range.
+   */
+  clamp(date: DateTime): DateTime {
+    if (this.startDate && date < DateTime.fromJSDate(this.startDate)) {
+      return DateTime.fromJSDate(this.startDate);
+    } else if (this.endDate && date > DateTime.fromJSDate(this.endDate)) {
+      return DateTime.fromJSDate(this.endDate);
+    } else {
+      return date;
+    }
+  }
 }
 
 /**
  * A range of dates, inclusive on both ends.
  */
 export class DateRange extends PartialDateRange {
-  constructor(value: PartialBy<Raw<DateRange>, 'timezone' | 'bucket'>) {
+  constructor(value: PartialBy<Raw<DateRange>, 'timezone' | 'scale'>) {
     super({
       timezone: 'UTC',
-      bucket: TimeBucket.Day,
+      scale: TimeScale.Day,
       ...value,
     });
   }
@@ -164,8 +178,8 @@ export class DateRange extends PartialDateRange {
   @IsTimeZone()
   override timezone: string;
 
-  @IsEnum(TimeBucket)
-  override bucket: TimeBucket;
+  @IsEnum(TimeScale)
+  override scale: TimeScale;
 
   /**
    * Fills in missing dates in a partial date range.
