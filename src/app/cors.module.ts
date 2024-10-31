@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, MethodNotAllowedException, Module } from '@nestjs/common';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { ConfigService } from '@nestjs/config';
 
@@ -25,6 +25,7 @@ export class CorsConfigModule {
       : allowedOrigins?.split(',');
 
     return {
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
       origin: (origin, callback) => {
         if (
           !origin ||
@@ -33,7 +34,7 @@ export class CorsConfigModule {
         ) {
           callback(null, true);
         } else {
-          callback(new Error('Not allowed by CORS'));
+          callback(new MethodNotAllowedException('Origin not allowed'), false);
         }
       },
       credentials: true,
