@@ -137,13 +137,13 @@ export class PartialDateRange {
    * The returned date will be within the range.
    */
   clamp(date: DateTime): DateTime {
-    if (this.startDate && date < DateTime.fromJSDate(this.startDate)) {
-      return DateTime.fromJSDate(this.startDate);
-    } else if (this.endDate && date > DateTime.fromJSDate(this.endDate)) {
-      return DateTime.fromJSDate(this.endDate);
-    } else {
-      return date;
-    }
+    return DateTime.max(
+      DateTime.min(
+        this.endDate ? DateTime.fromJSDate(this.endDate) : date,
+        date,
+      ),
+      this.startDate ? DateTime.fromJSDate(this.startDate) : date,
+    );
   }
 }
 

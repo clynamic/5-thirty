@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DateTime } from 'luxon';
+import { DateTime, DateTimeUnit } from 'luxon';
 import { TicketQtype, TicketStatus } from 'src/api/e621';
 import {
   convertKeysToCamelCase,
   createTimeBuckets,
   DateRange,
-  fillDateCounts,
   generateSeriesCountPoints,
   generateSeriesRecordPoints,
   PaginationParams,
@@ -121,47 +120,29 @@ export class TicketMetricService {
       ],
     });
 
-    const counts: Record<string, number> = {};
+    return generateSeriesCountPoints(tickets, range, (ticket) => {
+      const startDate = range
+        .clamp(DateTime.fromJSDate(ticket.createdAt))
+        .setZone(range.timezone);
 
-    for (const ticket of tickets) {
-      const createdDate = DateTime.max(
-        DateTime.fromJSDate(ticket.createdAt, { zone: range.timezone }).startOf(
-          'day',
-        ),
-        DateTime.fromJSDate(range.startDate!).startOf('day'),
-      );
-      const endDate = DateTime.min(
-        (ticket.status === TicketStatus.approved
-          ? DateTime.fromJSDate(ticket.updatedAt, { zone: range.timezone })
-              // we exclude the day the ticket was closed
-              .minus({ days: 1 })
-          : DateTime.now().setZone(range.timezone)
-        ).endOf('day'),
-        DateTime.fromJSDate(range.endDate!),
-      );
+      const endDate = range
+        .clamp(
+          ticket.status === TicketStatus.approved
+            ? DateTime.fromJSDate(ticket.updatedAt)
+            : DateTime.now(),
+        )
+        .setZone(range.timezone);
 
-      for (
-        let date = createdDate;
-        date <= endDate;
-        date = date.plus({ days: 1 })
-      ) {
-        const formattedDate = date.toISODate()!;
-        counts[formattedDate] = (counts[formattedDate] || 0) + 1;
-      }
-    }
+      const unit: DateTimeUnit =
+        range.scale! === 'minute' || range.scale! === 'hour'
+          ? range.scale!
+          : 'day';
 
-    fillDateCounts(range, counts);
+      // If the ticket was created and closed within the same unit, ignore it
+      if (endDate.hasSame(startDate, unit)) return undefined;
 
-    return Object.keys(counts)
-      .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
-      .sort()
-      .map(
-        (date) =>
-          new SeriesCountPoint({
-            date: date.toJSDate(),
-            value: counts[date.toISODate()!] ?? 0,
-          }),
-      );
+      return createTimeBuckets(startDate, endDate, range.scale!);
+    });
   }
 
   async createdSeries(
