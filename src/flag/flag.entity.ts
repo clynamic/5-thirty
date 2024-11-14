@@ -18,6 +18,7 @@ export class FlagEntity extends CacheLink {
   creatorId: number;
 
   @Column({ type: 'int' })
+  @Index()
   postId: number;
 
   @Column({ type: 'boolean' })

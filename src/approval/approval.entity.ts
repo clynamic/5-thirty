@@ -15,6 +15,7 @@ export class ApprovalEntity extends CacheLink {
   id: number;
 
   @Column({ type: 'int' })
+  @Index()
   postId: number;
 
   @Column({ type: 'int' })

@@ -12,8 +12,11 @@ import { FlagModule } from 'src/flag/flag.module';
 import { HealthModule } from 'src/health/health.module';
 import { JobModule } from 'src/job/job.module';
 import { ManifestModule } from 'src/manifest/manifest.module';
+import { PermitModule } from 'src/permit/permit.module';
 import { PostModule } from 'src/post/post.module';
+import { PostVersionModule } from 'src/post_version/post_version.module';
 import { TicketModule } from 'src/ticket/ticket.module';
+import { UploadModule } from 'src/upload/upload.module';
 import { UserModule } from 'src/user/user.module';
 
 import { AppConfigModule } from './config.module';
@@ -39,6 +42,9 @@ import { DatabaseModule } from './database.module';
     FlagModule,
     DeletionModule,
     FeedbackModule,
+    PostVersionModule,
+    UploadModule,
+    PermitModule,
   ],
   controllers: [],
   providers: [],
