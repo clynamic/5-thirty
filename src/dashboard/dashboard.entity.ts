@@ -43,6 +43,10 @@ export class DashboardEntity {
   @PrimaryColumn({ type: 'int' })
   userId: number;
 
+  // TODO: introduce versioning
+  // Column({ type: 'int' })
+  // version: number;
+
   @Column({ type: 'json' })
   positions: DashboardPositions;
 
