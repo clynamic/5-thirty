@@ -66,17 +66,21 @@ export class RequestLogger implements NestInterceptor {
 
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
+    const startTime = Date.now();
+
     this.logger.log(`[${method.toUpperCase()}] ${ip} -> ${url.href}`);
 
     return next.handle().pipe(
       tap(() => {
         const res = context.switchToHttp().getResponse();
+        const duration = Date.now() - startTime;
         this.logger.log(
-          `[${method.toUpperCase()}] ${ip} <- ${url.href} : ${res.statusCode}`,
+          `[${method.toUpperCase()}] ${ip} <- ${url.href} : ${res.statusCode} - ${duration}ms`,
         );
       }),
       catchError((error) => {
-        this.logger.error(`${ip} x- Error: ${error.message}`);
+        const duration = Date.now() - startTime;
+        this.logger.error(`${ip} x- Error: ${error.message} - ${duration}ms`);
         throw error;
       }),
     );
