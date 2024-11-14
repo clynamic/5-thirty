@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApprovalEntity } from 'src/approval/approval.entity';
+import { FeedbackEntity } from 'src/feedback/feedback.entity';
 import { FlagEntity } from 'src/flag/flag.entity';
 import { ManifestEntity } from 'src/manifest/manifest.entity';
 import { TicketEntity } from 'src/ticket/ticket.entity';
@@ -15,6 +16,7 @@ import { HealthService } from './health.service';
       TicketEntity,
       ApprovalEntity,
       FlagEntity,
+      FeedbackEntity,
     ]),
   ],
   controllers: [HealthController],
