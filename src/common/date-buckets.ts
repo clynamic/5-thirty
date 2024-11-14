@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { DateTime } from 'luxon';
+import { DateTime, DateTimeUnit } from 'luxon';
 
 import { SeriesCountPoint } from './chart.dto';
 import { DateRange, PartialDateRange, TimeScale } from './date-range.dto';
@@ -9,41 +9,34 @@ export interface SeriesPoint<T> {
   value: T;
 }
 
-const timeBucketFormats = {
-  [TimeScale.Minute]: 'yyyy-MM-dd HH:mm',
-  [TimeScale.Hour]: 'yyyy-MM-dd HH',
-  [TimeScale.Day]: 'yyyy-MM-dd',
-  [TimeScale.Week]: "kkkk-'W'WW",
-  [TimeScale.Month]: 'yyyy-MM',
-  [TimeScale.Year]: 'yyyy',
-  [TimeScale.Decade]: 'yyyy',
-  [TimeScale.All]: 'all',
-};
-
-const formatTimeBucket = (date: DateTime, bucket: TimeScale): string => {
+const formatTimeBucket = (date: DateTime, bucket: TimeScale): number => {
   if (bucket === TimeScale.All) {
-    return timeBucketFormats[bucket];
+    return 0;
   } else if (bucket === TimeScale.Decade) {
-    return (Math.floor(date.year / 10) * 10).toString();
+    const startOfDecade = date
+      .set({ year: Math.floor(date.year / 10) * 10 })
+      .startOf('year');
+    return startOfDecade.toSeconds();
   } else {
-    const format = timeBucketFormats[bucket];
-    return date.toFormat(format);
+    const startOfBucket = date.startOf(bucket.toLowerCase() as DateTimeUnit);
+    return startOfBucket.toSeconds();
   }
 };
 
 const parseTimeBucket = (
-  date: string,
+  seconds: number,
   bucket: TimeScale,
   timezone: string,
 ): DateTime => {
+  const date = DateTime.fromSeconds(seconds, { zone: timezone });
+
   if (bucket === TimeScale.All) {
     return DateTime.fromObject({ year: 0 }, { zone: timezone });
   } else if (bucket === TimeScale.Decade) {
-    return DateTime.fromObject({ year: parseInt(date) }, { zone: timezone });
+    const decadeStartYear = Math.floor(date.year / 10) * 10;
+    return DateTime.fromObject({ year: decadeStartYear }, { zone: timezone });
   } else {
-    return DateTime.fromFormat(date, timeBucketFormats[bucket], {
-      zone: timezone,
-    });
+    return date.startOf(bucket.toLowerCase() as DateTimeUnit);
   }
 };
 
@@ -76,11 +69,11 @@ export const createTimeBuckets = (
 // TODO: might replace this with just filling every bucket in the range
 const fillTimeBuckets = <R>(
   range: DateRange,
-  counts: Record<string, R>,
-  getDefault: (dateString: string) => R,
+  counts: Record<number, R>,
+  getDefault: (seconds: number) => R,
 ): void => {
-  const dates = Object.keys(counts).map((date) =>
-    parseTimeBucket(date, range.scale, range.timezone),
+  const dates = Object.keys(counts).map((seconds) =>
+    parseTimeBucket(parseInt(seconds), range.scale, range.timezone),
   );
 
   if (dates.length === 0) return;
@@ -89,9 +82,9 @@ const fillTimeBuckets = <R>(
   const maxDate = DateTime.max(...dates);
 
   for (const currentDate of createTimeBuckets(minDate, maxDate, range.scale)) {
-    const dateString = formatTimeBucket(currentDate, range.scale);
-    if (!(dateString in counts)) {
-      counts[dateString] = getDefault(dateString);
+    const unix = formatTimeBucket(currentDate, range.scale);
+    if (!(unix in counts)) {
+      counts[unix] = getDefault(unix);
     }
   }
 };
@@ -103,10 +96,10 @@ export const generateSeriesPoints = <T, R>(
   range: PartialDateRange,
   getDate: (item: T) => DateTime | DateTime[] | undefined,
   getValue: (prev: R | undefined, item: T) => R,
-  getDefault: (dateString: string) => R,
+  getDefault: (seconds: number) => R,
 ): SeriesPoint<R>[] => {
   const dateRange = DateRange.fill(range);
-  const counts: Record<string, R> = {};
+  const counts: Record<number, R> = {};
 
   const bucketCount = createTimeBuckets(
     DateTime.fromJSDate(dateRange.startDate),
@@ -127,19 +120,19 @@ export const generateSeriesPoints = <T, R>(
 
     for (const date of dates) {
       const dateInZone = date.setZone(range.timezone);
-      const dateString = formatTimeBucket(dateInZone, dateRange.scale);
-      counts[dateString] = getValue(counts[dateString], item);
+      const unix = formatTimeBucket(dateInZone, dateRange.scale);
+      counts[unix] = getValue(counts[unix], item);
     }
   }
 
   fillTimeBuckets(dateRange, counts, getDefault);
 
   return Object.keys(counts)
-    .map((dateString) => ({
-      date: dateString,
-      value: counts[dateString]!,
+    .map((seconds) => ({
+      date: parseInt(seconds),
+      value: counts[parseInt(seconds)]!,
     }))
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .sort((a, b) => a.date - b.date)
     .map(({ date, value }) => ({
       date: parseTimeBucket(
         date,
