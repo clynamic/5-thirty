@@ -6,6 +6,7 @@ import { WithId } from 'src/common';
 import { FeedbackEntity } from 'src/feedback/feedback.entity';
 import { FlagEntity } from 'src/flag/flag.entity';
 import { ManifestEntity } from 'src/manifest/manifest.entity';
+import { PostVersionEntity } from 'src/post_version/post_version.entity';
 import { TicketEntity } from 'src/ticket/ticket.entity';
 import { Between, Repository } from 'typeorm';
 
@@ -24,6 +25,8 @@ export class HealthService {
     private readonly flagRepository: Repository<FlagEntity>,
     @InjectRepository(FeedbackEntity)
     private readonly feedbackRepository: Repository<FeedbackEntity>,
+    @InjectRepository(PostVersionEntity)
+    private readonly postVersionRepository: Repository<PostVersionEntity>,
   ) {}
 
   private itemRepositories: Partial<Record<ItemType, Repository<WithId>>> = {
@@ -31,6 +34,7 @@ export class HealthService {
     [ItemType.approvals]: this.approvalRepository,
     [ItemType.flags]: this.flagRepository,
     [ItemType.feedbacks]: this.feedbackRepository,
+    [ItemType.postVersions]: this.postVersionRepository,
   };
 
   async getManifestHealth(): Promise<ManifestHealth[]> {
