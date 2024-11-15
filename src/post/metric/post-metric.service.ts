@@ -136,16 +136,16 @@ export class PostMetricService {
         .clamp(DateTime.fromJSDate(post.updatedAt))
         .setZone(range.timezone);
 
-      const stopDate = endDates.get(post.postId) || DateTime.now();
+      const endDate = endDates.get(post.postId) || DateTime.now();
 
       const unit: DateTimeUnit =
         range.scale! === 'minute' || range.scale! === 'hour'
           ? range.scale!
           : 'day';
 
-      if (stopDate.hasSame(startDate, unit)) return undefined;
+      if (endDate.minus({ [unit]: 1 }) < startDate) return undefined;
 
-      return createTimeBuckets(startDate, stopDate, range.scale!);
+      return createTimeBuckets(startDate, endDate, range.scale!);
     });
   }
 }

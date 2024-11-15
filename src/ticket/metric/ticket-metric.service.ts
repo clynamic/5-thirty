@@ -139,7 +139,7 @@ export class TicketMetricService {
           : 'day';
 
       // If the ticket was created and closed within the same unit, ignore it
-      if (endDate.hasSame(startDate, unit)) return undefined;
+      if (endDate.minus({ [unit]: 1 }) < startDate) return undefined;
 
       return createTimeBuckets(startDate, endDate, range.scale!);
     });
