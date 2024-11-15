@@ -3,6 +3,7 @@ import { Column, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 export enum NotabilityType {
   staff = 'staff',
   reporter = 'reporter',
+  uploader = 'uploader',
 }
 
 @Entity('notable_users')

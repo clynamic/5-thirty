@@ -81,7 +81,7 @@ export class UserSyncWorker {
     );
   }
 
-  @Cron(CronExpression.EVERY_HOUR)
+  @Cron(CronExpression.EVERY_10_MINUTES)
   refreshNotable() {
     this.jobService.add(
       new Job({
@@ -96,8 +96,12 @@ export class UserSyncWorker {
             newerThan: DateTime.now().minus({ months: 1 }).toJSDate(),
           });
 
-          await usersMany(
+          const users = await this.userSyncService.findOutdated(
             notable.map((notable) => notable.id),
+          );
+
+          await usersMany(
+            users,
             this.authService.getServerAxiosConfig(),
             async (result) => {
               this.logger.log(`Found ${result.length} notable users`);

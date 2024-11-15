@@ -27,6 +27,11 @@ import {
   PostVersionCacheEntity,
   PostVersionEntity,
 } from 'src/post_version/post_version.entity';
+import {
+  NotabilityType,
+  NotableUserEntity,
+} from 'src/user/sync/notable-user.entity';
+import { UserSyncService } from 'src/user/sync/user-sync.service';
 
 import { UploadSyncService } from './upload-sync.service';
 
@@ -37,6 +42,7 @@ export class UploadSyncWorker {
     private readonly authService: AuthService,
     private readonly uploadSyncService: UploadSyncService,
     private readonly manifestService: ManifestService,
+    private readonly userSyncService: UserSyncService,
   ) {}
 
   private readonly logger = new Logger(UploadSyncWorker.name);
@@ -45,7 +51,7 @@ export class UploadSyncWorker {
   runOrders() {
     this.jobService.add(
       new Job({
-        title: 'Post Uploads Sync',
+        title: 'Post Uploads Order Sync',
         key: `/uploads/orders`,
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.authService.getServerAxiosConfig();
@@ -134,6 +140,31 @@ export class UploadSyncWorker {
             ItemType.postVersions,
             recentlyRange,
           );
+        },
+      }),
+    );
+  }
+
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  writeNotable() {
+    this.jobService.add(
+      new Job({
+        title: 'Post Uploads Notable Sync',
+        key: `/uploads/notable`,
+        execute: async () => {
+          const reporters = await this.uploadSyncService.findUploaders();
+
+          await this.userSyncService.note(
+            reporters.map(
+              (reporter) =>
+                new NotableUserEntity({
+                  id: reporter,
+                  type: NotabilityType.uploader,
+                }),
+            ),
+          );
+
+          this.logger.log(`Noted ${reporters.length} uploaders`);
         },
       }),
     );

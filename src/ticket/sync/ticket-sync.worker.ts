@@ -200,7 +200,7 @@ export class TicketSyncWorker {
     );
   }
 
-  @Cron(CronExpression.EVERY_HOUR)
+  @Cron(CronExpression.EVERY_10_MINUTES)
   writeNotable() {
     this.jobService.add(
       new Job({

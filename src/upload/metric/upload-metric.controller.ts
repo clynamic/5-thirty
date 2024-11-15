@@ -7,9 +7,16 @@ import {
 } from '@nestjs/swagger';
 import { AuthLevel, RolesGuard } from 'src/auth/auth.guard';
 import { UserLevel } from 'src/auth/auth.level';
-import { PartialDateRange, SeriesCountPoint } from 'src/common';
+import {
+  PaginationParams,
+  PartialDateRange,
+  SeriesCountPoint,
+} from 'src/common';
 
-import { PostUploadSeriesQuery } from './upload-metric.dto';
+import {
+  PostUploaderSummary,
+  PostUploadSeriesQuery,
+} from './upload-metric.dto';
 import { UploadMetricService } from './upload-metric.service';
 
 @ApiTags('Uploads')
@@ -36,5 +43,23 @@ export class UploadMetricController {
     @Query() query?: PostUploadSeriesQuery,
   ): Promise<SeriesCountPoint[]> {
     return this.uploadMetricService.count(range, query);
+  }
+
+  @Get('uploader/summary')
+  @ApiOperation({
+    summary: 'Uploader summary',
+    description:
+      'Get a summary of post uploading counts for a given date range',
+    operationId: 'getPostUploaderSummary',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [PostUploaderSummary],
+  })
+  async uploaderSummary(
+    @Query() range?: PartialDateRange,
+    @Query() pages?: PaginationParams,
+  ): Promise<PostUploaderSummary[]> {
+    return this.uploadMetricService.uploaders(range, pages);
   }
 }

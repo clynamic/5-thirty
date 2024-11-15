@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { DateTime } from 'luxon';
 import { In, MoreThanOrEqual, Repository } from 'typeorm';
 
 import { UserEntity } from '../user.entity';
@@ -54,38 +55,29 @@ export class UserSyncService {
       .then((users) => users.map((user) => user.avatar_id));
   }
 
-  note(value: NotableUserEntity): Promise<NotableUserEntity>;
-  note(value: NotableUserEntity[]): Promise<NotableUserEntity[]>;
+  note = this.notableUserRepository.save.bind(this.notableUserRepository);
 
-  async note(
-    value: NotableUserEntity | NotableUserEntity[],
-  ): Promise<NotableUserEntity | NotableUserEntity[]> {
-    if (Array.isArray(value)) {
-      return this.notableUserRepository.save(value);
-    }
-    return this.notableUserRepository.save(value);
-  }
+  denote = this.notableUserRepository.remove.bind(this.notableUserRepository);
 
-  denote(value: NotableUserEntity): Promise<void>;
-  denote(value: NotableUserEntity[]): Promise<void>;
+  create = this.userRepository.save.bind(this.userRepository);
 
-  async denote(value: NotableUserEntity | NotableUserEntity[]): Promise<void> {
-    if (Array.isArray(value)) {
-      await this.notableUserRepository.remove(value);
-    } else {
-      await this.notableUserRepository.remove(value);
-    }
-  }
-
-  create(value: UserEntity): Promise<UserEntity>;
-  create(value: UserEntity[]): Promise<UserEntity[]>;
-
-  async create(
-    value: UserEntity | UserEntity[],
-  ): Promise<UserEntity | UserEntity[]> {
-    if (Array.isArray(value)) {
-      return this.userRepository.save(value);
-    }
-    return this.userRepository.save(value);
+  async findOutdated(
+    users: number[],
+    staleness: number = 60 * 60 * 1000,
+  ): Promise<number[]> {
+    return this.userRepository
+      .find({
+        where: {
+          id: In(users),
+          cache: {
+            refreshedAt: MoreThanOrEqual(
+              DateTime.now().minus({ milliseconds: staleness }).toJSDate(),
+            ),
+          },
+        },
+        select: ['id'],
+        relations: ['cache'],
+      })
+      .then((ids) => users.filter((id) => !ids.some((user) => user.id === id)));
   }
 }
