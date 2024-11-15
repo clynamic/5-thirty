@@ -9,5 +9,6 @@ export class JobInfo {
   startedAt?: Date;
   endedAt?: Date;
   succeeded: boolean;
+  failed: boolean;
   cancelled: boolean;
 }

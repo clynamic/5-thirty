@@ -80,12 +80,21 @@ export class Job<MetadataType = undefined> {
     return this._endedAt;
   }
 
+  private _error?: unknown;
+  get error(): unknown {
+    return this._error;
+  }
+
   get running(): boolean {
     return !!this._startedAt && !this._endedAt;
   }
 
   get succeeded(): boolean {
-    return !!this._endedAt && !this.cancelToken.isCancelled;
+    return !this.running && !this.failed && !this.cancelled;
+  }
+
+  get failed(): boolean {
+    return this._error !== undefined;
   }
 
   get cancelled(): boolean {
@@ -100,6 +109,7 @@ export class Job<MetadataType = undefined> {
       startedAt: this.startedAt,
       endedAt: this.endedAt,
       succeeded: this.succeeded,
+      failed: this.failed,
       cancelled: this.cancelled,
     });
   }
@@ -114,6 +124,9 @@ export class Job<MetadataType = undefined> {
         metadata: this.metadata as MetadataType,
       });
       await this._promise;
+    } catch (error) {
+      this._error = error;
+      throw error;
     } finally {
       this._endedAt = new Date();
     }
