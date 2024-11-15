@@ -3,6 +3,7 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 export enum DashboardType {
   moderator = 'moderator',
   janitor = 'janitor',
+  admin = 'admin',
 }
 
 export class DashboardPosition {
@@ -43,9 +44,8 @@ export class DashboardEntity {
   @PrimaryColumn({ type: 'int' })
   userId: number;
 
-  // TODO: introduce versioning
-  // Column({ type: 'int' })
-  // version: number;
+  @Column({ type: 'int', default: 1 })
+  version: number;
 
   @Column({ type: 'json' })
   positions: DashboardPositions;

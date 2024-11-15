@@ -29,6 +29,7 @@ export class DashboardService {
     return this.dashboardRepository.save({
       userId,
       type,
+      version: 1,
       positions: {
         xs: [],
         sm: [],
