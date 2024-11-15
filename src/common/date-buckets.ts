@@ -66,29 +66,6 @@ export const createTimeBuckets = (
   return buckets;
 };
 
-// TODO: might replace this with just filling every bucket in the range
-const fillTimeBuckets = <R>(
-  range: DateRange,
-  counts: Record<number, R>,
-  getDefault: (seconds: number) => R,
-): void => {
-  const dates = Object.keys(counts).map((seconds) =>
-    parseTimeBucket(parseInt(seconds), range.scale, range.timezone),
-  );
-
-  if (dates.length === 0) return;
-
-  const minDate = DateTime.min(...dates);
-  const maxDate = DateTime.max(...dates);
-
-  for (const currentDate of createTimeBuckets(minDate, maxDate, range.scale)) {
-    const unix = formatTimeBucket(currentDate, range.scale);
-    if (!(unix in counts)) {
-      counts[unix] = getDefault(unix);
-    }
-  }
-};
-
 const MAX_BUCKET_COUNT = 10000;
 
 export const generateSeriesPoints = <T, R>(
@@ -101,15 +78,15 @@ export const generateSeriesPoints = <T, R>(
   const dateRange = DateRange.fill(range);
   const counts: Record<number, R> = {};
 
-  const bucketCount = createTimeBuckets(
+  const buckets = createTimeBuckets(
     DateTime.fromJSDate(dateRange.startDate),
-    DateTime.fromJSDate(dateRange.endDate),
+    DateTime.min(DateTime.fromJSDate(dateRange.endDate), DateTime.now()),
     dateRange.scale,
-  ).length;
+  );
 
-  if (bucketCount >= MAX_BUCKET_COUNT) {
+  if (buckets.length >= MAX_BUCKET_COUNT) {
     throw new BadRequestException(
-      `Your request results in too many data points (${bucketCount}/${MAX_BUCKET_COUNT}). ` +
+      `Your request results in too many data points (${buckets.length}/${MAX_BUCKET_COUNT}). ` +
         `Please select a smaller range or larger bucket size.`,
     );
   }
@@ -125,7 +102,12 @@ export const generateSeriesPoints = <T, R>(
     }
   }
 
-  fillTimeBuckets(dateRange, counts, getDefault);
+  for (const currentDate of buckets) {
+    const unix = formatTimeBucket(currentDate, range.scale!);
+    if (!(unix in counts)) {
+      counts[unix] = getDefault(unix);
+    }
+  }
 
   return Object.keys(counts)
     .map((seconds) => ({
