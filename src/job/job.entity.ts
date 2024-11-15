@@ -90,7 +90,7 @@ export class Job<MetadataType = undefined> {
   }
 
   get succeeded(): boolean {
-    return !this.running && !this.failed && !this.cancelled;
+    return !!this._endedAt && !this.failed && !this.cancelled;
   }
 
   get failed(): boolean {
