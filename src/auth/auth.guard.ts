@@ -24,13 +24,11 @@ export class RolesGuard extends JwtAuthGuard {
   override async canActivate(context: ExecutionContext): Promise<boolean> {
     if (!(await super.canActivate(context))) return false;
 
-    const requiredLevel = this.reflector.get<UserLevel>(
-      'level',
-      context.getHandler(),
-    );
-    if (requiredLevel === undefined) {
-      return true;
-    }
+    const requiredLevel =
+      this.reflector.get<UserLevel>('level', context.getHandler()) ||
+      this.reflector.get<UserLevel>('level', context.getClass());
+
+    if (requiredLevel === undefined) return true;
 
     const user = context.switchToHttp().getRequest().user as DecodedJwt;
     const level = getUserLevelFromString(user.level);
