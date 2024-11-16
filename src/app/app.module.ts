@@ -18,6 +18,7 @@ import { PostVersionModule } from 'src/post_version/post_version.module';
 import { TicketModule } from 'src/ticket/ticket.module';
 import { UploadModule } from 'src/upload/upload.module';
 import { UserModule } from 'src/user/user.module';
+import { WorkerModule } from 'src/worker/worker.module';
 
 import { BrowserModule } from './browser.module';
 import { AppConfigModule } from './config.module';
@@ -33,6 +34,7 @@ import { DatabaseModule } from './database.module';
     DatabaseModule,
     AuthModule,
     JobModule,
+    WorkerModule,
     HealthModule,
     DashboardModule,
     CacheModule,

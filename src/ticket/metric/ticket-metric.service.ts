@@ -13,6 +13,7 @@ import {
   SeriesCountPoint,
 } from 'src/common';
 import { UserHeadService } from 'src/user/head/user-head.service';
+import { WorkerService } from 'src/worker/worker.service';
 import { FindOptionsWhere, LessThan, MoreThan, Not, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
@@ -36,6 +37,7 @@ export class TicketMetricService {
     @InjectRepository(TicketEntity)
     private readonly ticketRepository: Repository<TicketEntity>,
     private readonly userHeadService: UserHeadService,
+    private readonly workerService: WorkerService,
   ) {}
 
   private whereCreatedOrUpdated(
@@ -147,7 +149,7 @@ export class TicketMetricService {
       });
     });
 
-    return generateSeriesCountPoints(dates, range!);
+    return this.workerService.generateSeriesCountPoints(dates, range!);
   }
 
   async createdSeries(

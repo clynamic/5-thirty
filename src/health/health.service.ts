@@ -8,10 +8,10 @@ import { FlagEntity } from 'src/flag/flag.entity';
 import { ManifestEntity } from 'src/manifest/manifest.entity';
 import { PostVersionEntity } from 'src/post_version/post_version.entity';
 import { TicketEntity } from 'src/ticket/ticket.entity';
+import { WorkerService } from 'src/worker/worker.service';
 import { Between, Repository } from 'typeorm';
 
 import { ManifestHealth } from './health.dto';
-import { generateManifestSlices } from './health.utils';
 
 @Injectable()
 export class HealthService {
@@ -28,6 +28,7 @@ export class HealthService {
     private readonly feedbackRepository: Repository<FeedbackEntity>,
     @InjectRepository(PostVersionEntity)
     private readonly postVersionRepository: Repository<PostVersionEntity>,
+    private readonly workerService: WorkerService,
   ) {}
 
   private itemRepositories: Partial<Record<ItemType, Repository<WithId>>> = {
@@ -60,7 +61,7 @@ export class HealthService {
           },
         });
 
-        const slices = generateManifestSlices({
+        const slices = await this.workerService.generateManifestSlices({
           allIds,
           lowerId: manifest.lowerId,
           upperId: manifest.upperId,

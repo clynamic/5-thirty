@@ -6,7 +6,6 @@ import { Cacheable } from 'src/app/browser.module';
 import { ApprovalEntity } from 'src/approval/approval.entity';
 import {
   DateRange,
-  generateSeriesCountPoints,
   PartialDateRange,
   SeriesCountPoint,
   toRawQuery,
@@ -14,6 +13,7 @@ import {
 import { FlagEntity } from 'src/flag/flag.entity';
 import { PermitEntity } from 'src/permit/permit.entity';
 import { PostVersionEntity } from 'src/post_version/post_version.entity';
+import { WorkerService } from 'src/worker/worker.service';
 import { In, Repository } from 'typeorm';
 
 import { PostStatusSummary } from './post-metric.dto';
@@ -29,6 +29,7 @@ export class PostMetricService {
     private readonly flagRepository: Repository<FlagEntity>,
     @InjectRepository(PermitEntity)
     private readonly permitRepository: Repository<PermitEntity>,
+    private readonly workerService: WorkerService,
   ) {}
 
   async statusSummary(range?: PartialDateRange): Promise<PostStatusSummary> {
@@ -168,6 +169,6 @@ export class PostMetricService {
       });
     });
 
-    return generateSeriesCountPoints(dates, range);
+    return this.workerService.generateSeriesCountPoints(dates, range);
   }
 }
