@@ -142,16 +142,14 @@ export class PostMetricService {
         .setZone(range.timezone)
         .startOf(unit);
 
-      const endDate = (endDates.get(post.postId) ?? DateTime.now())
+      const endDate = (
+        endDates
+          .get(post.postId)
+          ?.setZone(range.timezone)
+          .minus({ [unit]: 1 }) ?? DateTime.now()
+      )
         .setZone(range.timezone)
         .endOf(unit);
-
-      if (
-        endDates.has(post.postId) &&
-        endDate.minus({ [unit]: 1 }) <= startDate
-      ) {
-        return undefined;
-      }
 
       const buckets = createTimeBuckets(startDate, endDate, range.scale!);
 

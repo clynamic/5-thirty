@@ -135,18 +135,12 @@ export class TicketMetricService {
         .clamp(
           ticket.status === TicketStatus.approved
             ? DateTime.fromJSDate(ticket.updatedAt)
+                .setZone(range.timezone)
+                .minus({ [unit]: 1 })
             : DateTime.now(),
         )
         .setZone(range.timezone)
         .endOf(unit);
-
-      // If the ticket was created and closed within the same unit, ignore it
-      if (
-        ticket.status === TicketStatus.approved &&
-        endDate.minus({ [unit]: 1 }) < startDate
-      ) {
-        return undefined;
-      }
 
       return createTimeBuckets(startDate, endDate, range.scale!);
     });
