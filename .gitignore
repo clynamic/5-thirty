@@ -57,4 +57,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # server files
 db.sqlite
+db.sqlite-journal
 .jwt-secret
