@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DateTime } from 'luxon';
 import {
   DateRange,
   generateSeriesCountPoints,
@@ -37,14 +36,12 @@ export class PermitMetricService {
       .getRawMany<{ updated_at: string }>()
       .then((results) =>
         results.map((result) => ({
-          updatedAt: result.updated_at.replace(' ', 'T'),
+          updatedAt: new Date(result.updated_at.replace(' ', 'T') + 'Z'),
         })),
       );
 
     return generateSeriesCountPoints(
-      postVersions.map((postVersion) =>
-        DateTime.fromISO(postVersion.updatedAt, { zone: 'utc' }).toJSDate(),
-      ),
+      postVersions.map((item) => item.updatedAt),
       range,
     );
   }

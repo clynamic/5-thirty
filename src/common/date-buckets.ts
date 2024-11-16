@@ -1,43 +1,66 @@
 import { BadRequestException } from '@nestjs/common';
-import { DateTime, DateTimeUnit } from 'luxon';
+import { DateTime } from 'luxon';
 
-import { SeriesCountPoint } from './chart.dto';
+import { SeriesCountPoint, SeriesPoint } from './chart.dto';
 import { DateRange, PartialDateRange, TimeScale } from './date-range.dto';
 
-export interface SeriesPoint<T> {
-  date: Date;
-  value: T;
-}
-
-const formatTimeBucket = (date: DateTime, bucket: TimeScale): number => {
-  if (bucket === TimeScale.All) {
-    return 0;
-  } else if (bucket === TimeScale.Decade) {
-    const startOfDecade = date
-      .set({ year: Math.floor(date.year / 10) * 10 })
-      .startOf('year');
-    return startOfDecade.toSeconds();
-  } else {
-    const startOfBucket = date.startOf(bucket.toLowerCase() as DateTimeUnit);
-    return startOfBucket.toSeconds();
+const binarySearchClosestBucket = (arr: Date[], date: Date): number => {
+  let left = 0;
+  let right = arr.length - 1;
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    if (arr[mid]! <= date && (mid === arr.length - 1 || arr[mid + 1]! > date)) {
+      return mid;
+    } else if (arr[mid]! < date) {
+      left = mid + 1;
+    } else {
+      right = mid - 1;
+    }
   }
+  return -1;
 };
 
-const parseTimeBucket = (
-  seconds: number,
-  bucket: TimeScale,
-  timezone: string,
-): DateTime => {
-  const date = DateTime.fromSeconds(seconds, { zone: timezone });
+export const assignDateBuckets = <T>(
+  dates: (Date | DateRange | undefined)[],
+  buckets: Date[],
+  items: readonly T[],
+): Record<number, T[]> => {
+  const bucketAssignments: Record<number, T[]> = {};
+  buckets.forEach((bucket) => {
+    bucketAssignments[bucket.getTime()] = [];
+  });
 
-  if (bucket === TimeScale.All) {
-    return DateTime.fromObject({ year: 0 }, { zone: timezone });
-  } else if (bucket === TimeScale.Decade) {
-    const decadeStartYear = Math.floor(date.year / 10) * 10;
-    return DateTime.fromObject({ year: decadeStartYear }, { zone: timezone });
-  } else {
-    return date.startOf(bucket.toLowerCase() as DateTimeUnit);
-  }
+  dates.forEach((entry, i) => {
+    if (entry === undefined) return;
+
+    const item = items[i];
+    if (item === undefined) return;
+
+    if (entry instanceof Date) {
+      const bucketIndex = binarySearchClosestBucket(buckets, entry);
+      if (bucketIndex !== -1 && buckets[bucketIndex]) {
+        bucketAssignments[buckets[bucketIndex].getTime()]!.push(item);
+      }
+    } else if (
+      entry != undefined &&
+      typeof entry === 'object' &&
+      'startDate' in entry &&
+      'endDate' in entry
+    ) {
+      const startIndex = binarySearchClosestBucket(buckets, entry.startDate);
+      const endIndex = binarySearchClosestBucket(buckets, entry.endDate);
+
+      if (startIndex !== -1 && endIndex !== -1) {
+        for (let j = startIndex; j <= endIndex && j < buckets.length; j++) {
+          if (buckets[j]) {
+            bucketAssignments[buckets[j]!.getTime()]!.push(item);
+          }
+        }
+      }
+    }
+  });
+
+  return bucketAssignments;
 };
 
 const incrementTimeBucket = (date: DateTime, bucket: TimeScale): DateTime => {
@@ -50,42 +73,36 @@ const incrementTimeBucket = (date: DateTime, bucket: TimeScale): DateTime => {
   }
 };
 
-export const createTimeBuckets = (
-  start: DateTime,
-  end: DateTime,
-  bucket: TimeScale,
-): DateTime[] => {
+export const createTimeBuckets = (range: DateRange): Date[] => {
+  const start = DateTime.fromJSDate(range.startDate, {
+    zone: range.timezone,
+  });
+  const end = DateTime.min(
+    DateTime.fromJSDate(range.endDate, { zone: range.timezone }),
+    DateTime.now().setZone(range.timezone).endOf('day'),
+  );
+
   const buckets = [];
   for (
     let currentDate = start;
     currentDate <= end;
-    currentDate = incrementTimeBucket(currentDate, bucket)
+    currentDate = incrementTimeBucket(currentDate, range.scale)
   ) {
-    buckets.push(currentDate);
+    buckets.push(currentDate.toJSDate());
   }
   return buckets;
 };
 
 const MAX_BUCKET_COUNT = 10000;
 
-export const generateSeriesPoints = <T, R>(
-  items: T[],
-  dates: readonly (Date | DateRange | undefined)[],
+export const generateSeriesPoints = <T>(
+  items: readonly T[],
+  dates: (Date | DateRange | undefined)[],
   range: PartialDateRange,
-  getValue: (prev: R | undefined, item: T) => R,
-  getDefault: (seconds: number) => R,
-): SeriesPoint<R>[] => {
+): SeriesPoint<T[]>[] => {
   const dateRange = DateRange.fill(range);
-  const counts: Record<number, R> = {};
 
-  const buckets = createTimeBuckets(
-    DateTime.fromJSDate(dateRange.startDate, { zone: dateRange.timezone }),
-    DateTime.min(
-      DateTime.fromJSDate(dateRange.endDate, { zone: dateRange.timezone }),
-      DateTime.now().setZone(dateRange.timezone).endOf('day'),
-    ),
-    dateRange.scale,
-  );
+  const buckets = createTimeBuckets(dateRange);
 
   if (buckets.length >= MAX_BUCKET_COUNT) {
     throw new BadRequestException(
@@ -94,95 +111,51 @@ export const generateSeriesPoints = <T, R>(
     );
   }
 
-  for (const item of items) {
-    const keys = dates[items.indexOf(item)];
-    let datetimes: DateTime[] = [];
+  const assignments: Record<number, T[]> = assignDateBuckets(
+    dates,
+    buckets,
+    items,
+  );
 
-    if (keys && 'startDate' in keys && 'endDate' in keys) {
-      const unit: DateTimeUnit =
-        range.scale! === 'minute' || range.scale! === 'hour'
-          ? range.scale!
-          : 'day';
-
-      datetimes = createTimeBuckets(
-        DateTime.fromJSDate(keys.startDate, {
-          zone: dateRange.timezone,
-        }).startOf(unit),
-        DateTime.min(DateTime.fromJSDate(keys.endDate), DateTime.now())
-          .setZone(dateRange.timezone)
-          .endOf(unit),
-        dateRange.scale,
-      );
-    } else if (keys instanceof Date) {
-      datetimes = [DateTime.fromJSDate(keys, { zone: dateRange.timezone })];
-    }
-
-    for (const date of datetimes) {
-      const dateInZone = date.setZone(range.timezone);
-      const unix = formatTimeBucket(dateInZone, dateRange.scale);
-      counts[unix] = getValue(counts[unix], item);
-    }
-  }
-
-  for (const currentDate of buckets) {
-    const unix = formatTimeBucket(currentDate, range.scale!);
-    if (!(unix in counts)) {
-      counts[unix] = getDefault(unix);
-    }
-  }
-
-  return Object.keys(counts)
-    .map((seconds) => ({
-      date: parseInt(seconds),
-      value: counts[parseInt(seconds)]!,
-    }))
-    .sort((a, b) => a.date - b.date)
-    .map(({ date, value }) => ({
-      date: parseTimeBucket(
-        date,
-        dateRange.scale,
-        dateRange.timezone,
-      ).toJSDate(),
-      value,
-    }));
+  return Object.entries(assignments).map(([date, items]) => ({
+    date: new Date(+date),
+    value: items,
+  }));
 };
 
 export const generateSeriesCountPoints = (
-  dates: readonly (Date | DateRange | undefined)[],
+  dates: (Date | DateRange | undefined)[],
   range: PartialDateRange,
 ): SeriesCountPoint[] =>
   generateSeriesPoints(
     Array.from({ length: dates.length }, (_, i) => i),
     dates,
     range,
-    (prev) => (prev ?? 0) + 1,
-    () => 0,
-  ).map((e) => new SeriesCountPoint(e));
+  ).map(
+    (e) =>
+      new SeriesCountPoint({
+        date: e.date,
+        value: e.value.length,
+      }),
+  );
 
 export const generateSeriesRecordPoints = <R extends Record<string, number>>(
-  dates: readonly (Date | DateRange | undefined)[],
+  dates: (Date | DateRange | undefined)[],
   keys: readonly (keyof R)[],
   allKeys: readonly (keyof R)[],
   range: PartialDateRange,
 ): SeriesPoint<R>[] => {
-  const getDefault = () => {
-    const emptyRecord: Partial<R> = {};
-    for (const key of allKeys) {
-      emptyRecord[key] = 0 as R[keyof R];
-    }
-    return emptyRecord as R;
-  };
-  return generateSeriesPoints(
-    Array.from({ length: dates.length }, (_, i) => i),
-    dates,
-    range,
-    (prev, item) => {
-      const key = keys[item]!;
-      return {
-        ...(prev ?? getDefault()),
-        [key]: (prev?.[key] ?? 0) + 1,
-      } as R;
-    },
-    getDefault,
-  );
+  return generateSeriesPoints(keys, dates, range).map((e) => ({
+    date: e.date,
+    value: allKeys.reduce(
+      (acc, key) => ({
+        ...acc,
+        [key]: e.value.reduce(
+          (count, item) => count + (item === key ? 1 : 0),
+          0,
+        ),
+      }),
+      {} as R,
+    ),
+  }));
 };

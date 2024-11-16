@@ -163,7 +163,7 @@ export class TicketMetricService {
     });
 
     return generateSeriesCountPoints(
-      tickets.map((e) => e.createdAt),
+      tickets.map((item) => item.createdAt),
       range,
     );
   }
@@ -177,10 +177,10 @@ export class TicketMetricService {
       where: this.whereCreatedOrUpdated(range, query?.where()),
     });
 
-    const endDate = new Date(range.endDate!);
+    const endDate = range.endDate!;
     return generateSeriesCountPoints(
-      tickets.map((ticket) =>
-        ticket.updatedAt <= endDate ? ticket.updatedAt : undefined,
+      tickets.map((item) =>
+        item.updatedAt <= endDate ? item.updatedAt : undefined,
       ),
       range,
     );

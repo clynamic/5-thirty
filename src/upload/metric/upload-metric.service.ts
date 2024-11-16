@@ -41,7 +41,7 @@ export class UploadMetricService {
     });
 
     return generateSeriesCountPoints(
-      postVersions.map((postVersion) => postVersion.updatedAt),
+      postVersions.map((item) => item.updatedAt),
       range,
     );
   }

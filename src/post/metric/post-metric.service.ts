@@ -112,10 +112,10 @@ export class PostMetricService {
       },
     });
 
-    const endDates = new Map<number, DateTime>();
+    const endDates = new Map<number, Date>();
 
     approvals.forEach((approval) => {
-      const approvalDate = DateTime.fromJSDate(approval.createdAt);
+      const approvalDate = approval.createdAt;
       const currentStop = endDates.get(approval.postId);
       if (!currentStop || approvalDate < currentStop) {
         endDates.set(approval.postId, approvalDate);
@@ -123,7 +123,7 @@ export class PostMetricService {
     });
 
     deletions.forEach((deletion) => {
-      const deletionDate = DateTime.fromJSDate(deletion.createdAt);
+      const deletionDate = deletion.createdAt;
       const currentStop = endDates.get(deletion.postId);
       if (!currentStop || deletionDate < currentStop) {
         endDates.set(deletion.postId, deletionDate);
@@ -142,10 +142,9 @@ export class PostMetricService {
         .startOf(unit);
 
       const endDate = (
-        endDates
-          .get(post.postId)
-          ?.setZone(range.timezone)
-          .minus({ [unit]: 1 }) ?? DateTime.now()
+        endDates.get(post.postId)
+          ? DateTime.fromJSDate(endDates.get(post.postId)!).minus({ [unit]: 1 })
+          : DateTime.now()
       )
         .setZone(range.timezone)
         .endOf(unit);
