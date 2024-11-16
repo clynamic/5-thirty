@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DateTime } from 'luxon';
 import {
   convertKeysToCamelCase,
   DateRange,
@@ -41,8 +40,9 @@ export class UploadMetricService {
       },
     });
 
-    return generateSeriesCountPoints(postVersions, range, (postVersion) =>
-      DateTime.fromJSDate(postVersion.updatedAt),
+    return generateSeriesCountPoints(
+      postVersions.map((postVersion) => postVersion.updatedAt),
+      range,
     );
   }
 

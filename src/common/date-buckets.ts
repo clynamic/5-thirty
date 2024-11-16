@@ -70,8 +70,8 @@ const MAX_BUCKET_COUNT = 10000;
 
 export const generateSeriesPoints = <T, R>(
   items: T[],
+  dates: readonly (Date | DateRange | undefined)[],
   range: PartialDateRange,
-  getDate: (item: T) => DateTime | DateTime[] | undefined,
   getValue: (prev: R | undefined, item: T) => R,
   getDefault: (seconds: number) => R,
 ): SeriesPoint<R>[] => {
@@ -95,10 +95,29 @@ export const generateSeriesPoints = <T, R>(
   }
 
   for (const item of items) {
-    let dates = getDate(item) ?? [];
-    dates = Array.isArray(dates) ? dates : [dates];
+    const keys = dates[items.indexOf(item)];
+    let datetimes: DateTime[] = [];
 
-    for (const date of dates) {
+    if (keys && 'startDate' in keys && 'endDate' in keys) {
+      const unit: DateTimeUnit =
+        range.scale! === 'minute' || range.scale! === 'hour'
+          ? range.scale!
+          : 'day';
+
+      datetimes = createTimeBuckets(
+        DateTime.fromJSDate(keys.startDate, {
+          zone: dateRange.timezone,
+        }).startOf(unit),
+        DateTime.min(DateTime.fromJSDate(keys.endDate), DateTime.now())
+          .setZone(dateRange.timezone)
+          .endOf(unit),
+        dateRange.scale,
+      );
+    } else if (keys instanceof Date) {
+      datetimes = [DateTime.fromJSDate(keys, { zone: dateRange.timezone })];
+    }
+
+    for (const date of datetimes) {
       const dateInZone = date.setZone(range.timezone);
       const unix = formatTimeBucket(dateInZone, dateRange.scale);
       counts[unix] = getValue(counts[unix], item);
@@ -128,41 +147,40 @@ export const generateSeriesPoints = <T, R>(
     }));
 };
 
-export const generateSeriesCountPoints = <T>(
-  items: T[],
+export const generateSeriesCountPoints = (
+  dates: readonly (Date | DateRange | undefined)[],
   range: PartialDateRange,
-  getDate: (item: T) => DateTime | DateTime[] | undefined,
 ): SeriesCountPoint[] =>
   generateSeriesPoints(
-    items,
+    Array.from({ length: dates.length }, (_, i) => i),
+    dates,
     range,
-    getDate,
     (prev) => (prev ?? 0) + 1,
     () => 0,
   ).map((e) => new SeriesCountPoint(e));
 
-export const generateSeriesRecordPoints = <T, R extends Record<string, number>>(
-  items: T[],
+export const generateSeriesRecordPoints = <R extends Record<string, number>>(
+  dates: readonly (Date | DateRange | undefined)[],
+  keys: readonly (keyof R)[],
+  allKeys: readonly (keyof R)[],
   range: PartialDateRange,
-  getDate: (item: T) => DateTime | DateTime[] | undefined,
-  getKey: (item: T) => keyof R,
-  keys: (keyof R)[],
 ): SeriesPoint<R>[] => {
   const getDefault = () => {
     const emptyRecord: Partial<R> = {};
-    for (const key of keys) {
+    for (const key of allKeys) {
       emptyRecord[key] = 0 as R[keyof R];
     }
     return emptyRecord as R;
   };
-  return generateSeriesPoints<T, R>(
-    items,
+  return generateSeriesPoints(
+    Array.from({ length: dates.length }, (_, i) => i),
+    dates,
     range,
-    getDate,
     (prev, item) => {
+      const key = keys[item]!;
       return {
         ...(prev ?? getDefault()),
-        [getKey(item)]: (prev?.[getKey(item)] ?? 0) + 1,
+        [key]: (prev?.[key] ?? 0) + 1,
       } as R;
     },
     getDefault,

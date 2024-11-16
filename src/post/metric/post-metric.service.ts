@@ -4,7 +4,6 @@ import { DateTime, DateTimeUnit } from 'luxon';
 import { PostFlagType } from 'src/api';
 import { ApprovalEntity } from 'src/approval/approval.entity';
 import {
-  createTimeBuckets,
   DateRange,
   generateSeriesCountPoints,
   PartialDateRange,
@@ -136,7 +135,7 @@ export class PostMetricService {
         ? range.scale!
         : 'day';
 
-    return generateSeriesCountPoints(posts, range, (post) => {
+    const dates = posts.map((post) => {
       const startDate = range
         .clamp(DateTime.fromJSDate(post.updatedAt))
         .setZone(range.timezone)
@@ -151,9 +150,12 @@ export class PostMetricService {
         .setZone(range.timezone)
         .endOf(unit);
 
-      const buckets = createTimeBuckets(startDate, endDate, range.scale!);
-
-      return buckets;
+      return new DateRange({
+        startDate: startDate.toJSDate(),
+        endDate: endDate.toJSDate(),
+      });
     });
+
+    return generateSeriesCountPoints(dates, range);
   }
 }

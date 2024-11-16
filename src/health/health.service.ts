@@ -10,7 +10,8 @@ import { PostVersionEntity } from 'src/post_version/post_version.entity';
 import { TicketEntity } from 'src/ticket/ticket.entity';
 import { Between, Repository } from 'typeorm';
 
-import { ManifestHealth, ManifestSlice } from './health.dto';
+import { ManifestHealth } from './health.dto';
+import { generateManifestSlices } from './health.utils';
 
 @Injectable()
 export class HealthService {
@@ -59,59 +60,11 @@ export class HealthService {
           },
         });
 
-        const rangeSize = manifest.upperId - manifest.lowerId + 1;
-        const maxIdsPerSlice = 10000;
-        const rowCount = 30;
-        const sliceCount =
-          Math.ceil(Math.ceil(rangeSize / maxIdsPerSlice) / rowCount) *
-          rowCount;
-        const sliceSize = Math.ceil(rangeSize / sliceCount);
-
-        const slices: ManifestSlice[] = [];
-
-        let currentId = manifest.lowerId;
-        let available = 0;
-        let unavailable = 0;
-        let none = 0;
-
-        let idIndex = 0;
-
-        for (let i = 0; i < sliceCount; i++) {
-          const sliceStart = currentId;
-          const sliceEnd = Math.min(
-            currentId + sliceSize - 1,
-            manifest.upperId,
-          );
-
-          available = 0;
-          unavailable = 0;
-
-          while (idIndex < allIds.length && allIds[idIndex]!.id <= sliceEnd) {
-            while (currentId < allIds[idIndex]!.id) {
-              unavailable++;
-              currentId++;
-            }
-
-            available++;
-            currentId++;
-            idIndex++;
-          }
-
-          unavailable += Math.max(0, sliceEnd - currentId + 1);
-          none = sliceSize - (available + unavailable);
-
-          slices.push(
-            new ManifestSlice({
-              startId: sliceStart,
-              endId: sliceEnd,
-              available,
-              unavailable,
-              none,
-            }),
-          );
-
-          currentId = sliceEnd + 1;
-        }
+        const slices = generateManifestSlices({
+          allIds,
+          lowerId: manifest.lowerId,
+          upperId: manifest.upperId,
+        });
 
         health.push(
           new ManifestHealth({

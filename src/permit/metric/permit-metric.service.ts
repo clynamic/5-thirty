@@ -41,8 +41,11 @@ export class PermitMetricService {
         })),
       );
 
-    return generateSeriesCountPoints(postVersions, range, (postVersion) =>
-      DateTime.fromISO(postVersion.updatedAt, { zone: 'utc' }),
+    return generateSeriesCountPoints(
+      postVersions.map((postVersion) =>
+        DateTime.fromISO(postVersion.updatedAt, { zone: 'utc' }).toJSDate(),
+      ),
+      range,
     );
   }
 }

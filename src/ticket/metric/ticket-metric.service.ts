@@ -4,7 +4,6 @@ import { DateTime, DateTimeUnit } from 'luxon';
 import { TicketQtype, TicketStatus } from 'src/api/e621';
 import {
   convertKeysToCamelCase,
-  createTimeBuckets,
   DateRange,
   generateSeriesCountPoints,
   generateSeriesRecordPoints,
@@ -125,7 +124,7 @@ export class TicketMetricService {
         ? range.scale!
         : 'day';
 
-    return generateSeriesCountPoints(tickets, range, (ticket) => {
+    const dates = tickets.map((ticket) => {
       const startDate = range
         .clamp(DateTime.fromJSDate(ticket.createdAt))
         .setZone(range.timezone)
@@ -142,8 +141,13 @@ export class TicketMetricService {
         .setZone(range.timezone)
         .endOf(unit);
 
-      return createTimeBuckets(startDate, endDate, range.scale!);
+      return new DateRange({
+        startDate: startDate.toJSDate(),
+        endDate: endDate.toJSDate(),
+      });
     });
+
+    return generateSeriesCountPoints(dates, range!);
   }
 
   async createdSeries(
@@ -158,8 +162,9 @@ export class TicketMetricService {
       },
     });
 
-    return generateSeriesCountPoints(tickets, range, (ticket) =>
-      DateTime.fromJSDate(ticket.createdAt),
+    return generateSeriesCountPoints(
+      tickets.map((e) => e.createdAt),
+      range,
     );
   }
 
@@ -172,17 +177,13 @@ export class TicketMetricService {
       where: this.whereCreatedOrUpdated(range, query?.where()),
     });
 
-    const endDate = DateTime.fromJSDate(range.endDate!, {
-      zone: range.timezone,
-    });
-
-    return generateSeriesCountPoints(tickets, range, (ticket) => {
-      const closedDate = DateTime.fromJSDate(ticket.updatedAt, {
-        zone: range.timezone,
-      });
-      if (closedDate <= endDate) return closedDate;
-      return undefined;
-    });
+    const endDate = new Date(range.endDate!);
+    return generateSeriesCountPoints(
+      tickets.map((ticket) =>
+        ticket.updatedAt <= endDate ? ticket.updatedAt : undefined,
+      ),
+      range,
+    );
   }
 
   async activitySummary(
@@ -274,53 +275,61 @@ export class TicketMetricService {
         ? range.scale!
         : 'day';
 
-    return generateSeriesRecordPoints<TicketEntity, Raw<TicketAgeSummary>>(
-      tickets,
-      range,
+    const dates = tickets.map(
       (ticket) =>
-        createTimeBuckets(
-          range
+        new DateRange({
+          startDate: range
             .clamp(DateTime.fromJSDate(ticket.createdAt))
             .setZone(range.timezone)
-            .startOf(unit),
-          range
+            .startOf(unit)
+            .toJSDate(),
+          endDate: range
             .clamp(
               ticket.status === TicketStatus.approved
                 ? DateTime.fromJSDate(ticket.updatedAt)
                 : DateTime.now(),
             )
             .setZone(range.timezone)
-            .endOf(unit),
-          range.scale!,
-        ),
-      (ticket) => {
-        const ageInDays = DateTime.fromJSDate(ticket.updatedAt).diff(
-          DateTime.fromJSDate(ticket.createdAt),
-          'days',
-        ).days;
+            .endOf(unit)
+            .toJSDate(),
+        }),
+    );
 
-        if (ageInDays <= 1) {
-          return 'oneDay';
-        } else if (ageInDays <= 3) {
-          return 'threeDays';
-        } else if (ageInDays <= 7) {
-          return 'oneWeek';
-        } else if (ageInDays <= 14) {
-          return 'twoWeeks';
-        } else if (ageInDays <= 30) {
-          return 'oneMonth';
-        } else {
-          return 'aboveOneMonth';
-        }
-      },
-      [
-        'oneDay',
-        'threeDays',
-        'oneWeek',
-        'twoWeeks',
-        'oneMonth',
-        'aboveOneMonth',
-      ] as const,
+    const keys = tickets.map((ticket) => {
+      const ageInDays = DateTime.fromJSDate(ticket.updatedAt).diff(
+        DateTime.fromJSDate(ticket.createdAt),
+        'days',
+      ).days;
+
+      if (ageInDays <= 1) {
+        return 'oneDay';
+      } else if (ageInDays <= 3) {
+        return 'threeDays';
+      } else if (ageInDays <= 7) {
+        return 'oneWeek';
+      } else if (ageInDays <= 14) {
+        return 'twoWeeks';
+      } else if (ageInDays <= 30) {
+        return 'oneMonth';
+      } else {
+        return 'aboveOneMonth';
+      }
+    });
+
+    const allKeys = [
+      'oneDay',
+      'threeDays',
+      'oneWeek',
+      'twoWeeks',
+      'oneMonth',
+      'aboveOneMonth',
+    ] as const;
+
+    return generateSeriesRecordPoints<Raw<TicketAgeSummary>>(
+      dates,
+      keys,
+      allKeys,
+      range,
     ).map(
       (e) =>
         new TicketAgeSeriesPoint({
