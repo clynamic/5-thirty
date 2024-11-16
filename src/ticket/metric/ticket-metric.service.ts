@@ -120,10 +120,16 @@ export class TicketMetricService {
       ],
     });
 
+    const unit: DateTimeUnit =
+      range.scale! === 'minute' || range.scale! === 'hour'
+        ? range.scale!
+        : 'day';
+
     return generateSeriesCountPoints(tickets, range, (ticket) => {
       const startDate = range
         .clamp(DateTime.fromJSDate(ticket.createdAt))
-        .setZone(range.timezone);
+        .setZone(range.timezone)
+        .startOf(unit);
 
       const endDate = range
         .clamp(
@@ -131,15 +137,16 @@ export class TicketMetricService {
             ? DateTime.fromJSDate(ticket.updatedAt)
             : DateTime.now(),
         )
-        .setZone(range.timezone);
-
-      const unit: DateTimeUnit =
-        range.scale! === 'minute' || range.scale! === 'hour'
-          ? range.scale!
-          : 'day';
+        .setZone(range.timezone)
+        .endOf(unit);
 
       // If the ticket was created and closed within the same unit, ignore it
-      if (endDate.minus({ [unit]: 1 }) < startDate) return undefined;
+      if (
+        ticket.status === TicketStatus.approved &&
+        endDate.minus({ [unit]: 1 }) < startDate
+      ) {
+        return undefined;
+      }
 
       return createTimeBuckets(startDate, endDate, range.scale!);
     });
@@ -268,6 +275,11 @@ export class TicketMetricService {
       ],
     });
 
+    const unit: DateTimeUnit =
+      range.scale! === 'minute' || range.scale! === 'hour'
+        ? range.scale!
+        : 'day';
+
     return generateSeriesRecordPoints<TicketEntity, Raw<TicketAgeSummary>>(
       tickets,
       range,
@@ -275,15 +287,16 @@ export class TicketMetricService {
         createTimeBuckets(
           range
             .clamp(DateTime.fromJSDate(ticket.createdAt))
-            .setZone(range.timezone),
+            .setZone(range.timezone)
+            .startOf(unit),
           range
             .clamp(
               ticket.status === TicketStatus.approved
-                ? // minus 1 day would remove tickets that were closed on the same day - do we want that?
-                  DateTime.fromJSDate(ticket.updatedAt) // .minus({ days: 1 })
+                ? DateTime.fromJSDate(ticket.updatedAt)
                 : DateTime.now(),
             )
-            .setZone(range.timezone),
+            .setZone(range.timezone)
+            .endOf(unit),
           range.scale!,
         ),
       (ticket) => {

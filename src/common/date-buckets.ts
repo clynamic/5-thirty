@@ -79,8 +79,11 @@ export const generateSeriesPoints = <T, R>(
   const counts: Record<number, R> = {};
 
   const buckets = createTimeBuckets(
-    DateTime.fromJSDate(dateRange.startDate),
-    DateTime.min(DateTime.fromJSDate(dateRange.endDate), DateTime.now()),
+    DateTime.fromJSDate(dateRange.startDate, { zone: dateRange.timezone }),
+    DateTime.min(
+      DateTime.fromJSDate(dateRange.endDate, { zone: dateRange.timezone }),
+      DateTime.now().setZone(dateRange.timezone).endOf('day'),
+    ),
     dateRange.scale,
   );
 

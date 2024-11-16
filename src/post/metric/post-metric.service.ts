@@ -131,21 +131,31 @@ export class PostMetricService {
       }
     });
 
+    const unit: DateTimeUnit =
+      range.scale! === 'minute' || range.scale! === 'hour'
+        ? range.scale!
+        : 'day';
+
     return generateSeriesCountPoints(posts, range, (post) => {
       const startDate = range
         .clamp(DateTime.fromJSDate(post.updatedAt))
-        .setZone(range.timezone);
+        .setZone(range.timezone)
+        .startOf(unit);
 
-      const endDate = endDates.get(post.postId) || DateTime.now();
+      const endDate = (endDates.get(post.postId) ?? DateTime.now())
+        .setZone(range.timezone)
+        .endOf(unit);
 
-      const unit: DateTimeUnit =
-        range.scale! === 'minute' || range.scale! === 'hour'
-          ? range.scale!
-          : 'day';
+      if (
+        endDates.has(post.postId) &&
+        endDate.minus({ [unit]: 1 }) <= startDate
+      ) {
+        return undefined;
+      }
 
-      if (endDate.minus({ [unit]: 1 }) < startDate) return undefined;
+      const buckets = createTimeBuckets(startDate, endDate, range.scale!);
 
-      return createTimeBuckets(startDate, endDate, range.scale!);
+      return buckets;
     });
   }
 }
