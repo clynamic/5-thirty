@@ -52,9 +52,7 @@ export const assignDateBuckets = <T>(
 
       if (startIndex !== -1 && endIndex !== -1) {
         for (let j = startIndex; j <= endIndex && j < buckets.length; j++) {
-          if (buckets[j]) {
-            bucketAssignments[buckets[j]!.getTime()]!.push(item);
-          }
+          bucketAssignments[buckets[j]!.getTime()]!.push(item);
         }
       }
     }
