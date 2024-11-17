@@ -2,12 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DateTime, DateTimeUnit } from 'luxon';
 import { PostFlagType } from 'src/api';
+import { Cacheable } from 'src/app/browser.module';
 import { ApprovalEntity } from 'src/approval/approval.entity';
 import {
   DateRange,
   generateSeriesCountPoints,
   PartialDateRange,
   SeriesCountPoint,
+  toRawQuery,
 } from 'src/common';
 import { FlagEntity } from 'src/flag/flag.entity';
 import { PermitEntity } from 'src/permit/permit.entity';
@@ -69,6 +71,15 @@ export class PostMetricService {
     });
   }
 
+  static getPendingSeriesKey(range?: PartialDateRange): string {
+    range = DateRange.fill(range);
+    return `pendingSeries?${toRawQuery(range)}`;
+  }
+
+  @Cacheable(PostMetricService.getPendingSeriesKey, {
+    ttl: 10 * 60 * 1000,
+    dependencies: [PostVersionEntity, PermitEntity, ApprovalEntity, FlagEntity],
+  })
   async pendingSeries(range?: PartialDateRange): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
 
@@ -143,7 +154,9 @@ export class PostMetricService {
 
       const endDate = (
         endDates.get(post.postId)
-          ? DateTime.fromJSDate(endDates.get(post.postId)!).minus({ [unit]: 1 })
+          ? DateTime.fromJSDate(endDates.get(post.postId)!).minus({
+              [unit]: 1,
+            })
           : DateTime.now()
       )
         .setZone(range.timezone)

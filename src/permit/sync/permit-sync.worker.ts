@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { chunk } from 'lodash';
 import { Post, posts } from 'src/api';
 import { MAX_API_LIMIT } from 'src/api/http/params';
+import { CacheManager } from 'src/app/browser.module';
 import { AuthService } from 'src/auth/auth.service';
 import { LoopGuard, rateLimit } from 'src/common';
 import { Job } from 'src/job/job.entity';
@@ -18,6 +19,7 @@ export class PermitSyncWorker {
     private readonly jobService: JobService,
     private readonly authService: AuthService,
     private readonly permitSyncService: PermitSyncService,
+    private readonly cacheManager: CacheManager,
   ) {}
 
   private readonly logger = new Logger(PermitSyncWorker.name);
@@ -110,6 +112,8 @@ export class PermitSyncWorker {
               );
             }),
           );
+
+          this.cacheManager.delDep(PermitEntity);
         },
       }),
     );

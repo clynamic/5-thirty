@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Approval, postApprovals } from 'src/api/e621';
 import { MAX_API_LIMIT } from 'src/api/http/params';
+import { CacheManager } from 'src/app/browser.module';
 import { AuthService } from 'src/auth/auth.service';
 import { ItemType } from 'src/cache/cache.entity';
 import {
@@ -31,6 +32,7 @@ export class ApprovalSyncWorker {
     private readonly authService: AuthService,
     private readonly approvalSyncService: ApprovalSyncService,
     private readonly manifestService: ManifestService,
+    private readonly cacheManager: CacheManager,
   ) {}
 
   private readonly logger = new Logger(ApprovalSyncWorker.name);
@@ -119,6 +121,10 @@ export class ApprovalSyncWorker {
                 items: stored,
                 exhausted,
               });
+
+              if (results.length) {
+                this.cacheManager.delDep(ApprovalEntity);
+              }
 
               if (exhausted) {
                 const gaps = findContiguityGaps(results);

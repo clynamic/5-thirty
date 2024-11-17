@@ -14,3 +14,17 @@ export const toRaws = <T extends object>(obj: T): Partial<Raw<T>> => {
     return acc;
   }, {} as Partial<T>);
 };
+
+export const toRawQuery = <T extends object>(obj: T): string => {
+  const raw = toRaws(obj);
+  return Object.keys(raw)
+    .map((key) => {
+      const value = raw[key as keyof typeof raw];
+      if (Array.isArray(value)) {
+        return value.map((v) => `${key}=${encodeURIComponent(v)}`).join('&');
+      }
+      return `${key}=${encodeURIComponent(String(value))}`;
+    })
+    .filter(Boolean)
+    .join('&');
+};

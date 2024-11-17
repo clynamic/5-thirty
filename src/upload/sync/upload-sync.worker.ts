@@ -6,6 +6,7 @@ import {
   postVersions,
 } from 'src/api/e621';
 import { MAX_API_LIMIT } from 'src/api/http/params';
+import { CacheManager } from 'src/app/browser.module';
 import { AuthService } from 'src/auth/auth.service';
 import { ItemType } from 'src/cache/cache.entity';
 import {
@@ -43,6 +44,7 @@ export class UploadSyncWorker {
     private readonly uploadSyncService: UploadSyncService,
     private readonly manifestService: ManifestService,
     private readonly userSyncService: UserSyncService,
+    private readonly cacheManager: CacheManager,
   ) {}
 
   private readonly logger = new Logger(UploadSyncWorker.name);
@@ -130,9 +132,11 @@ export class UploadSyncWorker {
                 exhausted,
               });
 
-              if (exhausted) {
-                break;
+              if (result.length) {
+                this.cacheManager.delDep(PostVersionEntity);
               }
+
+              if (exhausted) break;
             }
           }
 

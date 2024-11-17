@@ -19,6 +19,7 @@ import { TicketModule } from 'src/ticket/ticket.module';
 import { UploadModule } from 'src/upload/upload.module';
 import { UserModule } from 'src/user/user.module';
 
+import { BrowserModule } from './browser.module';
 import { AppConfigModule } from './config.module';
 import { CorsConfigModule } from './cors.module';
 import { DatabaseModule } from './database.module';
@@ -27,6 +28,7 @@ import { DatabaseModule } from './database.module';
   imports: [
     AppConfigModule,
     ScheduleModule.forRoot(),
+    BrowserModule,
     CorsConfigModule,
     DatabaseModule,
     AuthModule,
