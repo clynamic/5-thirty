@@ -21,7 +21,7 @@ const binarySearchClosestBucket = (arr: Date[], date: Date): number => {
 };
 
 export const assignDateBuckets = <T>(
-  dates: (Date | DateRange | undefined)[],
+  dates: DatePoint[],
   buckets: Date[],
   items: readonly T[],
 ): Record<number, T[]> => {
@@ -93,11 +93,13 @@ export const createTimeBuckets = (range: DateRange): Date[] => {
   return buckets;
 };
 
+export type DatePoint = Date | DateRange | undefined;
+
 const MAX_BUCKET_COUNT = 10000;
 
 export const generateSeriesPoints = <T>(
   items: readonly T[],
-  dates: (Date | DateRange | undefined)[],
+  dates: DatePoint[],
   range: PartialDateRange,
 ): SeriesPoint<T[]>[] => {
   const dateRange = DateRange.fill(range);
@@ -124,7 +126,7 @@ export const generateSeriesPoints = <T>(
 };
 
 export const generateSeriesCountPoints = (
-  dates: (Date | DateRange | undefined)[],
+  dates: DatePoint[],
   range: PartialDateRange,
 ): SeriesCountPoint[] =>
   generateSeriesPoints(
@@ -140,7 +142,7 @@ export const generateSeriesCountPoints = (
   );
 
 export const generateSeriesRecordPoints = <R extends Record<string, number>>(
-  dates: (Date | DateRange | undefined)[],
+  dates: DatePoint[],
   keys: readonly (keyof R)[],
   allKeys: readonly (keyof R)[],
   range: PartialDateRange,
