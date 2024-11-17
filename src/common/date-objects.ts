@@ -1,5 +1,3 @@
-import { DateTime } from 'luxon';
-
 /**
  * An object with a date denoting a creation time.
  */
@@ -42,10 +40,7 @@ export const findLowestDate = <T extends WithDate>(
 ): T | undefined => {
   if (items === undefined || items.length === 0) return undefined;
   return items.reduce((prev, current) =>
-    DateTime.fromJSDate(resolveWithDate(prev)) <
-    DateTime.fromJSDate(resolveWithDate(current))
-      ? prev
-      : current,
+    resolveWithDate(prev) < resolveWithDate(current) ? prev : current,
   );
 };
 
@@ -57,9 +52,6 @@ export const findHighestDate = <T extends WithDate>(
 ): T | undefined => {
   if (items === undefined || items.length === 0) return undefined;
   return items.reduce((prev, current) =>
-    DateTime.fromJSDate(resolveWithDate(prev)) >
-    DateTime.fromJSDate(resolveWithDate(current))
-      ? prev
-      : current,
+    resolveWithDate(prev) > resolveWithDate(current) ? prev : current,
   );
 };

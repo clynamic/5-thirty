@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DateTime } from 'luxon';
+import { set } from 'date-fns';
 import {
   convertKeysToCamelCase,
   DateRange,
-  fillDateCounts,
+  generateSeriesCountPoints,
   PaginationParams,
   PartialDateRange,
   SeriesCountPoint,
+  TimeScale,
 } from 'src/common';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import { Repository } from 'typeorm';
@@ -48,28 +49,10 @@ export class ApprovalMetricService {
       },
     });
 
-    const counts: Record<string, number> = {};
-
-    for (const approval of approvals) {
-      const createdDate = DateTime.fromJSDate(approval.createdAt, {
-        zone: range.timezone,
-      });
-      const dateString = createdDate.toISODate()!;
-      counts[dateString] = (counts[dateString] || 0) + 1;
-    }
-
-    fillDateCounts(range, counts);
-
-    return Object.keys(counts)
-      .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
-      .sort()
-      .map(
-        (date) =>
-          new SeriesCountPoint({
-            date: date.toJSDate(),
-            value: counts[date.toISODate()!]!,
-          }),
-      );
+    return generateSeriesCountPoints(
+      approvals.map((approval) => approval.createdAt),
+      range,
+    );
   }
 
   async activitySummary(
@@ -85,47 +68,24 @@ export class ApprovalMetricService {
       },
     });
 
-    const counts: Record<string, number> = {};
-    let minDate: DateTime | null = null;
-    let maxDate: DateTime | null = null;
+    const dates = approvals
+      .map((approval) =>
+        !query || approval.userId === query.userId
+          ? set(approval.createdAt, { year: 1970, month: 1, date: 1 })
+          : null,
+      )
+      .filter((date): date is Date => date !== null)
+      .flat();
 
-    for (const approval of approvals) {
-      const createdDate = DateTime.fromJSDate(approval.createdAt, {
-        zone: range.timezone,
-      })
-        .set({ year: 1970, month: 1, day: 1 })
-        .startOf('hour');
-
-      const createdHour = createdDate.toISO()!;
-      counts[createdHour] = (counts[createdHour] || 0) + 1;
-
-      minDate = DateTime.min(minDate ?? createdDate, createdDate);
-      maxDate = DateTime.max(maxDate ?? createdDate, createdDate);
-    }
-
-    if (minDate && maxDate) {
-      for (
-        let currentDate = minDate;
-        currentDate <= maxDate;
-        currentDate = currentDate.plus({ hours: 1 })
-      ) {
-        const dateString = currentDate.toISO()!;
-        if (!(dateString in counts)) {
-          counts[dateString] = 0;
-        }
-      }
-    }
-
-    return Object.keys(counts)
-      .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
-      .sort()
-      .map(
-        (date) =>
-          new SeriesCountPoint({
-            date: date.toJSDate(),
-            value: counts[date.toISO()!] ?? 0,
-          }),
-      );
+    return generateSeriesCountPoints(
+      dates,
+      new DateRange({
+        startDate: new Date(1970, 1, 1),
+        endDate: new Date(1970, 1, 1, 23, 59, 59, 999),
+        scale: TimeScale.Hour,
+        timezone: range.timezone,
+      }),
+    );
   }
 
   async approverSummary(

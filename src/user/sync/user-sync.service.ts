@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DateTime } from 'luxon';
+import { subMilliseconds } from 'date-fns';
 import { In, MoreThanOrEqual, Repository } from 'typeorm';
 
 import { UserEntity } from '../user.entity';
@@ -71,7 +71,7 @@ export class UserSyncService {
           id: In(users),
           cache: {
             refreshedAt: MoreThanOrEqual(
-              DateTime.now().minus({ milliseconds: staleness }).toJSDate(),
+              subMilliseconds(new Date(), staleness),
             ),
           },
         },

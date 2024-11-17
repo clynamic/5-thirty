@@ -131,20 +131,6 @@ export class PartialDateRange {
       return '';
     }
   }
-
-  /**
-   * Clamps a date to the range.
-   * The returned date will be within the range.
-   */
-  clamp(date: DateTime): DateTime {
-    return DateTime.max(
-      DateTime.min(
-        this.endDate ? DateTime.fromJSDate(this.endDate) : date,
-        date,
-      ),
-      this.startDate ? DateTime.fromJSDate(this.startDate) : date,
-    );
-  }
 }
 
 /**
@@ -255,60 +241,3 @@ export class DateRange extends PartialDateRange {
     return super.where()!;
   }
 }
-
-export const fillDateCounts = (
-  range: PartialDateRange,
-  counts: Record<string, number>,
-): void => {
-  const dates = Object.keys(counts).map((date) =>
-    DateTime.fromISO(date, { zone: range.timezone }),
-  );
-
-  if (dates.length === 0) return;
-
-  const minDate = DateTime.min(...dates);
-  const maxDate = DateTime.max(...dates);
-
-  for (
-    let currentDate = minDate;
-    currentDate <= maxDate;
-    currentDate = currentDate.plus({ days: 1 })
-  ) {
-    const dateString = currentDate.toISODate()!;
-    if (!(dateString in counts)) {
-      counts[dateString] = 0;
-    }
-  }
-};
-
-export const fillStackedDateCounts = (
-  range: PartialDateRange,
-  counts: Record<string, Record<string, number>>,
-  keys: string[],
-): void => {
-  const dates = Object.keys(counts).map((date) =>
-    DateTime.fromISO(date, { zone: range.timezone }),
-  );
-
-  if (dates.length === 0) return;
-
-  const minDate = DateTime.min(...dates);
-  const maxDate = DateTime.max(...dates);
-
-  for (
-    let currentDate = minDate;
-    currentDate <= maxDate;
-    currentDate = currentDate.plus({ days: 1 })
-  ) {
-    const dateString = currentDate.toISODate()!;
-    if (!(dateString in counts)) {
-      counts[dateString] = {};
-    }
-
-    for (const key of keys) {
-      if (!(key in counts[dateString]!)) {
-        counts[dateString]![key] = 0;
-      }
-    }
-  }
-};

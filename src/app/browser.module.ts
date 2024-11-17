@@ -66,6 +66,7 @@ export class CacheManager<S extends Store = Store> implements Cache<S> {
 export interface CacheableOptions {
   ttl?: number;
   dependencies?: ResourceKey[];
+  disable?: boolean;
 }
 
 export function Cacheable<TArgs extends any[], TReturn>(
@@ -86,6 +87,10 @@ export function Cacheable<TArgs extends any[], TReturn>(
           const resourceKey = typeof dep === 'string' ? dep : dep.name;
           cacheManager.dep(resourceKey, cacheKey);
         });
+      }
+
+      if (options?.disable) {
+        return originalMethod.apply(this, args);
       }
 
       return cacheManager.wrap(

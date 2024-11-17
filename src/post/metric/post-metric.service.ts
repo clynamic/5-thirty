@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DateTime, DateTimeUnit } from 'luxon';
+import { max, min, sub } from 'date-fns';
 import { PostFlagType } from 'src/api';
 import { Cacheable } from 'src/app/browser.module';
 import { ApprovalEntity } from 'src/approval/approval.entity';
 import {
+  collapseTimeScaleDuration,
   DateRange,
   generateSeriesCountPoints,
   PartialDateRange,
@@ -79,6 +80,7 @@ export class PostMetricService {
   @Cacheable(PostMetricService.getPendingSeriesKey, {
     ttl: 10 * 60 * 1000,
     dependencies: [PostVersionEntity, PermitEntity, ApprovalEntity, FlagEntity],
+    disable: true,
   })
   async pendingSeries(range?: PartialDateRange): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
@@ -141,31 +143,18 @@ export class PostMetricService {
       }
     });
 
-    const unit: DateTimeUnit =
-      range.scale! === 'minute' || range.scale! === 'hour'
-        ? range.scale!
-        : 'day';
+    const scale = collapseTimeScaleDuration(range.scale!);
 
     const dates = posts.map((post) => {
-      const startDate = range
-        .clamp(DateTime.fromJSDate(post.updatedAt))
-        .setZone(range.timezone)
-        .startOf(unit);
+      const startDate = max([post.updatedAt, range.startDate!]);
 
-      const endDate = (
-        endDates.get(post.postId)
-          ? DateTime.fromJSDate(endDates.get(post.postId)!).minus({
-              [unit]: 1,
-            })
-          : DateTime.now()
-      )
-        .setZone(range.timezone)
-        .endOf(unit);
+      const mapEndDate = endDates.get(post.postId);
+      const endDate = min([
+        mapEndDate ? sub(mapEndDate, { [scale]: 1 }) : new Date(),
+        range.endDate!,
+      ]);
 
-      return new DateRange({
-        startDate: startDate.toJSDate(),
-        endDate: endDate.toJSDate(),
-      });
+      return new DateRange({ startDate, endDate });
     });
 
     return generateSeriesCountPoints(dates, range);

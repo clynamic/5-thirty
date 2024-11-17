@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DateTime } from 'luxon';
+import { subMilliseconds } from 'date-fns';
 import { postsMany, usersMany } from 'src/api';
 import { AuthService } from 'src/auth/auth.service';
 import { convertKeysToCamelCase } from 'src/common';
@@ -41,9 +41,7 @@ export class UserHeadService {
         cache: params?.staleness
           ? {
               refreshedAt: MoreThan(
-                DateTime.now()
-                  .minus({ milliseconds: params.staleness })
-                  .toJSDate(),
+                subMilliseconds(new Date(), params.staleness),
               ),
             }
           : undefined,

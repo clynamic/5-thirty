@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { DateTime } from 'luxon';
+import { sub } from 'date-fns';
 import { usersMany } from 'src/api';
 import { users } from 'src/api/e621';
 import { UserLevel } from 'src/auth/auth.level';
@@ -93,7 +93,7 @@ export class UserSyncWorker {
             type: Object.values(NotabilityType).filter(
               (type) => type !== NotabilityType.staff,
             ),
-            newerThan: DateTime.now().minus({ months: 1 }).toJSDate(),
+            newerThan: sub(new Date(), { months: 1 }),
           });
 
           const users = await this.userSyncService.findOutdated(

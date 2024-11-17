@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DateTime, DateTimeUnit } from 'luxon';
+import { differenceInHours, max, min, set, sub } from 'date-fns';
 import { TicketQtype, TicketStatus } from 'src/api/e621';
 import {
+  collapseTimeScaleDuration,
   convertKeysToCamelCase,
   DateRange,
   generateSeriesCountPoints,
@@ -11,6 +12,7 @@ import {
   PartialDateRange,
   Raw,
   SeriesCountPoint,
+  TimeScale,
 } from 'src/common';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import { FindOptionsWhere, LessThan, MoreThan, Not, Repository } from 'typeorm';
@@ -119,31 +121,16 @@ export class TicketMetricService {
       ],
     });
 
-    const unit: DateTimeUnit =
-      range.scale! === 'minute' || range.scale! === 'hour'
-        ? range.scale!
-        : 'day';
+    const scale = collapseTimeScaleDuration(range.scale!);
 
     const dates = tickets.map((ticket) => {
-      const startDate = range
-        .clamp(DateTime.fromJSDate(ticket.createdAt))
-        .setZone(range.timezone)
-        .startOf(unit);
-
-      const endDate = range
-        .clamp(
-          ticket.status === TicketStatus.approved
-            ? DateTime.fromJSDate(ticket.updatedAt)
-                .setZone(range.timezone)
-                .minus({ [unit]: 1 })
-            : DateTime.now(),
-        )
-        .setZone(range.timezone)
-        .endOf(unit);
-
       return new DateRange({
-        startDate: startDate.toJSDate(),
-        endDate: endDate.toJSDate(),
+        startDate: max([ticket.createdAt, range.startDate!]),
+        endDate: min([
+          ticket.status === TicketStatus.approved
+            ? sub(ticket.updatedAt, { [scale]: 1 })
+            : range.endDate!,
+        ]),
       });
     });
 
@@ -196,62 +183,28 @@ export class TicketMetricService {
       where: this.whereCreatedOrUpdated(range, query?.where()),
     });
 
-    const counts: Record<string, number> = {};
-    let minDate: DateTime | null = null;
-    let maxDate: DateTime | null = null;
+    const dates = tickets
+      .map((ticket) => [
+        !query || ticket.creatorId === query.reporterId
+          ? set(ticket.createdAt, { year: 1970, month: 1, date: 1 })
+          : null,
+        ticket.createdAt.getTime() !== ticket.updatedAt.getTime() &&
+        (!query || ticket.claimantId === query.claimantId)
+          ? set(ticket.updatedAt, { year: 1970, month: 1, date: 1 })
+          : null,
+      ])
+      .map((date) => date.filter((d) => d !== null))
+      .flat();
 
-    for (const ticket of tickets) {
-      const createdDate = DateTime.fromJSDate(ticket.createdAt, {
-        zone: range.timezone,
-      })
-        .set({ year: 1970, month: 1, day: 1 })
-        .startOf('hour');
-      const updatedDate = ticket.updatedAt
-        ? DateTime.fromJSDate(ticket.updatedAt, { zone: range.timezone })
-            .set({ year: 1970, month: 1, day: 1 })
-            .startOf('hour')
-        : null;
-
-      if (!query || ticket.creatorId === query.reporterId) {
-        const createdHour = createdDate.toISO()!;
-        counts[createdHour] = (counts[createdHour] || 0) + 1;
-      }
-
-      if (updatedDate && (!query || ticket.handlerId === query.claimantId)) {
-        const updatedHour = updatedDate.toISO()!;
-        counts[updatedHour] = (counts[updatedHour] || 0) + 1;
-      }
-
-      minDate = DateTime.min(minDate ?? createdDate, createdDate);
-      maxDate = DateTime.max(
-        maxDate ?? updatedDate ?? createdDate,
-        updatedDate ?? createdDate,
-      );
-    }
-
-    if (minDate && maxDate) {
-      for (
-        let currentDate = minDate;
-        currentDate <= maxDate;
-        currentDate = currentDate.plus({ hours: 1 })
-      ) {
-        const dateString = currentDate.toISO()!;
-        if (!(dateString in counts)) {
-          counts[dateString] = 0;
-        }
-      }
-    }
-
-    return Object.keys(counts)
-      .map((date) => DateTime.fromISO(date, { zone: range.timezone }))
-      .sort()
-      .map(
-        (dateTime) =>
-          new SeriesCountPoint({
-            date: dateTime.toJSDate(),
-            value: counts[dateTime.toISO()!] ?? 0,
-          }),
-      );
+    return generateSeriesCountPoints(
+      dates,
+      new DateRange({
+        startDate: new Date(1970, 1, 1),
+        endDate: new Date(1970, 1, 1, 23, 59, 59, 999),
+        scale: TimeScale.Hour,
+        timezone: range.timezone,
+      }),
+    );
   }
 
   async ageSeries(range?: PartialDateRange): Promise<TicketAgeSeriesPoint[]> {
@@ -270,36 +223,24 @@ export class TicketMetricService {
       ],
     });
 
-    const unit: DateTimeUnit =
-      range.scale! === 'minute' || range.scale! === 'hour'
-        ? range.scale!
-        : 'day';
-
     const dates = tickets.map(
       (ticket) =>
         new DateRange({
-          startDate: range
-            .clamp(DateTime.fromJSDate(ticket.createdAt))
-            .setZone(range.timezone)
-            .startOf(unit)
-            .toJSDate(),
-          endDate: range
-            .clamp(
-              ticket.status === TicketStatus.approved
-                ? DateTime.fromJSDate(ticket.updatedAt)
-                : DateTime.now(),
-            )
-            .setZone(range.timezone)
-            .endOf(unit)
-            .toJSDate(),
+          startDate: max([ticket.createdAt, range.startDate!]),
+          endDate: min([
+            ticket.status === TicketStatus.approved
+              ? ticket.updatedAt
+              : new Date(),
+            range.endDate!,
+          ]),
         }),
     );
 
     const keys = tickets.map((ticket) => {
-      const ageInDays = DateTime.fromJSDate(ticket.updatedAt).diff(
-        DateTime.fromJSDate(ticket.createdAt),
-        'days',
-      ).days;
+      // age here is measured in cold dead hours, not zimezone aware intervals.
+      // this is because we want to know how long a user had to wait for a response.
+      const ageInDays =
+        differenceInHours(ticket.updatedAt, ticket.createdAt) / 24;
 
       if (ageInDays <= 1) {
         return 'oneDay';
@@ -358,16 +299,11 @@ export class TicketMetricService {
     });
 
     for (const ticket of tickets) {
-      const endDate = DateTime.fromJSDate(
+      const endDate =
         ticket.status === TicketStatus.approved
           ? ticket.updatedAt
-          : range.endDate!,
-        { zone: range.timezone },
-      );
-      const ageInDays = endDate.diff(
-        DateTime.fromJSDate(ticket.createdAt),
-        'day',
-      ).days;
+          : range.endDate!;
+      const ageInDays = differenceInHours(endDate, ticket.createdAt) / 24;
 
       let ageGroup: keyof TicketAgeSummary;
 

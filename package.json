@@ -15,6 +15,7 @@
     "generate": "orval"
   },
   "dependencies": {
+    "@date-fns/tz": "^1.2.0",
     "@nestjs/cache-manager": "^2.3.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.3",
@@ -29,6 +30,7 @@
     "cache-manager": "^5.7.6",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "date-fns": "^4.1.0",
     "joi": "^17.13.3",
     "lodash": "^4.17.21",
     "luxon": "^3.5.0",
