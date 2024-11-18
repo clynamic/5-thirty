@@ -188,8 +188,7 @@ export class TicketMetricService {
         !query || ticket.creatorId === query.reporterId
           ? set(ticket.createdAt, { year: 1970, month: 1, date: 1 })
           : null,
-        ticket.createdAt.getTime() !== ticket.updatedAt.getTime() &&
-        (!query || ticket.claimantId === query.claimantId)
+        !query || ticket.claimantId === query.claimantId
           ? set(ticket.updatedAt, { year: 1970, month: 1, date: 1 })
           : null,
       ])
