@@ -113,6 +113,19 @@ export class PermitSyncWorker {
             }),
           );
 
+          const overexplained =
+            await this.permitSyncService.findOverexplainedPosts();
+
+          this.logger.log(`Found ${overexplained.length} overexplained posts`);
+
+          await Promise.all(
+            chunk(overexplained, 100).map(async (items) => {
+              await this.permitSyncService.remove(
+                items.map((id) => new PermitEntity({ id })),
+              );
+            }),
+          );
+
           this.cacheManager.delDep(PermitEntity);
         },
       }),
