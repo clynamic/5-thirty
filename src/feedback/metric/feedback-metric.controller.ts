@@ -10,8 +10,8 @@ import { UserLevel } from 'src/auth/auth.level';
 import { PartialDateRange } from 'src/common';
 
 import {
-  FeedbackCountSeriesPoint,
-  FeedbackTypeSummary,
+  FeedbackTypeQuery,
+  FeedbackTypeSeriesPoint,
 } from './feedback-metric.dto';
 import { FeedbackMetricService } from './feedback-metric.service';
 
@@ -23,35 +23,20 @@ import { FeedbackMetricService } from './feedback-metric.service';
 export class FeedbackMetricController {
   constructor(private readonly feedbackMetricService: FeedbackMetricService) {}
 
-  @Get('type/summary')
+  @Get('type')
   @ApiOperation({
-    summary: 'Feedback type summary',
-    description: 'Get feedback types counts for a given date range',
-    operationId: 'getFeedbackTypeSummary',
+    summary: 'Feedback Type Series',
+    description: 'Get a time series of feedback types counts for a given range',
+    operationId: 'getFeedbackTypeSeries',
   })
   @ApiResponse({
     status: 200,
-    type: FeedbackTypeSummary,
-  })
-  async typeSummary(
-    @Query() range?: PartialDateRange,
-  ): Promise<FeedbackTypeSummary> {
-    return this.feedbackMetricService.typeSummary(range);
-  }
-
-  @Get('count/series')
-  @ApiOperation({
-    summary: 'Feedback count series',
-    description: 'Get a time series of feedback counts for a given date range',
-    operationId: 'getFeedbackCountSeries',
-  })
-  @ApiResponse({
-    status: 200,
-    type: [FeedbackCountSeriesPoint],
+    type: [FeedbackTypeSeriesPoint],
   })
   async countSeries(
     @Query() range?: PartialDateRange,
-  ): Promise<FeedbackCountSeriesPoint[]> {
-    return this.feedbackMetricService.countSeries(range);
+    @Query() query?: FeedbackTypeQuery,
+  ): Promise<FeedbackTypeSeriesPoint[]> {
+    return this.feedbackMetricService.type(range, query);
   }
 }

@@ -1,7 +1,10 @@
-import { Raw } from 'src/common';
+import { Raw, toRaws } from 'src/common';
+import { FindOptionsWhere } from 'typeorm';
 
-export class FeedbackTypeSummary {
-  constructor(value: Raw<FeedbackTypeSummary>) {
+import { FeedbackEntity } from '../feedback.entity';
+
+export class FeedbackTypeCount {
+  constructor(value: Raw<FeedbackTypeCount>) {
     Object.assign(this, value);
   }
 
@@ -10,21 +13,27 @@ export class FeedbackTypeSummary {
   positive: number;
 }
 
-export class FeedbackCountGroup {
-  constructor(value: Raw<FeedbackCountGroup>) {
-    Object.assign(this, value);
-  }
-
-  negative: number;
-  neutral: number;
-  positive: number;
-}
-
-export class FeedbackCountSeriesPoint {
-  constructor(value: Raw<FeedbackCountSeriesPoint>) {
+export class FeedbackTypeSeriesPoint extends FeedbackTypeCount {
+  constructor(value: Raw<FeedbackTypeSeriesPoint>) {
+    super(value);
     Object.assign(this, value);
   }
 
   date: Date;
-  groups: FeedbackCountGroup;
+}
+
+export class FeedbackTypeQuery {
+  constructor(value: Raw<FeedbackTypeQuery>) {
+    Object.assign(this, value);
+  }
+
+  creatorId?: number;
+  userId?: number;
+
+  where(): FindOptionsWhere<FeedbackEntity> {
+    return toRaws({
+      creatorId: this.creatorId,
+      userId: this.userId,
+    });
+  }
 }

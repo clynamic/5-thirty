@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserFeedbackCategory } from 'src/api';
 import {
   DateRange,
   generateSeriesRecordPoints,
@@ -11,9 +10,9 @@ import { Repository } from 'typeorm';
 
 import { FeedbackEntity } from '../feedback.entity';
 import {
-  FeedbackCountGroup,
-  FeedbackCountSeriesPoint,
-  FeedbackTypeSummary,
+  FeedbackTypeCount,
+  FeedbackTypeQuery,
+  FeedbackTypeSeriesPoint,
 } from './feedback-metric.dto';
 
 @Injectable()
@@ -23,39 +22,28 @@ export class FeedbackMetricService {
     private readonly feedbackRepository: Repository<FeedbackEntity>,
   ) {}
 
-  async typeSummary(range?: PartialDateRange): Promise<FeedbackTypeSummary> {
-    return new FeedbackTypeSummary({
-      ...Object.fromEntries(
-        await Promise.all(
-          Object.values(UserFeedbackCategory).map(async (category) => [
-            category,
-            await this.feedbackRepository.count({
-              where: { category, ...DateRange.fill(range).where() },
-            }),
-          ]),
-        ),
-      ),
-    });
-  }
-
-  async countSeries(
+  async type(
     range?: PartialDateRange,
-  ): Promise<FeedbackCountSeriesPoint[]> {
+    query?: FeedbackTypeQuery,
+  ): Promise<FeedbackTypeSeriesPoint[]> {
     range = DateRange.fill(range);
     const feedbacks = await this.feedbackRepository.find({
-      where: DateRange.fill(range).where(),
+      where: {
+        ...range.where(),
+        ...query?.where(),
+      },
     });
 
-    return generateSeriesRecordPoints<Raw<FeedbackCountGroup>>(
+    return generateSeriesRecordPoints<Raw<FeedbackTypeCount>>(
       feedbacks.map((e) => e.createdAt),
       feedbacks.map((e) => e.category),
       ['negative', 'neutral', 'positive'] as const,
       range,
     ).map(
       (e) =>
-        new FeedbackCountSeriesPoint({
+        new FeedbackTypeSeriesPoint({
           date: e.date,
-          groups: e.value,
+          ...e.value,
         }),
     );
   }
