@@ -45,6 +45,33 @@ export class PostMetricService {
       })
       .then((versions) => versions.map((version) => version.postId));
 
+    const pending = await this.postVersionRepository
+      .createQueryBuilder('post_version')
+      .select('post_version.post_id')
+      .distinct(true)
+      .leftJoin(
+        this.approvalRepository.metadata.tableName,
+        'approval',
+        'post_version.post_id = approval.post_id',
+      )
+      .leftJoin(
+        this.flagRepository.metadata.tableName,
+        'flag',
+        'post_version.post_id = flag.post_id AND flag.type = :type',
+        { type: PostFlagType.deletion },
+      )
+      .leftJoin(
+        this.permitRepository.metadata.tableName,
+        'permit',
+        'post_version.post_id = permit.post_id',
+      )
+      .where('post_version.version = 1')
+      .andWhere('approval.post_id IS NULL')
+      .andWhere('flag.id IS NULL')
+      .andWhere('permit.post_id IS NULL')
+      .getRawMany()
+      .then((results) => results.map((result) => result.post_id as number));
+
     const approved = await this.approvalRepository.count({
       where: {
         postId: In(posts),
@@ -68,7 +95,7 @@ export class PostMetricService {
       approved,
       deleted,
       permitted,
-      pending: posts.length - approved - deleted - permitted,
+      pending: pending.length,
     });
   }
 

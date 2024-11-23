@@ -46,7 +46,7 @@ export class PermitSyncService {
   // TODO: only count approvals & deletions that are within 30 days of the creation date of the post
   // this would increase our accuracy, as posts with a deletion after 30 days were most likely never in pending status.
   async findUnexplainedPosts(): Promise<UnexplainedPost[]> {
-    // At the time of writng, we try to avoid pulling large amounts of Post objects from upstream.
+    // At the time of writing, we try to avoid pulling large amounts of Post objects from upstream.
     // Because of that, we only have the PostVersions available. They help us find the Post IDs.
     return this.postVersionRepository
       .createQueryBuilder('post_version')
@@ -64,7 +64,11 @@ export class PermitSyncService {
         'post_version.post_id = flag.post_id AND flag.type = :type',
         { type: PostFlagType.deletion },
       )
-      .leftJoin('permits', 'permit', 'post_version.post_id = permit.post_id')
+      .leftJoin(
+        this.permitRepository.metadata.tableName,
+        'permit',
+        'post_version.post_id = permit.post_id',
+      )
       .where('post_version.version = 1') // source Post IDs from the first version.
       .andWhere('approval.post_id IS NULL') // No associated approval.
       .andWhere('flag.id IS NULL') // No associated deletion flag.
