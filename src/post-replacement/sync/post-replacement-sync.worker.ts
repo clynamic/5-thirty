@@ -178,7 +178,10 @@ export class PostReplacementSyncWorker {
               const rangeString = new PartialDateRange({
                 startDate: refreshDate,
               }).toE621RangeString();
-              const idString = getIdRangeString(undefined, manifest.upperId);
+              const idString = getIdRangeString(
+                manifest.lowerId,
+                manifest.upperId,
+              );
 
               this.logger.log(
                 `Fetching post replacements for refresh date ${rangeString} with ids ${idString}`,
