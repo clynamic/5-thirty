@@ -14,7 +14,8 @@ import { JobModule } from 'src/job/job.module';
 import { ManifestModule } from 'src/manifest/manifest.module';
 import { PermitModule } from 'src/permit/permit.module';
 import { PostModule } from 'src/post/post.module';
-import { PostVersionModule } from 'src/post_version/post_version.module';
+import { PostReplacementModule } from 'src/post-replacement/post-replacement.module';
+import { PostVersionModule } from 'src/post-version/post-version.module';
 import { TicketModule } from 'src/ticket/ticket.module';
 import { UploadModule } from 'src/upload/upload.module';
 import { UserModule } from 'src/user/user.module';
@@ -45,6 +46,7 @@ import { DatabaseModule } from './database.module';
     DeletionModule,
     FeedbackModule,
     PostVersionModule,
+    PostReplacementModule,
     UploadModule,
     PermitModule,
   ],

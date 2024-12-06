@@ -7,8 +7,8 @@
  */
 import type { File } from './file';
 import type { Flags } from './flags';
-import type { PostRating } from './postRating';
 import type { Preview } from './preview';
+import type { PostRating } from './postRating';
 import type { Relationships } from './relationships';
 import type { Sample } from './sample';
 import type { Score } from './score';

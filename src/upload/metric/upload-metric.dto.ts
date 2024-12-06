@@ -1,5 +1,5 @@
 import { Raw, toRaws } from 'src/common';
-import { PostVersionEntity } from 'src/post_version/post_version.entity';
+import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { UserHead } from 'src/user/head/user-head.dto';
 import { FindOptionsWhere } from 'typeorm';
 

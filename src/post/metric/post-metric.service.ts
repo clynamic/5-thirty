@@ -14,7 +14,7 @@ import {
 } from 'src/common';
 import { FlagEntity } from 'src/flag/flag.entity';
 import { PermitEntity } from 'src/permit/permit.entity';
-import { PostVersionEntity } from 'src/post_version/post_version.entity';
+import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { In, Repository } from 'typeorm';
 
 import { PostStatusSummary } from './post-metric.dto';

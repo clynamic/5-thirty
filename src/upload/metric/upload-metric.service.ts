@@ -8,7 +8,7 @@ import {
   PartialDateRange,
   SeriesCountPoint,
 } from 'src/common';
-import { PostVersionEntity } from 'src/post_version/post_version.entity';
+import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import { Repository } from 'typeorm';
 

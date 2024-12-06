@@ -22,6 +22,9 @@ export class ManifestEntity {
   @Column({ type: 'datetime' })
   endDate: Date;
 
+  @Column({ type: 'datetime', nullable: true })
+  refreshedAt?: Date;
+
   get range(): DateRange {
     return new DateRange({
       startDate: this.startDate,

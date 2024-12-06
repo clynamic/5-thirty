@@ -6,7 +6,7 @@ import {
   PartialDateRange,
   SeriesCountPoint,
 } from 'src/common';
-import { PostVersionEntity } from 'src/post_version/post_version.entity';
+import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { Repository } from 'typeorm';
 
 import { PermitEntity } from '../permit.entity';

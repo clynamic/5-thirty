@@ -27,7 +27,7 @@ import { ManifestService } from 'src/manifest/manifest.service';
 import {
   PostVersionCacheEntity,
   PostVersionEntity,
-} from 'src/post_version/post_version.entity';
+} from 'src/post-version/post-version.entity';
 import {
   NotabilityType,
   NotableUserEntity,

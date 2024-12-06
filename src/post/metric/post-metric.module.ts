@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApprovalEntity } from 'src/approval/approval.entity';
 import { FlagEntity } from 'src/flag/flag.entity';
 import { PermitEntity } from 'src/permit/permit.entity';
-import { PostVersionEntity } from 'src/post_version/post_version.entity';
+import { PostVersionEntity } from 'src/post-version/post-version.entity';
 
 import { PostEntity } from '../post.entity';
 import { PostMetricController } from './post-metric.controller';
