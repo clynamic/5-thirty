@@ -120,9 +120,7 @@ export class PermitSyncWorker {
 
           await Promise.all(
             chunk(overexplained, 100).map(async (items) => {
-              await this.permitSyncService.remove(
-                items.map((id) => new PermitEntity({ id })),
-              );
+              await this.permitSyncService.removeFor(items);
             }),
           );
 

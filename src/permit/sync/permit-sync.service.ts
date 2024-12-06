@@ -5,7 +5,7 @@ import { ApprovalEntity } from 'src/approval/approval.entity';
 import { FlagEntity } from 'src/flag/flag.entity';
 import { PostEntity } from 'src/post/post.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, In, Repository } from 'typeorm';
 
 import { PermitEntity } from '../permit.entity';
 
@@ -90,8 +90,7 @@ export class PermitSyncService {
   async findOverexplainedPosts(): Promise<number[]> {
     return this.postVersionRepository
       .createQueryBuilder('post_version')
-      .select('post_version.post_id')
-      .addSelect('post_version.updater_id')
+      .select('post_version.post_id', 'post_id')
       .distinct(true)
       .leftJoin(
         this.approvalRepository.metadata.tableName,
@@ -110,11 +109,27 @@ export class PermitSyncService {
       .andWhere(
         new Brackets((qb) => {
           qb.where('approval.post_id IS NOT NULL').orWhere(
-            'flag.id IS NOT NULL',
+            'flag.post_id IS NOT NULL',
           );
         }),
       )
-      .getRawMany()
+      .getRawMany<{ post_id: number }>()
       .then((results) => results.map((result) => result.post_id));
+  }
+
+  /**
+   * Removes permits associated with the given post IDs.
+   */
+  async removeFor(postIds: number): Promise<void>;
+
+  /**
+   * Removes permits associated with the given post ID.
+   */
+  async removeFor(postId: number[]): Promise<void>;
+
+  async removeFor(postIds: number | number[]): Promise<void> {
+    await this.permitRepository.delete({
+      postId: In(Array.isArray(postIds) ? postIds : [postIds]),
+    });
   }
 }
