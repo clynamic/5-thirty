@@ -41,4 +41,13 @@ export class DashboardService {
       ...update,
     });
   }
+
+  async delete(userId: number, type: DashboardType): Promise<void> {
+    const dashboard = await this.dashboardRepository.findOne({
+      where: { userId, type },
+    });
+    if (dashboard) {
+      await this.dashboardRepository.remove(dashboard);
+    }
+  }
 }

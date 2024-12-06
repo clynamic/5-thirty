@@ -71,4 +71,21 @@ export class DashboardController {
   ): Promise<void> {
     await this.dashboardService.update(req.user.userId, type, update);
   }
+
+  @Post(':type/delete')
+  @ApiOperation({
+    summary: 'Delete dashboard',
+    description: 'Delete dashboard by type, for the current user',
+    operationId: 'deleteDashboard',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Dashboard deleted',
+  })
+  async delete(
+    @Param('type') type: DashboardType,
+    @Req() req: { user: DecodedJwt },
+  ): Promise<void> {
+    await this.dashboardService.delete(req.user.userId, type);
+  }
 }
