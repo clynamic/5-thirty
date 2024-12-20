@@ -1,13 +1,13 @@
 import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'crypto';
 import fs from 'fs';
+import { join } from 'path';
 import { AppConfigKeys } from 'src/app/config.module';
 
 import { UserCredentials } from './auth.dto';
 
 export const readJwtSecret = (config: ConfigService) => {
-  const file =
-    config.get<string>(AppConfigKeys.JWT_SECRET_FILE) || '.jwt-secret';
+  const file = join(config.get<string>(AppConfigKeys.DATA_DIR)!, '.jwt-secret');
   let secret = '';
 
   try {

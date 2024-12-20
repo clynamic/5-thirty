@@ -5,8 +5,8 @@ import Joi from 'joi';
 export enum AppConfigKeys {
   E621_GLOBAL_USERNAME = 'E621_GLOBAL_USERNAME',
   E621_GLOBAL_API_KEY = 'E621_GLOBAL_API_KEY',
-  JWT_SECRET_FILE = 'JWT_SECRET_FILE',
   CORS_ALLOWED_ORIGINS = 'CORS_ALLOWED_ORIGINS',
+  DATA_DIR = 'DATA_DIR',
 }
 
 @Module({
@@ -17,10 +17,10 @@ export enum AppConfigKeys {
       validationSchema: Joi.object<Record<AppConfigKeys, Joi.Schema>>({
         E621_GLOBAL_USERNAME: Joi.string().required(),
         E621_GLOBAL_API_KEY: Joi.string().required(),
-        JWT_SECRET_FILE: Joi.string().optional(),
         CORS_ALLOWED_ORIGINS: Joi.alternatives()
           .try(Joi.string(), Joi.array().items(Joi.string()))
           .optional(),
+        DATA_DIR: Joi.string().optional().default('./data'),
       }),
     }),
   ],
