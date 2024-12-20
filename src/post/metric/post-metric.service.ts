@@ -116,13 +116,21 @@ export class PostMetricService {
       .leftJoin(
         this.approvalRepository.metadata.tableName,
         'approval',
-        'post_version.post_id = approval.post_id',
+        `post_version.post_id = approval.post_id AND approval.createdAt AND approval.createdAt BETWEEN :start AND :end`,
+        {
+          start: range.startDate!.toISOString(),
+          end: range.endDate!.toISOString(),
+        },
       )
       .leftJoin(
         this.flagRepository.metadata.tableName,
         'flag',
-        'post_version.post_id = flag.post_id AND flag.type = :type',
-        { type: PostFlagType.deletion },
+        `post_version.post_id = flag.post_id AND flag.type = :type AND flag.createdAt BETWEEN :start AND :end`,
+        {
+          type: PostFlagType.deletion,
+          start: range.startDate!.toISOString(),
+          end: range.endDate!.toISOString(),
+        },
       )
       .leftJoin(
         this.permitRepository.metadata.tableName,
@@ -139,9 +147,9 @@ export class PostMetricService {
       )
       .orWhere(
         new Brackets((qb) => {
-          qb.where('approval.post_id IS NULL')
-            .andWhere('flag.id IS NULL')
-            .andWhere('permit.post_id IS NULL');
+          qb.where('approval.post_id IS NOT NULL').orWhere(
+            'flag.id IS NOT NULL',
+          );
         }),
       )
       .groupBy('post_version.post_id')
