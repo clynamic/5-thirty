@@ -40,7 +40,16 @@ export class JobService {
         this.logger.log(`[#${job.id}] [${job.title}] is starting`);
         try {
           job.cancelToken.ensureRunning();
+          let timeout: NodeJS.Timeout | undefined;
+          if (job.timeout) {
+            timeout = setTimeout(() => {
+              job.cancelToken.cancel(`Timed out after ${job.timeout} ms`);
+            }, job.timeout);
+          }
           await job.run();
+          if (timeout) {
+            clearTimeout(timeout);
+          }
           this.logger.log(
             `[#${job.id}] [${job.title}] completed successfully.`,
           );

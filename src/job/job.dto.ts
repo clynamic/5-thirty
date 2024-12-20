@@ -11,4 +11,5 @@ export class JobInfo {
   succeeded: boolean;
   failed: boolean;
   cancelled: boolean;
+  timedOut: boolean;
 }

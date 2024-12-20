@@ -45,6 +45,7 @@ export class FeedbackSyncWorker {
       new Job({
         title: 'User Feedbacks Sync',
         key: `/${ItemType.feedbacks}/sync`,
+        timeout: 1000 * 60 * 5,
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.authService.getServerAxiosConfig();
 

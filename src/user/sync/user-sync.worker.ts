@@ -87,6 +87,7 @@ export class UserSyncWorker {
       new Job({
         title: 'User Notable Sync',
         key: `/${ItemType.users}/notable`,
+        timeout: 1000 * 60 * 5,
         execute: async ({ cancelToken }) => {
           const notable = await this.userSyncService.listNotable({
             // staff are already handled by the staff sync

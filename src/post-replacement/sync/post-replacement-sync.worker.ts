@@ -44,6 +44,7 @@ export class PostReplacementSyncWorker {
       new Job({
         title: 'Post Replacement Orders Sync',
         key: `/${ItemType.postReplacements}/orders`,
+        timeout: 1000 * 60 * 5,
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.authService.getServerAxiosConfig();
 

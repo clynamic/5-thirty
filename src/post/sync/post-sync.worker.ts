@@ -28,6 +28,7 @@ export class PostSyncWorker {
       new Job({
         title: 'Post Avatars Sync',
         key: `/${ItemType.posts}/avatars`,
+        timeout: 1000 * 60 * 5,
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.authService.getServerAxiosConfig();
 

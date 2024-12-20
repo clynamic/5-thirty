@@ -48,6 +48,7 @@ export class TicketSyncWorker {
       new Job({
         title: 'Ticket Orders Sync',
         key: `/${ItemType.tickets}/orders`,
+        timeout: 1000 * 60 * 5,
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.authService.getServerAxiosConfig();
 

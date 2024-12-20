@@ -42,6 +42,7 @@ export class FlagSyncWorker {
       new Job({
         title: 'Flag Orders Sync',
         key: `/${ItemType.flags}/orders`,
+        timeout: 1000 * 60 * 5,
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.authService.getServerAxiosConfig();
 

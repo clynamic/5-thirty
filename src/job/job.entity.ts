@@ -43,11 +43,38 @@ export type JobExecution<MetadataType = undefined> = (
 ) => Promise<void>;
 
 export interface JobOptions<MetadataType = undefined> {
-  execute: JobExecution<MetadataType>;
+  /**
+   * The title of this job. Used for display purposes.
+   */
   title?: string;
+
+  /**
+   * The key of this job. used for deduplication purposes.
+   * Jobs with no key are unique and will always run.
+   */
   key?: string;
+
+  /**
+   * The metadata for this job.
+   * Can contain any arbitrary data that the job needs to run.
+   */
   metadata?: MetadataType;
+
+  /**
+   * The cancel token for this job. Can be used to check if the job should continue running.
+   */
   cancelToken?: JobCancelToken;
+
+  /**
+   * The timeout for this job.
+   * If the job runs for longer than this, it will be cancelled by the job service.
+   */
+  timeout?: number;
+
+  /**
+   * The function that will be executed when the job is run.
+   */
+  execute: JobExecution<MetadataType>;
 }
 
 export class Job<MetadataType = undefined> {
@@ -57,15 +84,52 @@ export class Job<MetadataType = undefined> {
     this.key = options.key;
     this.metadata = options.metadata;
     this.cancelToken = options.cancelToken || new JobCancelToken();
+    this.timeout = options.timeout;
     this.execute = options.execute;
   }
 
+  /**
+   * Used to generate unique IDs for each job.
+   */
   private static idCounter = 0;
+
+  /**
+   * The unique identifier for this job.
+   */
   readonly id: number;
+
+  /**
+   * The title of this job. Used for display purposes.
+   */
   readonly title: string;
+
+  /**
+   * The key of this job. used for deduplication purposes.
+   * Jobs with no key are unique and will always run.
+   */
   readonly key?: string;
+
+  /**
+   * The metadata for this job.
+   * Can contain any arbitrary data that the job needs to run.
+   */
   readonly metadata?: MetadataType;
+
+  /**
+   * The cancel token for this job. Can be used to check if the job should continue running.
+   */
   readonly cancelToken: JobCancelToken;
+
+  /**
+   * The timeout for this job.
+   * If the job runs for longer than this, it will be cancelled by the job service.
+   * Is no timeout provided, the job will run until it completes.
+   */
+  readonly timeout?: number;
+
+  /**
+   * The function that will be executed when the job is run.
+   */
   private readonly execute: JobExecution<MetadataType>;
 
   private _promise?: Promise<void>;
@@ -101,6 +165,20 @@ export class Job<MetadataType = undefined> {
     return this.cancelToken.isCancelled;
   }
 
+  get runtime(): number | undefined {
+    if (!this.startedAt || !this.endedAt) return undefined;
+    return this.endedAt.getTime() - this.startedAt.getTime();
+  }
+
+  get timedOut(): boolean {
+    return (
+      !!this.timeout &&
+      !!this.runtime &&
+      this.cancelled &&
+      this.runtime >= this.timeout
+    );
+  }
+
   get info(): JobInfo {
     return new JobInfo({
       id: this.id,
@@ -111,6 +189,7 @@ export class Job<MetadataType = undefined> {
       succeeded: this.succeeded,
       failed: this.failed,
       cancelled: this.cancelled,
+      timedOut: this.timedOut,
     });
   }
 
