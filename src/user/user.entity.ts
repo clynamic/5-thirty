@@ -6,9 +6,7 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 export class UserEntity extends CacheLink {
   constructor(partial?: Partial<UserEntity>) {
     super();
-    if (partial) {
-      Object.assign(this, partial);
-    }
+    Object.assign(this, partial);
   }
 
   @PrimaryColumn({ type: 'int' })

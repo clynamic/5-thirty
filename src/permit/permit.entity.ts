@@ -16,9 +16,7 @@ import {
 @Entity('permits')
 export class PermitEntity {
   constructor(partial?: Partial<PermitEntity>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+    Object.assign(this, partial);
   }
 
   @PrimaryGeneratedColumn('increment')

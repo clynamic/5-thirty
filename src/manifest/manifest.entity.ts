@@ -5,9 +5,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 @Entity('manifests')
 export class ManifestEntity {
   constructor(partial?: Partial<ManifestEntity>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+    Object.assign(this, partial);
   }
 
   @PrimaryGeneratedColumn('increment')
@@ -96,9 +94,7 @@ export type OrderSide = 'start' | 'end';
 
 export class Order {
   constructor(partial?: Partial<Order>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+    Object.assign(this, partial);
   }
 
   lower: OrderBoundary;

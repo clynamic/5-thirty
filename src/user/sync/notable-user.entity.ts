@@ -9,9 +9,7 @@ export enum NotabilityType {
 @Entity('notable_users')
 export class NotableUserEntity {
   constructor(partial?: Partial<NotableUserEntity>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+    Object.assign(this, partial);
   }
 
   @PrimaryColumn({ type: 'int' })

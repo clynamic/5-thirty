@@ -6,9 +6,7 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 export class PostEntity extends CacheLink {
   constructor(partial?: Partial<PostEntity>) {
     super();
-    if (partial) {
-      Object.assign(this, partial);
-    }
+    Object.assign(this, partial);
   }
 
   static fromPost(value: Post): PostEntity {

@@ -8,9 +8,7 @@ export enum DashboardType {
 
 export class DashboardPosition {
   constructor(partial?: Partial<DashboardPosition>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+    Object.assign(this, partial);
   }
 
   i: string;
@@ -22,9 +20,7 @@ export class DashboardPosition {
 
 export class DashboardPositions {
   constructor(partial?: Partial<DashboardPositions>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+    Object.assign(this, partial);
   }
 
   xs?: DashboardPosition[];

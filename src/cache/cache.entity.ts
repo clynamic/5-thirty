@@ -26,9 +26,7 @@ export interface CacheValue {
 @Entity('caches')
 export class CacheEntity {
   constructor(partial?: Partial<CacheEntity>) {
-    if (partial) {
-      Object.assign(this, partial);
-    }
+    Object.assign(this, partial);
   }
 
   @PrimaryColumn({ type: 'text' })
