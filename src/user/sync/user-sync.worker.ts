@@ -45,7 +45,7 @@ export class UserSyncWorker {
                 loopGuard.iter({
                   page,
                   limit,
-                  'search[min_level]': UserLevel.Janitor,
+                  'search[min_level]': UserLevel.FormerStaff,
                 }),
                 axiosConfig,
               ),
