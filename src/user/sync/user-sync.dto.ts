@@ -1,7 +1,7 @@
 import { IsNumber, IsOptional } from 'class-validator';
 import { Raw } from 'src/common';
 
-import { NotabilityType } from './notable-user.entity';
+import { NotabilityType } from '../notable-user.entity';
 
 export class NotableUserQuery {
   constructor(value: Raw<NotableUserQuery> = {}) {

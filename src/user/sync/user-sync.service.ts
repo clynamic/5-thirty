@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { subMilliseconds } from 'date-fns';
 import { In, MoreThanOrEqual, Repository } from 'typeorm';
 
+import { NotableUserEntity } from '../notable-user.entity';
 import { UserEntity } from '../user.entity';
-import { NotableUserQuery } from './notable-user.dto';
-import { NotableUserEntity } from './notable-user.entity';
+import { NotableUserQuery } from './user-sync.dto';
 
 @Injectable()
 export class UserSyncService {

@@ -10,8 +10,8 @@ import { convertKeysToCamelCase, LoopGuard, rateLimit } from 'src/common';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
 
+import { NotabilityType, NotableUserEntity } from '../notable-user.entity';
 import { UserCacheEntity, UserEntity } from '../user.entity';
-import { NotabilityType, NotableUserEntity } from './notable-user.entity';
 import { UserSyncService } from './user-sync.service';
 
 @Injectable()
