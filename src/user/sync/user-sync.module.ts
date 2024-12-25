@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { NotableUserEntity } from '../notable-user.entity';
 import { UserEntity } from '../user.entity';
-import { NotableUserEntity } from './notable-user.entity';
 import { UserSyncService } from './user-sync.service';
 import { UserSyncWorker } from './user-sync.worker';
 

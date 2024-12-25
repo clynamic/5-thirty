@@ -31,7 +31,7 @@ import {
 import {
   NotabilityType,
   NotableUserEntity,
-} from 'src/user/sync/notable-user.entity';
+} from 'src/user/notable-user.entity';
 import { UserSyncService } from 'src/user/sync/user-sync.service';
 
 import { UploadSyncService } from './upload-sync.service';
