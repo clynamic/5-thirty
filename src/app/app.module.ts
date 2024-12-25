@@ -12,6 +12,7 @@ import { FlagModule } from 'src/flag/flag.module';
 import { HealthModule } from 'src/health/health.module';
 import { JobModule } from 'src/job/job.module';
 import { ManifestModule } from 'src/manifest/manifest.module';
+import { ModActionModule } from 'src/mod-action/mod-action.module';
 import { PermitModule } from 'src/permit/permit.module';
 import { PostModule } from 'src/post/post.module';
 import { PostReplacementModule } from 'src/post-replacement/post-replacement.module';
@@ -49,6 +50,7 @@ import { DatabaseModule } from './database.module';
     PostReplacementModule,
     UploadModule,
     PermitModule,
+    ModActionModule,
   ],
   controllers: [],
   providers: [],

@@ -7,4 +7,5 @@ export * from './uploads';
 export * from './post-flags';
 export * from './post-versions';
 export * from './post-replacements';
+export * from './mod-actions';
 export * from './model';

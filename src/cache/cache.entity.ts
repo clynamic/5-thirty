@@ -17,6 +17,7 @@ export enum ItemType {
   feedbacks = 'feedbacks',
   postVersions = 'post_versions',
   postReplacements = 'post_replacements',
+  modActions = 'mod_actions',
 }
 
 export interface CacheValue {
