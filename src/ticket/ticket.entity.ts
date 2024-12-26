@@ -1,9 +1,9 @@
 import { Ticket, TicketQtype, TicketStatus } from 'src/api/e621';
-import { CacheEntity, CacheLink, ItemType } from 'src/cache/cache.entity';
+import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @Entity('tickets')
-export class TicketEntity extends CacheLink {
+export class TicketEntity extends LabelLink {
   constructor(partial?: Partial<TicketEntity>) {
     super();
     Object.assign(this, partial);
@@ -51,11 +51,10 @@ export class TicketEntity extends CacheLink {
   updatedAt: Date;
 }
 
-export class TicketCacheEntity extends CacheEntity {
+export class TicketCacheEntity extends LabelEntity {
   constructor(value: Ticket) {
     super({
       id: `/${ItemType.tickets}/${value.id}`,
-      value,
     });
   }
 }

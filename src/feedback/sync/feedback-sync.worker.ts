@@ -7,7 +7,6 @@ import {
 } from 'src/api/e621';
 import { MAX_API_LIMIT } from 'src/api/http/params';
 import { AuthService } from 'src/auth/auth.service';
-import { ItemType } from 'src/cache/cache.entity';
 import {
   convertKeysToCamelCase,
   DateRange,
@@ -23,9 +22,10 @@ import {
 } from 'src/common';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
+import { ItemType } from 'src/label/label.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 
-import { FeedbackCacheEntity, FeedbackEntity } from '../feedback.entity';
+import { FeedbackEntity, FeedbackLabelEntity } from '../feedback.entity';
 import { FeedbackSyncService } from './feedback-sync.service';
 
 @Injectable()
@@ -95,7 +95,7 @@ export class FeedbackSyncWorker {
                   (feedback) =>
                     new FeedbackEntity({
                       ...convertKeysToCamelCase(feedback),
-                      cache: new FeedbackCacheEntity(feedback),
+                      cache: new FeedbackLabelEntity(feedback),
                     }),
                 ),
               );

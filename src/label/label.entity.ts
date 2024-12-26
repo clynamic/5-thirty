@@ -1,5 +1,4 @@
 import {
-  Column,
   Entity,
   JoinColumn,
   OneToOne,
@@ -20,13 +19,15 @@ export enum ItemType {
   modActions = 'mod_actions',
 }
 
-export interface CacheValue {
-  [key: string]: any;
-}
-
-@Entity('caches')
-export class CacheEntity {
-  constructor(partial?: Partial<CacheEntity>) {
+/**
+ * A label, like a shipping label,
+ * stores metadata about an entity we have synced from upstream.
+ *
+ * Its ID usually resembles the path to the entity in the upstream API.
+ */
+@Entity('labels')
+export class LabelEntity {
+  constructor(partial?: Partial<LabelEntity>) {
     Object.assign(this, partial);
   }
 
@@ -35,13 +36,10 @@ export class CacheEntity {
 
   @UpdateDateColumn({ type: 'datetime' })
   refreshedAt: Date;
-
-  @Column({ type: 'json' })
-  value: CacheValue;
 }
 
-export class CacheLink {
-  @OneToOne(() => CacheEntity, { eager: false, cascade: true })
-  @JoinColumn({ name: 'cache_id' })
-  cache: CacheEntity;
+export class LabelLink {
+  @OneToOne(() => LabelEntity, { eager: false, cascade: true })
+  @JoinColumn({ name: 'label_id' })
+  cache: LabelEntity;
 }

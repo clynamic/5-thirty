@@ -1,5 +1,5 @@
-import { ItemType } from 'src/cache/cache.entity';
 import { Raw } from 'src/common';
+import { ItemType } from 'src/label/label.entity';
 
 export class ManifestSlice {
   constructor(value: Raw<ManifestSlice>) {

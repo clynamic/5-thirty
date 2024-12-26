@@ -4,7 +4,6 @@ import { Approval, postApprovals } from 'src/api/e621';
 import { MAX_API_LIMIT } from 'src/api/http/params';
 import { CacheManager } from 'src/app/browser.module';
 import { AuthService } from 'src/auth/auth.service';
-import { ItemType } from 'src/cache/cache.entity';
 import {
   convertKeysToCamelCase,
   DateRange,
@@ -20,6 +19,7 @@ import {
 } from 'src/common';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
+import { ItemType } from 'src/label/label.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 
 import { ApprovalCacheEntity, ApprovalEntity } from '../approval.entity';

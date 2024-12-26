@@ -1,9 +1,9 @@
 import { UserFeedback, UserFeedbackCategory } from 'src/api';
-import { CacheEntity, CacheLink, ItemType } from 'src/cache/cache.entity';
+import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('feedbacks')
-export class FeedbackEntity extends CacheLink {
+export class FeedbackEntity extends LabelLink {
   constructor(partial?: Partial<FeedbackEntity>) {
     super();
     Object.assign(this, partial);
@@ -37,11 +37,10 @@ export class FeedbackEntity extends CacheLink {
   isDeleted: boolean;
 }
 
-export class FeedbackCacheEntity extends CacheEntity {
+export class FeedbackLabelEntity extends LabelEntity {
   constructor(value: UserFeedback) {
     super({
       id: `/${ItemType.feedbacks}/${value.id}`,
-      value,
     });
   }
 }

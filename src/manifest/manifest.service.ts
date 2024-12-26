@@ -1,6 +1,5 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { DateTime } from 'luxon';
-import { ItemType } from 'src/cache/cache.entity';
 import {
   DateRange,
   findHighestId,
@@ -8,6 +7,7 @@ import {
   findLowestId,
   resolveWithDate,
 } from 'src/common';
+import { ItemType } from 'src/label/label.entity';
 import {
   Between,
   FindOptionsWhere,

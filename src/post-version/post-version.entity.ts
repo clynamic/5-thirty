@@ -1,10 +1,10 @@
 import { PostVersion, PostVersionRating } from 'src/api/e621';
-import { CacheEntity, CacheLink, ItemType } from 'src/cache/cache.entity';
+import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @Entity('post_versions')
 @Index(['version', 'updatedAt'])
-export class PostVersionEntity extends CacheLink {
+export class PostVersionEntity extends LabelLink {
   constructor(partial?: Partial<PostVersionEntity>) {
     super();
     Object.assign(this, partial);
@@ -83,11 +83,10 @@ export class PostVersionEntity extends CacheLink {
   version: number;
 }
 
-export class PostVersionCacheEntity extends CacheEntity {
+export class PostVersionLabelEntity extends LabelEntity {
   constructor(value: PostVersion) {
     super({
       id: `/${ItemType.postVersions}/${value.id}`,
-      value,
     });
   }
 }

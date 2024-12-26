@@ -1,9 +1,9 @@
 import { Post, PostRating, Tags } from 'src/api/e621';
-import { CacheEntity, CacheLink, ItemType } from 'src/cache/cache.entity';
+import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('posts')
-export class PostEntity extends CacheLink {
+export class PostEntity extends LabelLink {
   constructor(partial?: Partial<PostEntity>) {
     super();
     Object.assign(this, partial);
@@ -26,7 +26,7 @@ export class PostEntity extends CacheLink {
       approverId: value.approver_id,
       tags: value.tags,
       deleted: value.flags.deleted,
-      cache: new PostCacheEntity(value),
+      cache: new PostLabelEntity(value),
     });
   }
 
@@ -76,11 +76,10 @@ export class PostEntity extends CacheLink {
   deleted: boolean;
 }
 
-export class PostCacheEntity extends CacheEntity {
+export class PostLabelEntity extends LabelEntity {
   constructor(value: Post) {
     super({
       id: `/${ItemType.posts}/${value.id}`,
-      value,
     });
   }
 }

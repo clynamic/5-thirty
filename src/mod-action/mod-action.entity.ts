@@ -1,10 +1,10 @@
 import { ModAction, ModActionAction } from 'src/api';
-import { CacheEntity, CacheLink, ItemType } from 'src/cache/cache.entity';
+import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @Entity('mod_actions')
 @Index(['action', 'createdAt'])
-export class ModActionEntity extends CacheLink {
+export class ModActionEntity extends LabelLink {
   constructor(partial: Partial<ModActionEntity>) {
     super();
     Object.assign(this, partial);
@@ -31,11 +31,10 @@ export class ModActionEntity extends CacheLink {
   values: Record<string, unknown>;
 }
 
-export class ModActionCacheEntity extends CacheEntity {
+export class ModActionLabelEntity extends LabelEntity {
   constructor(value: ModAction) {
     super({
       id: `/${ItemType.modActions}/${value.id}`,
-      value,
     });
   }
 }

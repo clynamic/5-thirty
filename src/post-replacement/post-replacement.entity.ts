@@ -1,9 +1,9 @@
 import { PostReplacement, PostReplacementStatus } from 'src/api/e621';
-import { CacheEntity, CacheLink, ItemType } from 'src/cache/cache.entity';
+import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('post_replacements')
-export class PostReplacementEntity extends CacheLink {
+export class PostReplacementEntity extends LabelLink {
   constructor(partial?: Partial<PostReplacementEntity>) {
     super();
     Object.assign(this, partial);
@@ -55,11 +55,10 @@ export class PostReplacementEntity extends CacheLink {
   reason: string;
 }
 
-export class PostReplacementCacheEntity extends CacheEntity {
+export class PostReplacementCacheEntity extends LabelEntity {
   constructor(value: PostReplacement) {
     super({
       id: `/${ItemType.postReplacements}/${value.id}`,
-      value,
     });
   }
 }

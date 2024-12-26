@@ -1,9 +1,9 @@
 import { PostFlag, PostFlagType } from 'src/api';
-import { CacheEntity, CacheLink, ItemType } from 'src/cache/cache.entity';
+import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @Entity('flags')
-export class FlagEntity extends CacheLink {
+export class FlagEntity extends LabelLink {
   constructor(partial?: Partial<FlagEntity>) {
     super();
     Object.assign(this, partial);
@@ -36,11 +36,10 @@ export class FlagEntity extends CacheLink {
   updatedAt: Date;
 }
 
-export class FlagCacheEntity extends CacheEntity {
+export class FlagCacheEntity extends LabelEntity {
   constructor(value: PostFlag) {
     super({
       id: `/${ItemType.flags}/${value.id}`,
-      value,
     });
   }
 }

@@ -1,9 +1,9 @@
 import { Approval } from 'src/api/e621';
-import { CacheEntity, CacheLink, ItemType } from 'src/cache/cache.entity';
+import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @Entity('approvals')
-export class ApprovalEntity extends CacheLink {
+export class ApprovalEntity extends LabelLink {
   constructor(partial?: Partial<ApprovalEntity>) {
     super();
     Object.assign(this, partial);
@@ -24,11 +24,10 @@ export class ApprovalEntity extends CacheLink {
   createdAt: Date;
 }
 
-export class ApprovalCacheEntity extends CacheEntity {
+export class ApprovalCacheEntity extends LabelEntity {
   constructor(value: Approval) {
     super({
       id: `/${ItemType.approvals}/${value.id}`,
-      value,
     });
   }
 }

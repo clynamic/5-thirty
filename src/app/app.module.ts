@@ -4,13 +4,13 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ApprovalModule } from 'src/approval/approval.module';
 import { AuthModule } from 'src/auth/auth.module';
-import { CacheModule } from 'src/cache/cache.module';
 import { DashboardModule } from 'src/dashboard/dashboard.module';
 import { DeletionModule } from 'src/deletion/deletion.module';
 import { FeedbackModule } from 'src/feedback/feedback.module';
 import { FlagModule } from 'src/flag/flag.module';
 import { HealthModule } from 'src/health/health.module';
 import { JobModule } from 'src/job/job.module';
+import { LabelModule } from 'src/label/label.module';
 import { ManifestModule } from 'src/manifest/manifest.module';
 import { ModActionModule } from 'src/mod-action/mod-action.module';
 import { PermitModule } from 'src/permit/permit.module';
@@ -37,7 +37,7 @@ import { DatabaseModule } from './database.module';
     JobModule,
     HealthModule,
     DashboardModule,
-    CacheModule,
+    LabelModule,
     ManifestModule,
     ApprovalModule,
     TicketModule,

@@ -1,9 +1,9 @@
 import { User } from 'src/api/e621';
-import { CacheEntity, CacheLink, ItemType } from 'src/cache/cache.entity';
+import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('users')
-export class UserEntity extends CacheLink {
+export class UserEntity extends LabelLink {
   constructor(partial?: Partial<UserEntity>) {
     super();
     Object.assign(this, partial);
@@ -40,11 +40,10 @@ export class UserEntity extends CacheLink {
   createdAt: Date;
 }
 
-export class UserCacheEntity extends CacheEntity {
+export class UserCacheEntity extends LabelEntity {
   constructor(value: User) {
     super({
       id: `/${ItemType.users}/${value.id}`,
-      value,
     });
   }
 }

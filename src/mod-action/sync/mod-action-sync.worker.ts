@@ -3,7 +3,6 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { ModAction, modActions } from 'src/api/e621';
 import { MAX_API_LIMIT } from 'src/api/http/params';
 import { AuthService } from 'src/auth/auth.service';
-import { ItemType } from 'src/cache/cache.entity';
 import {
   convertKeysToCamelCase,
   DateRange,
@@ -19,9 +18,10 @@ import {
 } from 'src/common';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
+import { ItemType } from 'src/label/label.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 
-import { ModActionCacheEntity, ModActionEntity } from '../mod-action.entity';
+import { ModActionEntity, ModActionLabelEntity } from '../mod-action.entity';
 import { ModActionSyncService } from './mod-action-sync.service';
 
 @Injectable()
@@ -90,7 +90,7 @@ export class ModActionSyncWorker {
                   (action) =>
                     new ModActionEntity({
                       ...convertKeysToCamelCase(action),
-                      cache: new ModActionCacheEntity(action),
+                      cache: new ModActionLabelEntity(action),
                     }),
                 ),
               );

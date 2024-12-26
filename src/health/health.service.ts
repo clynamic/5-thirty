@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ApprovalEntity } from 'src/approval/approval.entity';
-import { ItemType } from 'src/cache/cache.entity';
 import { WithId } from 'src/common';
 import { FeedbackEntity } from 'src/feedback/feedback.entity';
 import { FlagEntity } from 'src/flag/flag.entity';
+import { ItemType } from 'src/label/label.entity';
 import { ManifestEntity } from 'src/manifest/manifest.entity';
 import { PostReplacementEntity } from 'src/post-replacement/post-replacement.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
