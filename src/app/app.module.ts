@@ -52,7 +52,5 @@ import { DatabaseModule } from './database.module';
     PermitModule,
     ModActionModule,
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}

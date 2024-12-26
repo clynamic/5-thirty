@@ -13,7 +13,6 @@ import { UploadSyncWorker } from './upload-sync.worker';
     TypeOrmModule.forFeature([PostVersionEntity]),
     UserSyncModule,
   ],
-  controllers: [],
   providers: [UploadSyncService, UploadSyncWorker],
 })
 export class UploadSyncModule {}

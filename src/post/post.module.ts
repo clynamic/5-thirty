@@ -5,7 +5,5 @@ import { PostSyncModule } from './sync/post-sync.module';
 
 @Module({
   imports: [PostSyncModule, PostMetricModule],
-  controllers: [],
-  providers: [],
 })
 export class PostModule {}

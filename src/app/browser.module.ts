@@ -140,7 +140,6 @@ export function Invalidates(
       ttl: 5 * 60 * 1000,
     }),
   ],
-  controllers: [],
   providers: [CacheManager],
   exports: [CacheManager],
 })

@@ -5,7 +5,5 @@ import { UserSyncModule } from './sync/user-sync.module';
 
 @Module({
   imports: [UserSyncModule, UserHeadModule],
-  controllers: [],
-  providers: [],
 })
 export class UserModule {}

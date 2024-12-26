@@ -5,7 +5,5 @@ import { UploadSyncModule } from './sync/upload-sync.module';
 
 @Module({
   imports: [UploadSyncModule, UploadMetricModule],
-  controllers: [],
-  providers: [],
 })
 export class UploadModule {}

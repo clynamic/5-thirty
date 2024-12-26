@@ -8,7 +8,6 @@ import { FeedbackSyncWorker } from './feedback-sync.worker';
 
 @Module({
   imports: [TypeOrmModule.forFeature([FeedbackEntity]), ManifestModule],
-  controllers: [],
   providers: [FeedbackSyncService, FeedbackSyncWorker],
 })
 export class FeedbackSyncModule {}

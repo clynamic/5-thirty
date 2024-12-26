@@ -8,7 +8,6 @@ import { ApprovalSyncWorker } from './approval-sync.worker';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ApprovalEntity]), ManifestModule],
-  controllers: [],
   providers: [ApprovalSyncService, ApprovalSyncWorker],
 })
 export class ApprovalSyncModule {}

@@ -13,7 +13,5 @@ import { ApprovalSyncModule } from './sync/approval-sync.module';
     ApprovalMetricModule,
     ApprovalSyncModule,
   ],
-  controllers: [],
-  providers: [],
 })
 export class ApprovalModule {}

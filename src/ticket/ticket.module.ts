@@ -5,7 +5,5 @@ import { TicketSyncModule } from './sync/ticket-sync.module';
 
 @Module({
   imports: [TicketSyncModule, TicketMetricModule],
-  controllers: [],
-  providers: [],
 })
 export class TicketModule {}

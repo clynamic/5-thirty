@@ -5,7 +5,5 @@ import { FeedbackSyncModule } from './sync/feedback-sync.module';
 
 @Module({
   imports: [FeedbackSyncModule, FeedbackMetricModule],
-  controllers: [],
-  providers: [],
 })
 export class FeedbackModule {}

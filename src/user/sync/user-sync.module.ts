@@ -8,7 +8,6 @@ import { UserSyncWorker } from './user-sync.worker';
 
 @Module({
   imports: [TypeOrmModule.forFeature([NotableUserEntity, UserEntity])],
-  controllers: [],
   providers: [UserSyncService, UserSyncWorker],
   exports: [UserSyncService],
 })

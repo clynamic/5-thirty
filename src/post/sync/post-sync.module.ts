@@ -8,7 +8,6 @@ import { PostSyncWorker } from './post-sync.worker';
 
 @Module({
   imports: [TypeOrmModule.forFeature([PostEntity]), UserSyncModule],
-  controllers: [],
   providers: [PostSyncService, PostSyncWorker],
 })
 export class PostSyncModule {}

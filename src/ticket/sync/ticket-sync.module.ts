@@ -13,7 +13,6 @@ import { TicketSyncWorker } from './ticket-sync.worker';
     ManifestModule,
     UserSyncModule,
   ],
-  controllers: [],
   providers: [TicketSyncService, TicketSyncWorker],
 })
 export class TicketSyncModule {}
