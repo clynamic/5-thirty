@@ -186,13 +186,17 @@ export class TicketMetricService {
     const dates = tickets
       .map((ticket) => [
         !query || ticket.creatorId === query.reporterId
-          ? set(ticket.createdAt, { year: 1970, month: 1, date: 1 })
+          ? ticket.createdAt
           : null,
         !query || ticket.claimantId === query.claimantId
-          ? set(ticket.updatedAt, { year: 1970, month: 1, date: 1 })
+          ? ticket.updatedAt
           : null,
       ])
-      .map((date) => date.filter((d) => d !== null))
+      .map((dates) =>
+        dates
+          .filter((d) => d !== null)
+          .map((d) => set(d!, { year: 1970, month: 1, date: 1 })),
+      )
       .flat();
 
     return generateSeriesCountPoints(
