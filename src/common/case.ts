@@ -4,11 +4,12 @@ function toCamelCase(snakeCaseString: string): string {
   );
 }
 
-type SnakeToCamelCase<S extends string> = S extends `${infer T}_${infer U}`
-  ? `${T}${Capitalize<SnakeToCamelCase<U>>}`
-  : S;
+export type SnakeToCamelCase<S extends string> =
+  S extends `${infer T}_${infer U}`
+    ? `${T}${Capitalize<SnakeToCamelCase<U>>}`
+    : S;
 
-type ConvertKeysToCamelCase<T> = {
+export type ConvertKeysToCamelCase<T> = {
   [K in keyof T as SnakeToCamelCase<string & K>]: T[K];
 };
 

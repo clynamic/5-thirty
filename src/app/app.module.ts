@@ -13,6 +13,7 @@ import { JobModule } from 'src/job/job.module';
 import { LabelModule } from 'src/label/label.module';
 import { ManifestModule } from 'src/manifest/manifest.module';
 import { ModActionModule } from 'src/mod-action/mod-action.module';
+import { PerformanceModule } from 'src/performance/performance.module';
 import { PermitModule } from 'src/permit/permit.module';
 import { PostModule } from 'src/post/post.module';
 import { PostReplacementModule } from 'src/post-replacement/post-replacement.module';
@@ -51,6 +52,7 @@ import { DatabaseModule } from './database.module';
     UploadModule,
     PermitModule,
     ModActionModule,
+    PerformanceModule,
   ],
 })
 export class AppModule {}
