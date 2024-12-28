@@ -20,7 +20,7 @@ import {
   TicketCreatedSeriesQuery,
   TicketHandlerSummary,
   TicketReporterSummary,
-  TicketStatusSummary,
+  TicketStatusSeriesPoint,
   TicketTypeSummary,
   TicketTypeSummaryQuery,
 } from './ticket-metric.dto';
@@ -34,21 +34,21 @@ import { TicketMetricService } from './ticket-metric.service';
 export class TicketMetricController {
   constructor(private readonly ticketMetricService: TicketMetricService) {}
 
-  @Get('status/summary')
+  @Get('status')
   @ApiOperation({
-    summary: 'Ticket status summary',
+    summary: 'Ticket status',
     description:
       'Get ticket status (pending, approved, partial) counts for a given date range',
-    operationId: 'getTicketStatusSummary',
+    operationId: 'getTicketStatus',
   })
   @ApiResponse({
     status: 200,
-    type: TicketStatusSummary,
+    type: [TicketStatusSeriesPoint],
   })
   async statusSummary(
     @Query() range?: PartialDateRange,
-  ): Promise<TicketStatusSummary> {
-    return this.ticketMetricService.statusSummary(range);
+  ): Promise<TicketStatusSeriesPoint[]> {
+    return this.ticketMetricService.status(range);
   }
 
   @Get('type/summary')

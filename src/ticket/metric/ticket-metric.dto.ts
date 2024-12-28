@@ -5,6 +5,17 @@ import { FindOptionsWhere, In } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
 
+export class TicketStatusSeriesPoint {
+  constructor(value: TicketStatusSeriesPoint) {
+    Object.assign(this, value);
+  }
+
+  date: Date;
+  pending: number;
+  approved: number;
+  partial: number;
+}
+
 export class TicketStatusSummary {
   constructor(value: TicketStatusSummary) {
     Object.assign(this, value);

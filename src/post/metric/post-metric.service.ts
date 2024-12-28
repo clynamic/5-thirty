@@ -167,9 +167,12 @@ export class PostMetricService {
       const startDate = max([post.updatedAt, range.startDate!]);
 
       const handledDate = post.approvalDate || post.deletionDate;
-      const endDate = min([
-        handledDate ? sub(handledDate, { [scale]: 1 }) : new Date(),
-        range.endDate!,
+      const endDate = max([
+        min([
+          handledDate ? sub(handledDate, { [scale]: 1 }) : new Date(),
+          range.endDate!,
+        ]),
+        range.startDate!,
       ]);
 
       return new DateRange({ startDate, endDate });

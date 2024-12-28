@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { max, min } from 'date-fns';
 import { PostReplacementStatus } from 'src/api';
 import {
   DateRange,
@@ -74,8 +75,8 @@ export class PostReplacementMetricService {
       }
 
       return new DateRange({
-        startDate: replacement.createdAt,
-        endDate: replacement.updatedAt,
+        startDate: max([replacement.createdAt, range.startDate!]),
+        endDate: min([replacement.updatedAt, range.endDate!]),
       });
     });
 

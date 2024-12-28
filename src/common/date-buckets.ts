@@ -40,11 +40,14 @@ export const assignDateBuckets = <T>(
 
     if (entry instanceof Date) {
       const bucketIndex = binarySearchClosestBucket(buckets, entry);
-      if (bucketIndex !== -1 && buckets[bucketIndex]) {
-        bucketAssignments[buckets[bucketIndex].getTime()]!.push(item);
+
+      if (bucketIndex === -1) {
+        throw new Error(`No bucket found for entry: ${entry}`);
       }
+
+      bucketAssignments[buckets[bucketIndex]!.getTime()]!.push(item);
     } else if (
-      entry != undefined &&
+      entry !== undefined &&
       typeof entry === 'object' &&
       'startDate' in entry &&
       'endDate' in entry
@@ -52,10 +55,14 @@ export const assignDateBuckets = <T>(
       const startIndex = binarySearchClosestBucket(buckets, entry.startDate);
       const endIndex = binarySearchClosestBucket(buckets, entry.endDate);
 
-      if (startIndex !== -1 && endIndex !== -1) {
-        for (let j = startIndex; j <= endIndex && j < buckets.length; j++) {
-          bucketAssignments[buckets[j]!.getTime()]!.push(item);
-        }
+      if (startIndex === -1 || endIndex === -1) {
+        throw new Error(
+          `Invalid range for entry: ${JSON.stringify(entry)}. StartIndex: ${startIndex}, EndIndex: ${endIndex}`,
+        );
+      }
+
+      for (let j = startIndex; j <= endIndex && j < buckets.length; j++) {
+        bucketAssignments[buckets[j]!.getTime()]!.push(item);
       }
     }
   });
@@ -124,7 +131,8 @@ const applyDateCycle = (dates: DatePoint[], cycle: TimeScale): DatePoint[] => {
     } else if (
       date != undefined &&
       typeof date === 'object' &&
-      'startDate' in date
+      'startDate' in date &&
+      'endDate' in date
     ) {
       return new DateRange({
         ...date,

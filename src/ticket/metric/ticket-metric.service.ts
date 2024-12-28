@@ -25,7 +25,7 @@ import {
   TicketCreatedSeriesQuery,
   TicketHandlerSummary,
   TicketReporterSummary,
-  TicketStatusSummary,
+  TicketStatusSeriesPoint,
   TicketTypeSummary,
   TicketTypeSummaryQuery,
 } from './ticket-metric.dto';
@@ -55,30 +55,31 @@ export class TicketMetricService {
     ];
   }
 
-  async statusSummary(range?: PartialDateRange): Promise<TicketStatusSummary> {
+  async status(range?: PartialDateRange): Promise<TicketStatusSeriesPoint[]> {
     range = DateRange.fill(range);
-    return new TicketStatusSummary({
-      ...Object.fromEntries(
-        await Promise.all(
-          Object.values(TicketStatus).map(async (status) => [
-            status,
-            await this.ticketRepository.count({
-              where: [
-                ...this.whereCreatedOrUpdated(range, { status }),
-                ...(status !== TicketStatus.approved
-                  ? [
-                      {
-                        createdAt: LessThan(range.endDate!),
-                        status,
-                      },
-                    ]
-                  : []),
-              ],
-            }),
-          ]),
-        ),
-      ),
+
+    const tickets = await this.ticketRepository.find({
+      where: [
+        ...this.whereCreatedOrUpdated(range),
+        {
+          createdAt: LessThan(range.endDate!),
+          status: Not(TicketStatus.approved),
+        },
+      ],
     });
+
+    return generateSeriesRecordPoints<Record<TicketStatus, number>>(
+      tickets.map((ticket) => max([ticket.createdAt, range.startDate!])),
+      tickets.map((ticket) => ticket.status),
+      Object.values(TicketStatus),
+      range,
+    ).map(
+      (e) =>
+        new TicketStatusSeriesPoint({
+          date: e.date,
+          ...e.value,
+        }),
+    );
   }
 
   async typeSummary(
@@ -124,10 +125,14 @@ export class TicketMetricService {
     const dates = tickets.map((ticket) => {
       return new DateRange({
         startDate: max([ticket.createdAt, range.startDate!]),
-        endDate: min([
-          ticket.status === TicketStatus.approved
-            ? sub(ticket.updatedAt, { [scale]: 1 })
-            : range.endDate!,
+        endDate: max([
+          min([
+            ticket.status === TicketStatus.approved
+              ? sub(ticket.updatedAt, { [scale]: 1 })
+              : range.endDate!,
+            range.endDate!,
+          ]),
+          range.startDate!,
         ]),
       });
     });
