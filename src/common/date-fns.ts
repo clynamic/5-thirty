@@ -18,6 +18,21 @@ import {
 
 import { TimeScale } from './date-range.dto';
 
+export const scaleToDuration = (scale: TimeScale): keyof Duration => {
+  if (scale === TimeScale.All || scale === TimeScale.Decade) {
+    throw new Error('Cannot convert All or Decade to duration');
+  }
+
+  return {
+    [TimeScale.Minute]: 'minutes',
+    [TimeScale.Hour]: 'hours',
+    [TimeScale.Day]: 'days',
+    [TimeScale.Week]: 'weeks',
+    [TimeScale.Month]: 'months',
+    [TimeScale.Year]: 'years',
+  }[scale] as keyof Duration;
+};
+
 export const startOf = (unit: TimeScale, date: Date): Date => {
   switch (unit) {
     case TimeScale.Minute:

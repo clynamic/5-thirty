@@ -1,8 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
-// TODO: remove luxon, use date-fns
-import { DateTime } from 'luxon';
+import { add, addYears, endOfDay, min } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 import { SeriesCountPoint, SeriesPoint } from './chart.dto';
+import { scaleToDuration } from './date-fns';
 import { DateRange, PartialDateRange, TimeScale } from './date-range.dto';
 
 const binarySearchClosestBucket = (arr: Date[], date: Date): number => {
@@ -62,24 +63,23 @@ export const assignDateBuckets = <T>(
   return bucketAssignments;
 };
 
-const incrementTimeBucket = (date: DateTime, bucket: TimeScale): DateTime => {
+const incrementTimeBucket = (date: Date, bucket: TimeScale): Date => {
   if (bucket === TimeScale.All) {
-    return date.plus({ years: 9999 });
+    return addYears(date, 9999);
   } else if (bucket === TimeScale.Decade) {
-    return date.plus({ years: 10 });
+    return addYears(date, 10);
   } else {
-    return date.plus({ [bucket]: 1 });
+    return add(date, { [scaleToDuration(bucket)]: 1 });
   }
 };
 
 export const createTimeBuckets = (range: DateRange): Date[] => {
-  const start = DateTime.fromJSDate(range.startDate, {
-    zone: range.timezone,
-  });
-  const end = DateTime.min(
-    DateTime.fromJSDate(range.endDate, { zone: range.timezone }),
-    DateTime.now().setZone(range.timezone).endOf('day'),
-  );
+  const start = toZonedTime(range.startDate, range.timezone);
+
+  const end = min([
+    toZonedTime(range.endDate, range.timezone),
+    endOfDay(toZonedTime(new Date(), range.timezone)),
+  ]);
 
   const buckets = [];
   for (
@@ -87,7 +87,7 @@ export const createTimeBuckets = (range: DateRange): Date[] => {
     currentDate <= end;
     currentDate = incrementTimeBucket(currentDate, range.scale)
   ) {
-    buckets.push(currentDate.toJSDate());
+    buckets.push(currentDate);
   }
   return buckets;
 };

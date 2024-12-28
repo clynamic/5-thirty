@@ -1,11 +1,14 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { DateTime } from 'luxon';
+import { add, addMilliseconds, isEqual, min } from 'date-fns';
 import {
   DateRange,
+  endOf,
   findHighestId,
   findLowestDate,
   findLowestId,
   resolveWithDate,
+  startOf,
+  TimeScale,
 } from 'src/common';
 import { ItemType } from 'src/label/label.entity';
 import {
@@ -102,17 +105,17 @@ export class ManifestService {
     side1: OrderSide,
     side2: OrderSide,
   ): boolean {
-    const date1 = DateTime.fromJSDate(Order.getBoundaryDate(boundary1, side1));
-    const date2 = DateTime.fromJSDate(Order.getBoundaryDate(boundary2, side2));
+    const date1 = Order.getBoundaryDate(boundary1, side1);
+    const date2 = Order.getBoundaryDate(boundary2, side2);
 
     if (
       boundary1 instanceof ManifestEntity &&
       boundary2 instanceof ManifestEntity
     ) {
       return (
-        date1.equals(date2) ||
-        date1.plus({ milliseconds: 1 }).equals(date2) ||
-        date2.plus({ milliseconds: 1 }).equals(date1)
+        isEqual(date1, date2) ||
+        isEqual(addMilliseconds(date1, 1), date2) ||
+        isEqual(date1, addMilliseconds(date2, 1))
       );
     }
 
@@ -120,10 +123,10 @@ export class ManifestService {
       boundary1 instanceof ManifestEntity ||
       boundary2 instanceof ManifestEntity
     ) {
-      return date1.equals(date2);
+      return isEqual(date1, date2);
     }
 
-    return date1.equals(date2);
+    return isEqual(date1, date2);
   }
 
   static isBoundaryBefore(
@@ -133,8 +136,8 @@ export class ManifestService {
     side2: OrderSide,
   ): boolean {
     return (
-      DateTime.fromJSDate(Order.getBoundaryDate(boundary1, side1)) <
-      DateTime.fromJSDate(Order.getBoundaryDate(boundary2, side2))
+      Order.getBoundaryDate(boundary1, side1) <
+      Order.getBoundaryDate(boundary2, side2)
     );
   }
 
@@ -186,43 +189,42 @@ export class ManifestService {
     const splitOrders: Order[] = [];
 
     for (const order of orders) {
-      const lowerDate = DateTime.fromJSDate(order.lowerDate);
-      const upperDate = DateTime.fromJSDate(order.upperDate);
+      const { lowerDate, upperDate } = order;
 
       let currentStart = lowerDate;
       const originalLowerBoundary = order.lower;
       const originalUpperBoundary = order.upper;
 
       while (currentStart < upperDate) {
-        const currentEnd = DateTime.min(
-          currentStart.plus({ days: maxOrderDuration }).endOf('day'),
+        const currentEnd = min([
+          endOf(TimeScale.Day, add(currentStart, { days: maxOrderDuration })),
           upperDate,
-        );
+        ]);
 
-        if (currentStart.equals(lowerDate)) {
+        if (isEqual(currentStart, lowerDate)) {
           splitOrders.push(
             new Order({
               lower: originalLowerBoundary,
-              upper: currentEnd.toJSDate(),
+              upper: currentEnd,
             }),
           );
-        } else if (currentEnd.equals(upperDate)) {
+        } else if (isEqual(currentEnd, upperDate)) {
           splitOrders.push(
             new Order({
-              lower: currentStart.toJSDate(),
+              lower: currentStart,
               upper: originalUpperBoundary,
             }),
           );
         } else {
           splitOrders.push(
             new Order({
-              lower: currentStart.toJSDate(),
-              upper: currentEnd.toJSDate(),
+              lower: currentStart,
+              upper: currentEnd,
             }),
           );
         }
 
-        currentStart = currentEnd.plus({ days: 1 }).startOf('day');
+        currentStart = startOf(TimeScale.Day, add(currentEnd, { days: 1 }));
       }
     }
 
@@ -235,7 +237,7 @@ export class ManifestService {
     items,
     exhausted,
   }: OrderResults): Promise<void> {
-    const currentDate = DateTime.now().startOf('day');
+    const currentDate = startOf(TimeScale.Day, new Date());
 
     if (!exhausted) {
       // we assume that data is paginated newest to oldest,
@@ -258,10 +260,7 @@ export class ManifestService {
           lowerId: findLowestId(items)!.id,
           upperId: findHighestId(items)!.id,
           startDate: resolveWithDate(findLowestDate(items)!),
-          endDate: DateTime.min(
-            DateTime.fromJSDate(order.upper),
-            currentDate,
-          ).toJSDate(),
+          endDate: min([order.upper, currentDate]),
         });
 
         this.save(order.upper);
@@ -281,10 +280,7 @@ export class ManifestService {
         this.save(
           order.lower.extend(
             'end',
-            DateTime.min(
-              DateTime.fromJSDate(order.upper),
-              currentDate,
-            ).toJSDate(),
+            min([order.upper, currentDate]),
             findHighestId(items)?.id,
           ),
         );
@@ -295,10 +291,7 @@ export class ManifestService {
           lowerId: findLowestId(items)!.id,
           upperId: findHighestId(items)!.id,
           startDate: order.lower,
-          endDate: DateTime.min(
-            DateTime.fromJSDate(order.upper),
-            currentDate,
-          ).toJSDate(),
+          endDate: min([order.upper, currentDate]),
         });
 
         this.save(order.upper);
@@ -319,22 +312,14 @@ export class ManifestService {
       while (i + 1 < manifests.length) {
         const manifestB = manifests[i + 1]!;
 
-        if (
-          DateTime.fromJSDate(manifestB.endDate) <
-          DateTime.fromJSDate(manifestA.endDate)
-        ) {
+        if (manifestB.endDate < manifestA.endDate) {
           await this.remove(manifestB);
           i++;
-        } else if (
-          DateTime.fromJSDate(manifestB.startDate) <
-          DateTime.fromJSDate(manifestA.endDate)
-        ) {
+        } else if (manifestB.startDate < manifestA.endDate) {
           this.merge(manifestA, manifestB);
           i++;
         } else if (
-          DateTime.fromJSDate(manifestB.startDate).equals(
-            DateTime.fromJSDate(manifestA.endDate).plus({ milliseconds: 1 }),
-          )
+          isEqual(manifestB.startDate, addMilliseconds(manifestA.endDate, 1))
         ) {
           this.merge(manifestA, manifestB);
           i++;

@@ -1,6 +1,15 @@
 import { Transform } from 'class-transformer';
 import { IsDate, IsEnum, IsOptional, IsTimeZone } from 'class-validator';
-import { DateTime } from 'luxon';
+import {
+  addDays,
+  endOfMonth,
+  formatISO,
+  parseISO,
+  startOfMonth,
+  subDays,
+  subMonths,
+} from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 import {
   Between,
   FindOperator,
@@ -40,12 +49,8 @@ export class PartialDateRange {
    */
   @IsOptional()
   @IsDate()
-  @Transform((opts) =>
-    opts.value
-      ? DateTime.fromISO(opts.value, {
-          zone: opts.obj.timezone ?? 'UTC',
-        }).toJSDate()
-      : undefined,
+  @Transform(({ value, obj }) =>
+    value ? toZonedTime(parseISO(value), obj.timezone || 'UTC') : undefined,
   )
   startDate?: Date;
 
@@ -54,12 +59,8 @@ export class PartialDateRange {
    */
   @IsOptional()
   @IsDate()
-  @Transform((opts) =>
-    opts.value
-      ? DateTime.fromISO(opts.value, {
-          zone: opts.obj.timezone ?? 'UTC',
-        }).toJSDate()
-      : undefined,
+  @Transform(({ value, obj }) =>
+    value ? toZonedTime(parseISO(value), obj.timezone || 'UTC') : undefined,
   )
   endDate?: Date;
 
@@ -102,23 +103,19 @@ export class PartialDateRange {
     let end = '';
 
     if (this.startDate) {
-      start = DateTime.fromJSDate(this.startDate)
-        .minus({
-          days: 1,
-        })
-        // TODO: e6 uses the request timezone, not UTC.
-        // but how would we which timezone that is?
-        .toUTC()
-        .toISODate()!;
+      // TODO: e6 uses the request timezone, not UTC.
+      // How would we determine which timezone that is?
+      start = formatISO(
+        subDays(toZonedTime(this.startDate, this.timezone || 'UTC'), 1),
+        { representation: 'date' },
+      );
     }
 
     if (this.endDate) {
-      end = DateTime.fromJSDate(this.endDate)
-        .plus({
-          days: 1,
-        })
-        .toUTC()
-        .toISODate()!;
+      end = formatISO(
+        addDays(toZonedTime(this.endDate, this.timezone || 'UTC'), 1),
+        { representation: 'date' },
+      );
     }
 
     if (start && !end) {
@@ -147,17 +144,13 @@ export class DateRange extends PartialDateRange {
 
   @IsDate()
   @Transform((opts) =>
-    DateTime.fromISO(opts.value, {
-      zone: opts.obj.timezone ?? 'UTC',
-    }).toJSDate(),
+    toZonedTime(parseISO(opts.value), opts.obj.timezone || 'UTC'),
   )
   override startDate: Date;
 
   @IsDate()
   @Transform((opts) =>
-    DateTime.fromISO(opts.value, {
-      zone: opts.obj.timezone ?? 'UTC',
-    }).toJSDate(),
+    toZonedTime(parseISO(opts.value), opts.obj.timezone || 'UTC'),
   )
   override endDate: Date;
 
@@ -182,20 +175,16 @@ export class DateRange extends PartialDateRange {
     } else if (range?.startDate) {
       return new DateRange({
         startDate: range.startDate,
-        endDate: DateTime.fromJSDate(range.startDate, {
-          zone: range.timezone ?? 'UTC',
-        })
-          .endOf('month')
-          .toJSDate(),
+        endDate: endOfMonth(
+          toZonedTime(range.startDate, range.timezone || 'UTC'),
+        ),
         ...range,
       });
     } else if (range?.endDate) {
       return new DateRange({
-        startDate: DateTime.fromJSDate(range.endDate, {
-          zone: range.timezone ?? 'UTC',
-        })
-          .startOf('month')
-          .toJSDate(),
+        startDate: startOfMonth(
+          toZonedTime(range.endDate, range.timezone || 'UTC'),
+        ),
         endDate: range.endDate,
         ...range,
       });
@@ -211,15 +200,10 @@ export class DateRange extends PartialDateRange {
     months: number = 3,
     value?: Omit<Raw<PartialDateRange>, 'startDate' | 'endDate'>,
   ): DateRange {
-    const now = DateTime.now().setZone(value?.timezone ?? 'UTC');
+    const now = toZonedTime(new Date(), value?.timezone || 'UTC');
     return new DateRange({
-      startDate: now
-        .minus({
-          months,
-        })
-        .startOf('month')
-        .toJSDate(),
-      endDate: now.endOf('month').toJSDate(),
+      startDate: startOfMonth(subMonths(now, months)),
+      endDate: endOfMonth(now),
       ...value,
     });
   }

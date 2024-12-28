@@ -1,13 +1,13 @@
 import { AxiosResponse } from 'axios';
-import { DateTime } from 'luxon';
+import { isValid, parseISO } from 'date-fns';
 
 const deserializeDates = <T>(body: T): T => {
   if (body === null || (typeof body !== 'object' && typeof body !== 'string'))
     return body;
 
   if (typeof body === 'string') {
-    const date = DateTime.fromISO(body);
-    if (date.isValid) return date.toJSDate() as unknown as T;
+    const date = parseISO(body);
+    if (isValid(date)) return date as unknown as T;
     return body;
   }
 
