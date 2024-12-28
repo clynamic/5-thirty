@@ -158,8 +158,6 @@ const resolveRangeCycle = (range: DateRange): DateRange => {
           new Date(1970, 0, 1, 0, 0),
           new Date(1970, 0, 1, 0, 0, 59, 999),
         ];
-      default:
-        return [new Date(1970, 0, 1), new Date(1970, 0, 1)];
     }
   })();
 
