@@ -14,7 +14,6 @@ import {
 } from 'src/common';
 
 import {
-  ApprovalActivitySummaryQuery,
   ApprovalCountSeriesQuery,
   ApprovalCountSummary,
   ApproverSummary,
@@ -79,44 +78,6 @@ export class ApprovalMetricController {
     return this.approvalMetricService.countSeries(
       range,
       new ApprovalCountSeriesQuery({ userId: approverId }),
-    );
-  }
-
-  @Get('activity/summary')
-  @ApiOperation({
-    summary: 'Approval activity summary',
-    description:
-      'Get a hourly summary of approval activity for a given date range',
-    operationId: 'getApprovalActivitySeries',
-  })
-  @ApiResponse({
-    status: 200,
-    type: [SeriesCountPoint],
-  })
-  async activitySummary(
-    @Query() range?: PartialDateRange,
-  ): Promise<SeriesCountPoint[]> {
-    return this.approvalMetricService.activitySummary(range);
-  }
-
-  @Get('activity/summary/by/approver/:approverId')
-  @ApiOperation({
-    summary: 'Approval activity summary by approver',
-    description:
-      'Get a hourly summary of approval activity for a given date range by approver',
-    operationId: 'getApprovalActivitySummaryByApprover',
-  })
-  @ApiResponse({
-    status: 200,
-    type: [SeriesCountPoint],
-  })
-  async activitySummaryByApprover(
-    @Param('approverId') approverId: number,
-    @Query() range?: PartialDateRange,
-  ): Promise<SeriesCountPoint[]> {
-    return this.approvalMetricService.activitySummary(
-      range,
-      new ApprovalActivitySummaryQuery({ userId: approverId }),
     );
   }
 

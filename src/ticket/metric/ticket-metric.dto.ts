@@ -75,22 +75,6 @@ export class TicketClosedSeriesQuery {
   }
 }
 
-export class TicketActivitySummaryQuery {
-  constructor(value: Raw<TicketActivitySummaryQuery>) {
-    Object.assign(this, value);
-  }
-
-  claimantId?: number;
-  reporterId?: number;
-
-  where(): FindOptionsWhere<TicketEntity> {
-    return toRaws({
-      claimantId: this.claimantId,
-      reporterId: this.reporterId,
-    });
-  }
-}
-
 export class TicketAgeSummaryQuery {
   constructor(value: Raw<TicketAgeSummaryQuery>) {
     Object.assign(this, value);

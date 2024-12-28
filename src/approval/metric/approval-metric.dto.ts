@@ -24,18 +24,6 @@ export class ApprovalCountSeriesQuery {
   }
 }
 
-export class ApprovalActivitySummaryQuery {
-  constructor(value: Raw<ApprovalActivitySummaryQuery>) {
-    Object.assign(this, value);
-  }
-
-  userId: number;
-
-  where(): FindOptionsWhere<ApprovalEntity> {
-    return { userId: this.userId };
-  }
-}
-
 export class ApproverSummary {
   constructor(value: ApproverSummary) {
     Object.assign(this, value);

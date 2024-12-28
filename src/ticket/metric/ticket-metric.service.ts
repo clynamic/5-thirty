@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { differenceInHours, max, min, set, sub } from 'date-fns';
+import { differenceInHours, max, min, sub } from 'date-fns';
 import { TicketQtype, TicketStatus } from 'src/api/e621';
 import {
   collapseTimeScaleDuration,
@@ -18,7 +18,6 @@ import { FindOptionsWhere, LessThan, MoreThan, Not, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
 import {
-  TicketActivitySummaryQuery,
   TicketAgeSeriesPoint,
   TicketAgeSummary,
   TicketAgeSummaryQuery,
@@ -169,38 +168,6 @@ export class TicketMetricService {
         item.updatedAt <= endDate ? item.updatedAt : undefined,
       ),
       range,
-    );
-  }
-
-  async activitySummary(
-    range?: PartialDateRange,
-    query?: TicketActivitySummaryQuery,
-  ): Promise<SeriesCountPoint[]> {
-    range = DateRange.fill(range);
-
-    const tickets = await this.ticketRepository.find({
-      where: this.whereCreatedOrUpdated(range, query?.where()),
-    });
-
-    const dates = tickets
-      .map((ticket) => [
-        !query || ticket.creatorId === query.reporterId
-          ? ticket.createdAt
-          : null,
-        !query || ticket.claimantId === query.claimantId
-          ? ticket.updatedAt
-          : null,
-      ])
-      .map((dates) =>
-        dates
-          .filter((d) => d !== null)
-          .map((d) => set(d!, { year: 1970, month: 1, date: 1 })),
-      )
-      .flat();
-
-    return generateSeriesCountPoints(
-      dates,
-      DateRange.hoursOnly(range.timezone),
     );
   }
 

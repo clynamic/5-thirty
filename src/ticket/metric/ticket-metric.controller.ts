@@ -14,7 +14,6 @@ import {
 } from 'src/common';
 
 import {
-  TicketActivitySummaryQuery,
   TicketAgeSeriesPoint,
   TicketAgeSummary,
   TicketClosedSeriesQuery,
@@ -176,44 +175,6 @@ export class TicketMetricController {
     return this.ticketMetricService.closedSeries(
       range,
       new TicketClosedSeriesQuery({ handlerId }),
-    );
-  }
-
-  @Get('activity/summary')
-  @ApiOperation({
-    summary: 'Ticket summary series',
-    description:
-      'Get a hourly summary of ticket activity for a given date range',
-    operationId: 'getTicketActivitySummary',
-  })
-  @ApiResponse({
-    status: 200,
-    type: [SeriesCountPoint],
-  })
-  async activitySummary(
-    @Query() range?: PartialDateRange,
-  ): Promise<SeriesCountPoint[]> {
-    return this.ticketMetricService.activitySummary(range);
-  }
-
-  @Get('activity/summary/by/handler/:claimantId')
-  @ApiOperation({
-    summary: 'Ticket activity summary by handler',
-    description:
-      'Get a hourly summary of ticket activity for a given date range for a specific handler',
-    operationId: 'getTicketActivitySummaryByHandler',
-  })
-  @ApiResponse({
-    status: 200,
-    type: [SeriesCountPoint],
-  })
-  async activitySummaryByHandler(
-    @Param('claimantId') claimantId: number,
-    @Query() range?: PartialDateRange,
-  ): Promise<SeriesCountPoint[]> {
-    return this.ticketMetricService.activitySummary(
-      range,
-      new TicketActivitySummaryQuery({ claimantId }),
     );
   }
 

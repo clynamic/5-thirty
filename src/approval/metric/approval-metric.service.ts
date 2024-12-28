@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { set } from 'date-fns';
 import {
   convertKeysToCamelCase,
   DateRange,
@@ -8,14 +7,12 @@ import {
   PaginationParams,
   PartialDateRange,
   SeriesCountPoint,
-  TimeScale,
 } from 'src/common';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import { Repository } from 'typeorm';
 
 import { ApprovalEntity } from '../approval.entity';
 import {
-  ApprovalActivitySummaryQuery,
   ApprovalCountSeriesQuery,
   ApprovalCountSummary,
   ApproverSummary,
@@ -52,39 +49,6 @@ export class ApprovalMetricService {
     return generateSeriesCountPoints(
       approvals.map((approval) => approval.createdAt),
       range,
-    );
-  }
-
-  async activitySummary(
-    range?: PartialDateRange,
-    query?: ApprovalActivitySummaryQuery,
-  ): Promise<SeriesCountPoint[]> {
-    range = DateRange.fill(range);
-
-    const approvals = await this.approvalRepository.find({
-      where: {
-        ...range.where(),
-        ...query?.where(),
-      },
-    });
-
-    const dates = approvals
-      .map((approval) =>
-        !query || approval.userId === query.userId
-          ? set(approval.createdAt, { year: 1970, month: 1, date: 1 })
-          : null,
-      )
-      .filter((date): date is Date => date !== null)
-      .flat();
-
-    return generateSeriesCountPoints(
-      dates,
-      new DateRange({
-        startDate: new Date(1970, 1, 1),
-        endDate: new Date(1970, 1, 1, 23, 59, 59, 999),
-        scale: TimeScale.Hour,
-        timezone: range.timezone,
-      }),
     );
   }
 
