@@ -12,7 +12,6 @@ import {
   PartialDateRange,
   Raw,
   SeriesCountPoint,
-  TimeScale,
 } from 'src/common';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import { FindOptionsWhere, LessThan, MoreThan, Not, Repository } from 'typeorm';
@@ -201,12 +200,7 @@ export class TicketMetricService {
 
     return generateSeriesCountPoints(
       dates,
-      new DateRange({
-        startDate: new Date(1970, 1, 1),
-        endDate: new Date(1970, 1, 1, 23, 59, 59, 999),
-        scale: TimeScale.Hour,
-        timezone: range.timezone,
-      }),
+      DateRange.hoursOnly(range.timezone),
     );
   }
 

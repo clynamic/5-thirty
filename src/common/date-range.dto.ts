@@ -233,6 +233,18 @@ export class DateRange extends PartialDateRange {
     return new DateRange(DateRange.recentMonths(0, value));
   }
 
+  /**
+   * Returns a fixed date range for 1970-01-01, covering all hours of the day.
+   */
+  static hoursOnly(timezone?: string): DateRange {
+    return new DateRange({
+      startDate: new Date(1970, 1, 1),
+      endDate: new Date(1970, 1, 1, 23, 59, 59, 999),
+      scale: TimeScale.Hour,
+      timezone: timezone,
+    });
+  }
+
   override find(): FindOperator<Date> {
     return super.find()!;
   }
