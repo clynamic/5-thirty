@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { set } from 'date-fns';
 import { PostFlagType, TicketStatus } from 'src/api';
 import { ApprovalEntity } from 'src/approval/approval.entity';
 import { getUserLevelFromString, UserLevel } from 'src/auth/auth.level';
@@ -47,38 +46,67 @@ export class PerformanceMetricService {
   ): Promise<ActivitySeriesPoint[]> {
     range = DateRange.fill(range);
 
-    let area: UserArea = UserArea.Member;
-    if (query?.area) {
-      area = query.area;
-    } else if (query?.userId) {
-      const user = await this.userRepository.findOne({
-        where: { id: query.userId },
-      });
+    let allKeys: ActivityType[] = [];
 
-      switch (getUserLevelFromString(user?.levelString)) {
-        case UserLevel.Admin:
-          area = UserArea.Admin;
+    if (query?.activities?.length) {
+      allKeys = query.activities;
+    } else {
+      let area: UserArea = UserArea.Member;
+      if (query?.area) {
+        area = query.area;
+      } else if (query?.userId) {
+        const user = await this.userRepository.findOne({
+          where: { id: query.userId },
+        });
+
+        switch (getUserLevelFromString(user?.levelString)) {
+          case UserLevel.Admin:
+            area = UserArea.Admin;
+            break;
+          case UserLevel.Moderator:
+            area = UserArea.Moderator;
+            break;
+          case UserLevel.Janitor:
+            area = UserArea.Janitor;
+            break;
+          default:
+            area = UserArea.Member;
+            break;
+        }
+      }
+
+      switch (area) {
+        case UserArea.Admin:
+          allKeys = query?.userId ? ['upload_post', 'close_ticket'] : [];
           break;
-        case UserLevel.Moderator:
-          area = UserArea.Moderator;
+        case UserArea.Moderator:
+          allKeys = query?.userId
+            ? ['upload_post', 'close_ticket']
+            : ['close_ticket'];
           break;
-        case UserLevel.Janitor:
-          area = UserArea.Janitor;
+        case UserArea.Janitor:
+          allKeys = query?.userId
+            ? [
+                'upload_post',
+                'approve_post',
+                'delete_post',
+                'create_replacement',
+                'approve_replacement',
+                'create_ticket',
+              ]
+            : ['approve_post', 'delete_post', 'approve_replacement'];
           break;
-        default:
-          area = UserArea.Member;
+        case UserArea.Member:
+          allKeys = ['upload_post', 'create_replacement', 'create_ticket'];
           break;
       }
     }
 
-    let items: { date: Date; key: ActivityType }[] = [];
-    let allKeys: ActivityType[] = [];
+    const items: { date: Date; key: ActivityType }[] = [];
 
-    switch (area) {
-      case UserArea.Admin:
-        allKeys = query?.userId ? ['upload_post', 'close_ticket'] : [];
-
-        if (query?.userId) {
+    for (const key of new Set(allKeys)) {
+      switch (key) {
+        case 'upload_post':
           await this.postVersionRepository
             .find({
               where: {
@@ -92,148 +120,77 @@ export class PerformanceMetricService {
                 items.push({ date: post.updatedAt, key: 'upload_post' });
               });
             });
-        }
-
-        if (query?.userId) {
-          await this.ticketRepository
+          break;
+        case 'approve_post':
+          await this.approvalRepository
             .find({
               where: {
                 ...range.where(),
-                handlerId: query?.userId,
+                userId: query?.userId,
               },
             })
-            .then((tickets) => {
-              tickets.forEach((ticket) => {
-                items.push({ date: ticket.updatedAt, key: 'close_ticket' });
+            .then((approvals) => {
+              approvals.forEach((approval) => {
+                items.push({
+                  date: approval.createdAt,
+                  key: 'approve_post',
+                });
               });
             });
-        }
-
-        break;
-      case UserArea.Moderator:
-        allKeys = query?.userId
-          ? ['upload_post', 'close_ticket']
-          : ['close_ticket'];
-
-        if (query?.userId) {
-          await this.postVersionRepository
+          break;
+        case 'delete_post':
+          await this.flagRepository
             .find({
               where: {
-                version: 1,
-                updatedAt: range.find(),
-                updaterId: query?.userId,
+                ...range.where(),
+                type: PostFlagType.deletion,
+                creatorId: query?.userId,
               },
             })
-            .then((posts) => {
-              posts.forEach((post) => {
-                items.push({ date: post.updatedAt, key: 'upload_post' });
+            .then((flags) => {
+              flags.forEach((flag) => {
+                items.push({ date: flag.createdAt, key: 'delete_post' });
               });
             });
-        }
-
-        await this.ticketRepository
-          .find({
-            where: {
-              ...range.where(),
-              status: TicketStatus.approved,
-              handlerId: query?.userId,
-            },
-          })
-          .then((tickets) => {
-            tickets.forEach((ticket) => {
-              items.push({ date: ticket.updatedAt, key: 'close_ticket' });
-            });
-          });
-
-        break;
-      case UserArea.Janitor:
-        allKeys = query?.userId
-          ? [
-              'upload_post',
-              'approve_post',
-              'delete_post',
-              'create_replacement',
-              'approve_replacement',
-              'create_ticket',
-            ]
-          : ['approve_post', 'delete_post', 'approve_replacement'];
-
-        if (query?.userId) {
-          await this.postVersionRepository
+          break;
+        case 'create_replacement':
+          await this.postReplacementRepository
             .find({
               where: {
-                version: 1,
-                updatedAt: range.find(),
-                updaterId: query?.userId,
+                ...range.where(),
+                creatorId: query?.userId,
               },
             })
-            .then((posts) => {
-              posts.forEach((post) => {
-                items.push({ date: post.updatedAt, key: 'upload_post' });
+            .then((replacements) => {
+              replacements.forEach((replacement) => {
+                items.push({
+                  date: replacement.createdAt,
+                  key:
+                    replacement.creatorId === query?.userId
+                      ? 'create_replacement'
+                      : 'approve_replacement',
+                });
               });
             });
-        }
-
-        await this.approvalRepository
-          .find({
-            where: {
-              ...range.where(),
-              userId: query?.userId,
-            },
-          })
-          .then((approvals) => {
-            approvals.forEach((approval) => {
-              items.push({
-                date: approval.createdAt,
-                key: 'approve_post',
-              });
-            });
-          });
-
-        await this.flagRepository
-          .find({
-            where: {
-              ...range.where(),
-              type: PostFlagType.deletion,
-              creatorId: query?.userId,
-            },
-          })
-          .then((flags) => {
-            flags.forEach((flag) => {
-              items.push({ date: flag.createdAt, key: 'delete_post' });
-            });
-          });
-
-        await this.postReplacementRepository
-          .find({
-            where: [
-              ...(query?.userId
-                ? [
-                    {
-                      ...range.where(),
-                      creatorId: query?.userId,
-                    },
-                  ]
-                : []),
-              {
+          break;
+        case 'approve_replacement':
+          await this.postReplacementRepository
+            .find({
+              where: {
                 ...range.where(),
                 approverId: query?.userId,
               },
-            ],
-          })
-          .then((replacements) => {
-            replacements.forEach((replacement) => {
-              items.push({
-                date: replacement.createdAt,
-                key:
-                  replacement.creatorId === query?.userId
-                    ? 'create_replacement'
-                    : 'approve_replacement',
+            })
+            .then((replacements) => {
+              replacements.forEach((replacement) => {
+                items.push({
+                  date: replacement.createdAt,
+                  key: 'approve_replacement',
+                });
               });
             });
-          });
-
-        if (query?.userId) {
+          break;
+        case 'create_ticket':
           await this.ticketRepository
             .find({
               where: {
@@ -246,75 +203,30 @@ export class PerformanceMetricService {
                 items.push({ date: ticket.createdAt, key: 'create_ticket' });
               });
             });
-        }
-
-        break;
-      case UserArea.Member:
-        allKeys = ['upload_post', 'create_replacement', 'create_ticket'];
-
-        await this.postVersionRepository
-          .find({
-            where: {
-              version: 1,
-              updatedAt: range.find(),
-              updaterId: query?.userId,
-            },
-          })
-          .then((posts) => {
-            posts.forEach((post) => {
-              items.push({ date: post.updatedAt, key: 'upload_post' });
-            });
-          });
-
-        await this.postReplacementRepository
-          .find({
-            where: {
-              ...range.where(),
-              creatorId: query?.userId,
-            },
-          })
-          .then((replacements) => {
-            replacements.forEach((replacement) => {
-              items.push({
-                date: replacement.createdAt,
-                key: 'create_replacement',
+          break;
+        case 'close_ticket':
+          await this.ticketRepository
+            .find({
+              where: {
+                ...range.where(),
+                status: TicketStatus.approved,
+                handlerId: query?.userId,
+              },
+            })
+            .then((tickets) => {
+              tickets.forEach((ticket) => {
+                items.push({ date: ticket.updatedAt, key: 'close_ticket' });
               });
             });
-          });
-
-        await this.ticketRepository
-          .find({
-            where: {
-              ...range.where(),
-              creatorId: query?.userId,
-            },
-          })
-          .then((tickets) => {
-            tickets.forEach((ticket) => {
-              items.push({ date: ticket.createdAt, key: 'create_ticket' });
-            });
-          });
-
-        break;
+          break;
+      }
     }
 
-    items = items
-      .map((e) => ({
-        ...e,
-        date: set(e.date, { year: 1970, month: 1, date: 1 }),
-      }))
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
-
-    const dates = items.map((e) => e.date);
-    const keys = items.map((e) => e.key);
-
     return generateSeriesRecordPoints<Record<ActivityType, number>>(
-      dates,
-      keys,
-      // TODO: because we dynamically populate "allKeys", we are technically lying about the type.
-      // It will not actually contain all keys with 0. We are going to ignore this for now.
+      items.map((e) => e.date),
+      items.map((e) => e.key),
       allKeys,
-      DateRange.hoursOnly(range.timezone),
+      range,
     ).map(
       (e) =>
         new ActivitySeriesPoint({

@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { add, addYears, endOfDay, min } from 'date-fns';
+import { add, addYears, endOfDay, getDayOfYear, min, set } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 
 import { SeriesCountPoint, SeriesPoint } from './chart.dto';
@@ -92,16 +92,98 @@ export const createTimeBuckets = (range: DateRange): Date[] => {
   return buckets;
 };
 
+const setDateCycle = (date: Date, cycle: TimeScale): Date => {
+  switch (cycle) {
+    case TimeScale.All:
+      return date;
+    case TimeScale.Decade:
+      return set(date, { year: 1970 + (date.getFullYear() % 10) });
+    case TimeScale.Year:
+      return set(date, { year: 1970 });
+    case TimeScale.Month:
+      return set(date, { year: 1970, month: 0 });
+    case TimeScale.Week:
+      return set(date, {
+        year: 1970,
+        month: 0,
+        date: (getDayOfYear(date) % 7) + 1,
+      });
+    case TimeScale.Day:
+      return set(date, { year: 1970, month: 0, date: 1 });
+    case TimeScale.Hour:
+      return set(date, { year: 1970, month: 0, date: 1, hours: 0 });
+    case TimeScale.Minute:
+      return set(date, { year: 1970, month: 0, date: 1, hours: 0, minutes: 0 });
+  }
+};
+
+const applyDateCycle = (dates: DatePoint[], cycle: TimeScale): DatePoint[] => {
+  return dates.map((date) => {
+    if (date instanceof Date) {
+      return setDateCycle(date, cycle);
+    } else if (
+      date != undefined &&
+      typeof date === 'object' &&
+      'startDate' in date
+    ) {
+      return new DateRange({
+        ...date,
+        startDate: setDateCycle(date.startDate, cycle),
+        endDate: setDateCycle(date.endDate, cycle),
+      });
+    }
+    return date;
+  });
+};
+
+const resolveRangeCycle = (range: DateRange): DateRange => {
+  const [startDate, endDate] = (() => {
+    switch (range.cycle) {
+      case TimeScale.All:
+        return [range.startDate, range.endDate];
+      case TimeScale.Decade:
+        return [new Date(1970, 0, 1), new Date(1979, 11, 31, 23, 59, 59, 999)];
+      case TimeScale.Year:
+        return [new Date(1970, 0, 1), new Date(1970, 11, 31, 23, 59, 59, 999)];
+      case TimeScale.Month:
+        return [new Date(1970, 0, 1), new Date(1970, 0, 31, 23, 59, 59, 999)];
+      case TimeScale.Week:
+        return [new Date(1970, 0, 1), new Date(1970, 0, 7, 23, 59, 59, 999)];
+      case TimeScale.Day:
+        return [new Date(1970, 0, 1), new Date(1970, 0, 1, 23, 59, 59, 999)];
+      case TimeScale.Hour:
+        return [new Date(1970, 0, 1, 0), new Date(1970, 0, 1, 0, 59, 59, 999)];
+      case TimeScale.Minute:
+        return [
+          new Date(1970, 0, 1, 0, 0),
+          new Date(1970, 0, 1, 0, 0, 59, 999),
+        ];
+      default:
+        return [new Date(1970, 0, 1), new Date(1970, 0, 1)];
+    }
+  })();
+
+  return new DateRange({
+    ...range,
+    startDate,
+    endDate,
+  });
+};
+
 export type DatePoint = Date | DateRange | undefined;
 
 const MAX_BUCKET_COUNT = 10000;
 
 export const generateSeriesPoints = <T>(
-  items: readonly T[],
+  items: T[],
   dates: DatePoint[],
   range: PartialDateRange,
 ): SeriesPoint<T[]>[] => {
-  const dateRange = DateRange.fill(range);
+  let dateRange = DateRange.fill(range);
+
+  // resolve cycles
+  dateRange = resolveRangeCycle(dateRange);
+  dates = applyDateCycle(dates, dateRange.cycle);
 
   const buckets = createTimeBuckets(dateRange);
 
@@ -146,7 +228,7 @@ export const generateSeriesRecordPoints = <R extends Record<string, number>>(
   allKeys: readonly (keyof R)[],
   range: PartialDateRange,
 ): SeriesPoint<R>[] => {
-  return generateSeriesPoints(keys, dates, range).map((e) => ({
+  return generateSeriesPoints([...keys], dates, range).map((e) => ({
     date: e.date,
     value: allKeys.reduce(
       (acc, key) => ({

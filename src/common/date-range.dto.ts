@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsDate, IsEnum, IsOptional, IsTimeZone } from 'class-validator';
 import {
@@ -22,7 +23,7 @@ import { WithCreationDate } from './date-objects';
 import { PartialBy, Raw } from './raw';
 
 /**
- * A bucket of time for grouping dates.
+ * A measure of time, used to group or normalize date points.
  */
 export enum TimeScale {
   Minute = 'minute',
@@ -34,6 +35,28 @@ export enum TimeScale {
   Decade = 'decade',
   All = 'all',
 }
+
+export const inferScaleForCycle = (
+  cycle?: TimeScale,
+): TimeScale | undefined => {
+  if (!cycle) return undefined;
+
+  const orderedScales: TimeScale[] = [
+    // there is no smaller scale than Minute
+    TimeScale.Minute,
+    TimeScale.Hour,
+    TimeScale.Day,
+    TimeScale.Week,
+    TimeScale.Month,
+    TimeScale.Year,
+    TimeScale.Decade,
+    // there is no sensible default for TimeScale.All
+  ];
+
+  const index = orderedScales.indexOf(cycle) - 1;
+  if (index < 0) return undefined;
+  return orderedScales[index];
+};
 
 /**
  * A range of dates, inclusive on both ends.
@@ -76,7 +99,16 @@ export class PartialDateRange {
    */
   @IsOptional()
   @IsEnum(TimeScale)
+  @ApiProperty({ enum: TimeScale, enumName: 'TimeScale' })
   scale?: TimeScale;
+
+  /**
+   * Which part of the dates should be cyclic.
+   */
+  @IsOptional()
+  @IsEnum(TimeScale)
+  @ApiProperty({ enum: TimeScale, enumName: 'TimeScale' })
+  cycle?: TimeScale;
 
   find(): FindOperator<Date> | undefined {
     return this.startDate
@@ -134,10 +166,13 @@ export class PartialDateRange {
  * A range of dates, inclusive on both ends.
  */
 export class DateRange extends PartialDateRange {
-  constructor(value: PartialBy<Raw<DateRange>, 'timezone' | 'scale'>) {
+  constructor(
+    value: PartialBy<Raw<DateRange>, 'timezone' | 'scale' | 'cycle'>,
+  ) {
     super({
       timezone: 'UTC',
-      scale: TimeScale.Day,
+      scale: inferScaleForCycle(value.cycle) || TimeScale.Day,
+      cycle: TimeScale.All,
       ...value,
     });
   }
@@ -158,7 +193,12 @@ export class DateRange extends PartialDateRange {
   override timezone: string;
 
   @IsEnum(TimeScale)
+  @ApiProperty({ enum: TimeScale, enumName: 'TimeScale' })
   override scale: TimeScale;
+
+  @IsEnum(TimeScale)
+  @ApiProperty({ enum: TimeScale, enumName: 'TimeScale' })
+  override cycle: TimeScale;
 
   /**
    * Fills in missing dates in a partial date range.

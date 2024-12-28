@@ -27,6 +27,7 @@ export class ActivitySummaryQuery {
 
   userId?: number;
   area?: UserArea;
+  activities?: ActivityType[];
 }
 
 export class ActivitySeriesPoint

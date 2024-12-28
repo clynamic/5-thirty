@@ -27,9 +27,9 @@ export class PerformanceMetricController {
 
   @Get('activity')
   @ApiOperation({
-    summary: 'Activity Series',
-    description: 'Get activity series for a given date range',
-    operationId: 'getActivitySeries',
+    summary: 'Activity',
+    description: 'Get activity data for the specified range, scale, and cycle.',
+    operationId: 'getActivity',
   })
   @ApiResponse({
     status: 200,
