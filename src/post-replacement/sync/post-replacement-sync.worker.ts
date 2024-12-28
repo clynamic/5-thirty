@@ -22,8 +22,8 @@ import { ItemType } from 'src/label/label.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 
 import {
-  PostReplacementCacheEntity,
   PostReplacementEntity,
+  PostReplacementLabelEntity,
 } from '../post-replacement.entity';
 import { PostReplacementSyncService } from './post-replacement-sync.service';
 
@@ -93,7 +93,7 @@ export class PostReplacementSyncWorker {
                   (replacement) =>
                     new PostReplacementEntity({
                       ...convertKeysToCamelCase(replacement),
-                      cache: new PostReplacementCacheEntity(replacement),
+                      cache: new PostReplacementLabelEntity(replacement),
                     }),
                 ),
               );
@@ -213,7 +213,7 @@ export class PostReplacementSyncWorker {
                   (replacement) =>
                     new PostReplacementEntity({
                       ...convertKeysToCamelCase(replacement),
-                      cache: new PostReplacementCacheEntity(replacement),
+                      cache: new PostReplacementLabelEntity(replacement),
                     }),
                 ),
               );

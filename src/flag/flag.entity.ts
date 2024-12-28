@@ -36,7 +36,7 @@ export class FlagEntity extends LabelLink {
   updatedAt: Date;
 }
 
-export class FlagCacheEntity extends LabelEntity {
+export class FlagLabelEntity extends LabelEntity {
   constructor(value: PostFlag) {
     super({
       id: `/${ItemType.flags}/${value.id}`,

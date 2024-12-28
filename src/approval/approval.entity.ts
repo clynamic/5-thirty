@@ -24,7 +24,7 @@ export class ApprovalEntity extends LabelLink {
   createdAt: Date;
 }
 
-export class ApprovalCacheEntity extends LabelEntity {
+export class ApprovalLabelEntity extends LabelEntity {
   constructor(value: Approval) {
     super({
       id: `/${ItemType.approvals}/${value.id}`,

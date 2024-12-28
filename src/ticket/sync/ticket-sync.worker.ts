@@ -27,7 +27,7 @@ import {
 } from 'src/user/notable-user.entity';
 import { UserSyncService } from 'src/user/sync/user-sync.service';
 
-import { TicketCacheEntity, TicketEntity } from '../ticket.entity';
+import { TicketEntity, TicketLabelEntity } from '../ticket.entity';
 import { FindIncompleteParams, TicketSyncService } from './ticket-sync.service';
 
 @Injectable()
@@ -97,7 +97,7 @@ export class TicketSyncWorker {
                   (ticket) =>
                     new TicketEntity({
                       ...convertKeysToCamelCase(ticket),
-                      cache: new TicketCacheEntity(ticket),
+                      cache: new TicketLabelEntity(ticket),
                     }),
                 ),
               );
@@ -185,7 +185,7 @@ export class TicketSyncWorker {
                 (ticket) =>
                   new TicketEntity({
                     ...convertKeysToCamelCase(ticket),
-                    cache: new TicketCacheEntity(ticket),
+                    cache: new TicketLabelEntity(ticket),
                   }),
               ),
             );

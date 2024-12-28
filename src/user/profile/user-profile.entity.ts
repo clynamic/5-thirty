@@ -88,7 +88,7 @@ export class UserProfileEntity extends LabelLink {
   createdAt: Date;
 }
 
-export class UserProfileCacheEntity extends LabelEntity {
+export class UserProfileLabelEntity extends LabelEntity {
   constructor(value: UserProfile) {
     super({
       id: `/${ItemType.userProfiles}/${value.id}`,

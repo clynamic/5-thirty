@@ -51,7 +51,7 @@ export class TicketEntity extends LabelLink {
   updatedAt: Date;
 }
 
-export class TicketCacheEntity extends LabelEntity {
+export class TicketLabelEntity extends LabelEntity {
   constructor(value: Ticket) {
     super({
       id: `/${ItemType.tickets}/${value.id}`,

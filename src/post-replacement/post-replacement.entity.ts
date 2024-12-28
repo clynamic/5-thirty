@@ -55,7 +55,7 @@ export class PostReplacementEntity extends LabelLink {
   reason: string;
 }
 
-export class PostReplacementCacheEntity extends LabelEntity {
+export class PostReplacementLabelEntity extends LabelEntity {
   constructor(value: PostReplacement) {
     super({
       id: `/${ItemType.postReplacements}/${value.id}`,

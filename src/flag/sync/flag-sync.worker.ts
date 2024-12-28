@@ -21,7 +21,7 @@ import { JobService } from 'src/job/job.service';
 import { ItemType } from 'src/label/label.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 
-import { FlagCacheEntity, FlagEntity } from '../flag.entity';
+import { FlagEntity, FlagLabelEntity } from '../flag.entity';
 import { FlagSyncService } from './flag-sync.service';
 
 @Injectable()
@@ -90,7 +90,7 @@ export class FlagSyncWorker {
                   (flag) =>
                     new FlagEntity({
                       ...convertKeysToCamelCase(flag),
-                      cache: new FlagCacheEntity(flag),
+                      cache: new FlagLabelEntity(flag),
                     }),
                 ),
               );

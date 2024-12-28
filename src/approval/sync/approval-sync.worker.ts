@@ -22,7 +22,7 @@ import { JobService } from 'src/job/job.service';
 import { ItemType } from 'src/label/label.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 
-import { ApprovalCacheEntity, ApprovalEntity } from '../approval.entity';
+import { ApprovalEntity, ApprovalLabelEntity } from '../approval.entity';
 import { ApprovalSyncService } from './approval-sync.service';
 
 @Injectable()
@@ -94,7 +94,7 @@ export class ApprovalSyncWorker {
                   (approval) =>
                     new ApprovalEntity({
                       ...convertKeysToCamelCase(approval),
-                      cache: new ApprovalCacheEntity(approval),
+                      cache: new ApprovalLabelEntity(approval),
                     }),
                 ),
               );

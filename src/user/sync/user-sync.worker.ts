@@ -11,7 +11,7 @@ import { JobService } from 'src/job/job.service';
 import { ItemType } from 'src/label/label.entity';
 
 import { NotabilityType, NotableUserEntity } from '../notable-user.entity';
-import { UserCacheEntity, UserEntity } from '../user.entity';
+import { UserEntity, UserLabelEntity } from '../user.entity';
 import { UserSyncService } from './user-sync.service';
 
 @Injectable()
@@ -58,7 +58,7 @@ export class UserSyncWorker {
                 (user) =>
                   new UserEntity({
                     ...convertKeysToCamelCase(user),
-                    cache: new UserCacheEntity(user),
+                    cache: new UserLabelEntity(user),
                   }),
               ),
             );
@@ -112,7 +112,7 @@ export class UserSyncWorker {
                   (user) =>
                     new UserEntity({
                       ...convertKeysToCamelCase(user),
-                      cache: new UserCacheEntity(user),
+                      cache: new UserLabelEntity(user),
                     }),
                 ),
               );

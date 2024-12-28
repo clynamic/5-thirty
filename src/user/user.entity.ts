@@ -40,7 +40,7 @@ export class UserEntity extends LabelLink {
   createdAt: Date;
 }
 
-export class UserCacheEntity extends LabelEntity {
+export class UserLabelEntity extends LabelEntity {
   constructor(value: User) {
     super({
       id: `/${ItemType.users}/${value.id}`,

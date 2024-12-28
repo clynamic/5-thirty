@@ -7,7 +7,7 @@ import { convertKeysToCamelCase } from 'src/common';
 import { PostEntity } from 'src/post/post.entity';
 import { In, IsNull, MoreThan, Not, Repository } from 'typeorm';
 
-import { UserCacheEntity, UserEntity } from '../user.entity';
+import { UserEntity, UserLabelEntity } from '../user.entity';
 import { UserHead } from './user-head.dto';
 
 export interface UserHeadParams {
@@ -64,7 +64,7 @@ export class UserHeadService {
             (user) =>
               new UserEntity({
                 ...convertKeysToCamelCase(user),
-                cache: new UserCacheEntity(user),
+                cache: new UserLabelEntity(user),
               }),
           ),
         );
