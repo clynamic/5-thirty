@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { ConvertKeysToCamelCase, Raw } from 'src/common';
 
 export type ActivityType =
@@ -26,6 +27,7 @@ export class ActivitySummaryQuery {
   }
 
   userId?: number;
+  @ApiProperty({ enum: UserArea, enumName: 'UserArea' })
   area?: UserArea;
   activities?: ActivityType[];
 }

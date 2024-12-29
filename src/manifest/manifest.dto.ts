@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsOptional } from 'class-validator';
 import { Raw } from 'src/common';
 import { ItemType } from 'src/label/label.entity';
@@ -10,6 +11,7 @@ export class Manifest {
   id: number;
   startDate: Date;
   endDate: Date;
+  @ApiProperty({ enum: ItemType, enumName: 'ItemType' })
   type: ItemType;
   lowerId: number;
   upperId: number;
@@ -25,5 +27,6 @@ export class ManifestQuery {
 
   @IsOptional()
   @IsArray()
+  @ApiProperty({ enum: ItemType, enumName: 'ItemType' })
   type?: ItemType[];
 }

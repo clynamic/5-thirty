@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Raw } from 'src/common';
 import { ItemType } from 'src/label/label.entity';
 
@@ -20,6 +21,7 @@ export class ManifestHealth {
   }
 
   id: number;
+  @ApiProperty({ enum: ItemType, enumName: 'ItemType' })
   type: ItemType;
   startDate: Date;
   endDate: Date;
