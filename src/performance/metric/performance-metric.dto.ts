@@ -3,16 +3,16 @@ import { ConvertKeysToCamelCase, Raw } from 'src/common';
 
 export type ActivityType =
   // Many more, which we are currently not syncing.
-  | 'upload_post'
-  | 'approve_post'
-  | 'delete_post'
-  | 'create_replacement'
-  | 'approve_replacement'
+  | 'post_create'
+  | 'post_delete'
+  | 'post_approve'
+  | 'post_replacement_create'
+  | 'post_replacement_approve'
   // TODO: When a replacement is rejected, the ID of the user that rejected it is not stored.
   // Why is that the case? >:(
-  // | 'reject_replacement'
-  | 'create_ticket'
-  | 'close_ticket';
+  // | 'post_replacement_reject'
+  | 'ticket_create'
+  | 'ticket_handle';
 
 export enum UserArea {
   Admin = 'admin',
@@ -40,12 +40,12 @@ export class ActivitySeriesPoint
   }
 
   date: Date;
-  uploadPost: number;
-  approvePost: number;
-  deletePost: number;
-  createReplacement: number;
-  approveReplacement: number;
-  // rejectReplacement: number;
-  createTicket: number;
-  closeTicket: number;
+  postCreate: number;
+  postDelete: number;
+  postApprove: number;
+  postReplacementCreate: number;
+  postReplacementApprove: number;
+  // postReplacementReject: number;
+  ticketCreate: number;
+  ticketHandle: number;
 }

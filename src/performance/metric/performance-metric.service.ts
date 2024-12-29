@@ -77,27 +77,27 @@ export class PerformanceMetricService {
 
       switch (area) {
         case UserArea.Admin:
-          allKeys = query?.userId ? ['upload_post', 'close_ticket'] : [];
+          allKeys = query?.userId ? ['post_create', 'ticket_handle'] : [];
           break;
         case UserArea.Moderator:
           allKeys = query?.userId
-            ? ['upload_post', 'close_ticket']
-            : ['close_ticket'];
+            ? ['post_create', 'ticket_handle']
+            : ['ticket_handle'];
           break;
         case UserArea.Janitor:
           allKeys = query?.userId
             ? [
-                'upload_post',
-                'approve_post',
-                'delete_post',
-                'create_replacement',
-                'approve_replacement',
-                'create_ticket',
+                'post_create',
+                'post_delete',
+                'post_approve',
+                'post_replacement_create',
+                'post_replacement_approve',
+                'ticket_create',
               ]
-            : ['approve_post', 'delete_post', 'approve_replacement'];
+            : ['post_approve', 'post_delete', 'post_replacement_approve'];
           break;
         case UserArea.Member:
-          allKeys = ['upload_post', 'create_replacement', 'create_ticket'];
+          allKeys = ['post_create', 'post_replacement_create', 'ticket_create'];
           break;
       }
     }
@@ -106,7 +106,7 @@ export class PerformanceMetricService {
 
     for (const key of new Set(allKeys)) {
       switch (key) {
-        case 'upload_post':
+        case 'post_create':
           await this.postVersionRepository
             .find({
               where: {
@@ -117,11 +117,11 @@ export class PerformanceMetricService {
             })
             .then((posts) => {
               posts.forEach((post) => {
-                items.push({ date: post.updatedAt, key: 'upload_post' });
+                items.push({ date: post.updatedAt, key: 'post_create' });
               });
             });
           break;
-        case 'approve_post':
+        case 'post_approve':
           await this.approvalRepository
             .find({
               where: {
@@ -133,12 +133,12 @@ export class PerformanceMetricService {
               approvals.forEach((approval) => {
                 items.push({
                   date: approval.createdAt,
-                  key: 'approve_post',
+                  key: 'post_approve',
                 });
               });
             });
           break;
-        case 'delete_post':
+        case 'post_delete':
           await this.flagRepository
             .find({
               where: {
@@ -149,11 +149,11 @@ export class PerformanceMetricService {
             })
             .then((flags) => {
               flags.forEach((flag) => {
-                items.push({ date: flag.createdAt, key: 'delete_post' });
+                items.push({ date: flag.createdAt, key: 'post_delete' });
               });
             });
           break;
-        case 'create_replacement':
+        case 'post_replacement_create':
           await this.postReplacementRepository
             .find({
               where: {
@@ -167,13 +167,13 @@ export class PerformanceMetricService {
                   date: replacement.createdAt,
                   key:
                     replacement.creatorId === query?.userId
-                      ? 'create_replacement'
-                      : 'approve_replacement',
+                      ? 'post_replacement_create'
+                      : 'post_replacement_approve',
                 });
               });
             });
           break;
-        case 'approve_replacement':
+        case 'post_replacement_approve':
           await this.postReplacementRepository
             .find({
               where: {
@@ -185,12 +185,12 @@ export class PerformanceMetricService {
               replacements.forEach((replacement) => {
                 items.push({
                   date: replacement.createdAt,
-                  key: 'approve_replacement',
+                  key: 'post_replacement_approve',
                 });
               });
             });
           break;
-        case 'create_ticket':
+        case 'ticket_create':
           await this.ticketRepository
             .find({
               where: {
@@ -200,11 +200,11 @@ export class PerformanceMetricService {
             })
             .then((tickets) => {
               tickets.forEach((ticket) => {
-                items.push({ date: ticket.createdAt, key: 'create_ticket' });
+                items.push({ date: ticket.createdAt, key: 'ticket_create' });
               });
             });
           break;
-        case 'close_ticket':
+        case 'ticket_handle':
           await this.ticketRepository
             .find({
               where: {
@@ -215,7 +215,7 @@ export class PerformanceMetricService {
             })
             .then((tickets) => {
               tickets.forEach((ticket) => {
-                items.push({ date: ticket.updatedAt, key: 'close_ticket' });
+                items.push({ date: ticket.updatedAt, key: 'ticket_handle' });
               });
             });
           break;
