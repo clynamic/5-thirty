@@ -89,125 +89,155 @@ export class PerformanceMetricService {
       items[userId]![key].push(date);
     };
 
+    const tasks: Promise<void>[] = [];
+
     for (const key of new Set(keys)) {
       switch (key) {
         case 'post_create':
-          await this.postVersionRepository
-            .find({
-              where: {
-                version: 1,
-                updatedAt: range.find(),
-                updaterId: userId,
-              },
-              select: ['updaterId', 'updatedAt'],
-            })
-            .then((posts) =>
-              posts.forEach((post) =>
-                storeItem('post_create', post.updaterId, post.updatedAt),
+          tasks.push(
+            this.postVersionRepository
+              .find({
+                where: {
+                  version: 1,
+                  updatedAt: range.find(),
+                  updaterId: userId,
+                },
+                select: ['updaterId', 'updatedAt'],
+              })
+              .then((posts) =>
+                posts.forEach((post) =>
+                  storeItem('post_create', post.updaterId, post.updatedAt),
+                ),
               ),
-            );
+          );
           break;
         case 'post_approve':
-          await this.approvalRepository
-            .find({
-              where: {
-                ...range.where(),
-                userId: userId,
-              },
-              select: ['userId', 'createdAt'],
-            })
-            .then((approvals) =>
-              approvals.forEach((approval) =>
-                storeItem('post_approve', approval.userId, approval.createdAt),
+          tasks.push(
+            this.approvalRepository
+              .find({
+                where: {
+                  ...range.where(),
+                  userId: userId,
+                },
+                select: ['userId', 'createdAt'],
+              })
+              .then((approvals) =>
+                approvals.forEach((approval) =>
+                  storeItem(
+                    'post_approve',
+                    approval.userId,
+                    approval.createdAt,
+                  ),
+                ),
               ),
-            );
+          );
           break;
         case 'post_delete':
-          await this.flagRepository
-            .find({
-              where: {
-                ...range.where(),
-                type: PostFlagType.deletion,
-                creatorId: userId,
-              },
-              select: ['creatorId', 'createdAt'],
-            })
-            .then((flags) =>
-              flags.forEach((flag) =>
-                storeItem('post_delete', flag.creatorId, flag.createdAt),
+          tasks.push(
+            this.flagRepository
+              .find({
+                where: {
+                  ...range.where(),
+                  type: PostFlagType.deletion,
+                  creatorId: userId,
+                },
+                select: ['creatorId', 'createdAt'],
+              })
+              .then((flags) =>
+                flags.forEach((flag) =>
+                  storeItem('post_delete', flag.creatorId, flag.createdAt),
+                ),
               ),
-            );
+          );
           break;
         case 'post_replacement_create':
-          await this.postReplacementRepository
-            .find({
-              where: {
-                ...range.where(),
-                creatorId: userId,
-              },
-              select: ['creatorId', 'createdAt'],
-            })
-            .then((replacements) =>
-              replacements.forEach((replacement) =>
-                storeItem(
-                  'post_replacement_create',
-                  replacement.creatorId,
-                  replacement.createdAt,
+          tasks.push(
+            this.postReplacementRepository
+              .find({
+                where: {
+                  ...range.where(),
+                  creatorId: userId,
+                },
+                select: ['creatorId', 'createdAt'],
+              })
+              .then((replacements) =>
+                replacements.forEach((replacement) =>
+                  storeItem(
+                    'post_replacement_create',
+                    replacement.creatorId,
+                    replacement.createdAt,
+                  ),
                 ),
               ),
-            );
+          );
           break;
         case 'post_replacement_approve':
-          await this.postReplacementRepository
-            .find({
-              where: {
-                ...range.where(),
-                approverId: userId ? userId : Not(IsNull()),
-              },
-              select: ['approverId', 'updatedAt'],
-            })
-            .then((replacements) =>
-              replacements.forEach((replacement) =>
-                storeItem(
-                  'post_replacement_approve',
-                  replacement.approverId!,
-                  replacement.updatedAt,
+          tasks.push(
+            this.postReplacementRepository
+              .find({
+                where: {
+                  ...range.where(),
+                  approverId: userId ? userId : Not(IsNull()),
+                },
+                select: ['approverId', 'updatedAt'],
+              })
+              .then((replacements) =>
+                replacements.forEach((replacement) =>
+                  storeItem(
+                    'post_replacement_approve',
+                    replacement.approverId!,
+                    replacement.updatedAt,
+                  ),
                 ),
               ),
-            );
+          );
           break;
         case 'ticket_create':
-          await this.ticketRepository
-            .find({
-              where: {
-                ...range.where(),
-                creatorId: userId,
-              },
-              select: ['creatorId', 'createdAt'],
-            })
-            .then((tickets) =>
-              tickets.forEach((ticket) =>
-                storeItem('ticket_create', ticket.creatorId, ticket.createdAt),
+          tasks.push(
+            this.ticketRepository
+              .find({
+                where: {
+                  ...range.where(),
+                  creatorId: userId,
+                },
+                select: ['creatorId', 'createdAt'],
+              })
+              .then((tickets) =>
+                tickets.forEach((ticket) =>
+                  storeItem(
+                    'ticket_create',
+                    ticket.creatorId,
+                    ticket.createdAt,
+                  ),
+                ),
               ),
-            );
+          );
           break;
         case 'ticket_handle':
-          await this.ticketRepository
-            .find({
-              where: this.whereCreatedOrUpdated<TicketEntity>(range, {
-                status: TicketStatus.approved,
-                handlerId: userId ? userId : Not(IsNull()),
-              }),
-              select: ['handlerId', 'updatedAt'],
-            })
-            .then((tickets) =>
-              tickets.forEach((ticket) =>
-                storeItem('ticket_handle', ticket.handlerId, ticket.updatedAt),
+          tasks.push(
+            this.ticketRepository
+              .find({
+                where: this.whereCreatedOrUpdated<TicketEntity>(range, {
+                  status: TicketStatus.approved,
+                  handlerId: userId ? userId : Not(IsNull()),
+                }),
+                select: ['handlerId', 'updatedAt'],
+              })
+              .then((tickets) =>
+                tickets.forEach((ticket) =>
+                  storeItem(
+                    'ticket_handle',
+                    ticket.handlerId,
+                    ticket.updatedAt,
+                  ),
+                ),
               ),
-            );
+          );
           break;
       }
     }
+
+    await Promise.all(tasks);
 
     return items;
   }
@@ -389,7 +419,9 @@ export class PerformanceMetricService {
             days: days[e.userId]!,
           }),
       )
-      .filter((e) => (query?.userId ? e.userId === query.userId : true));
+      .filter((e) =>
+        query?.userId ? e.userId === Number(query.userId) : true,
+      );
   }
 
   async activity(
