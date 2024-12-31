@@ -3,6 +3,7 @@ import { Transform } from 'class-transformer';
 import { IsDate, IsEnum, IsOptional, IsTimeZone } from 'class-validator';
 import {
   addDays,
+  Duration,
   endOfMonth,
   formatISO,
   parseISO,
@@ -35,6 +36,58 @@ export enum TimeScale {
   Decade = 'decade',
   All = 'all',
 }
+
+export const getClosestTimeScale = (dateRange: DateRange): TimeScale => {
+  const { startDate, endDate } = dateRange;
+  const diffInMs = Math.abs(endDate.getTime() - startDate.getTime());
+
+  const msPerMinute = 60 * 1000;
+  const msPerHour = 60 * msPerMinute;
+  const msPerDay = 24 * msPerHour;
+  const msPerWeek = 7 * msPerDay;
+  const msPerMonth = 30 * msPerDay;
+  const msPerYear = 365 * msPerDay;
+  const msPerDecade = 10 * msPerYear;
+
+  const timeScales = [
+    { scale: TimeScale.Minute, ms: msPerMinute },
+    { scale: TimeScale.Hour, ms: msPerHour },
+    { scale: TimeScale.Day, ms: msPerDay },
+    { scale: TimeScale.Week, ms: msPerWeek },
+    { scale: TimeScale.Month, ms: msPerMonth },
+    { scale: TimeScale.Year, ms: msPerYear },
+    { scale: TimeScale.Decade, ms: msPerDecade },
+  ];
+
+  const closest = timeScales.reduce((prev, curr) => {
+    const prevDiff = Math.abs(diffInMs - prev.ms);
+    const currDiff = Math.abs(diffInMs - curr.ms);
+    return currDiff < prevDiff ? curr : prev;
+  });
+
+  return diffInMs > msPerDecade ? TimeScale.All : closest.scale;
+};
+
+export const getDurationKeyForScale = (scale: TimeScale): keyof Duration => {
+  switch (scale) {
+    case TimeScale.Minute:
+      return 'minutes';
+    case TimeScale.Hour:
+      return 'hours';
+    case TimeScale.Day:
+      return 'days';
+    case TimeScale.Week:
+      return 'weeks';
+    case TimeScale.Month:
+      return 'months';
+    case TimeScale.Year:
+      return 'years';
+    case TimeScale.Decade:
+      return 'years';
+    case TimeScale.All:
+      return 'years';
+  }
+};
 
 export const inferScaleForCycle = (
   cycle?: TimeScale,
@@ -237,7 +290,7 @@ export class DateRange extends PartialDateRange {
    * Returns a date range for the last `months` months.
    */
   static recentMonths(
-    months: number = 3,
+    months: number = 6,
     value?: Omit<Raw<PartialDateRange>, 'startDate' | 'endDate'>,
   ): DateRange {
     const now = toZonedTime(new Date(), value?.timezone || 'UTC');

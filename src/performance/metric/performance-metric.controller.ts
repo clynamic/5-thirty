@@ -12,6 +12,8 @@ import { PartialDateRange } from 'src/common';
 import {
   ActivitySeriesPoint,
   ActivitySummaryQuery,
+  PerformanceSummary,
+  PerformanceSummaryQuery,
 } from './performance-metric.dto';
 import { PerformanceMetricService } from './performance-metric.service';
 
@@ -24,6 +26,23 @@ export class PerformanceMetricController {
   constructor(
     private readonly performanceMetricService: PerformanceMetricService,
   ) {}
+
+  @Get('performance')
+  @ApiOperation({
+    summary: 'Performance',
+    description: 'Get performance data for an area.',
+    operationId: 'getPerformance',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [PerformanceSummary],
+  })
+  async performance(
+    @Query() range?: PartialDateRange,
+    @Query() query?: PerformanceSummaryQuery,
+  ): Promise<PerformanceSummary[]> {
+    return this.performanceMetricService.performance(range, query);
+  }
 
   @Get('activity')
   @ApiOperation({
