@@ -242,7 +242,7 @@ export class PerformanceMetricService {
           allKeys = ['ticket_handle'];
           break;
         case UserArea.Janitor:
-          allKeys = ['post_approve', 'post_replacement_approve'];
+          allKeys = ['post_approve', 'post_replacement_approve', 'post_delete'];
           break;
         case UserArea.Member:
           allKeys = [];
