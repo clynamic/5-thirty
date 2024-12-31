@@ -43,6 +43,7 @@ export class ApprovalSyncWorker {
       new Job({
         title: 'Approval Orders Sync',
         key: `/${ItemType.approvals}/orders`,
+        timeout: 1000 * 60 * 5,
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.authService.getServerAxiosConfig();
 
