@@ -22,10 +22,10 @@ import { UserEntity } from 'src/user/user.entity';
 import { FindOptionsWhere, IsNull, Not, Repository } from 'typeorm';
 
 import {
+  Activity,
   ActivitySeriesPoint,
   ActivitySummary,
   ActivitySummaryQuery,
-  ActivityType,
   getActivityScore,
   getPerformanceScoreGrade,
   getPerformanceTrendGrade,
@@ -71,13 +71,13 @@ export class PerformanceMetricService {
   }
 
   private async findActivities(
-    keys: ActivityType[],
+    keys: Activity[],
     range: PartialDateRange,
     userId?: number,
-  ): Promise<Record<number, Partial<Record<ActivityType, Date[]>>>> {
-    const items: Record<number, Partial<Record<ActivityType, Date[]>>> = {};
+  ): Promise<Record<number, Partial<Record<Activity, Date[]>>>> {
+    const items: Record<number, Partial<Record<Activity, Date[]>>> = {};
 
-    const storeItem = (key: ActivityType, userId: number, date: Date) => {
+    const storeItem = (key: Activity, userId: number, date: Date) => {
       if (!items[userId]) {
         items[userId] = {};
       }
@@ -93,7 +93,7 @@ export class PerformanceMetricService {
 
     for (const key of new Set(keys)) {
       switch (key) {
-        case 'post_create':
+        case Activity.PostCreate:
           tasks.push(
             this.postVersionRepository
               .find({
@@ -106,12 +106,16 @@ export class PerformanceMetricService {
               })
               .then((posts) =>
                 posts.forEach((post) =>
-                  storeItem('post_create', post.updaterId, post.updatedAt),
+                  storeItem(
+                    Activity.PostCreate,
+                    post.updaterId,
+                    post.updatedAt,
+                  ),
                 ),
               ),
           );
           break;
-        case 'post_approve':
+        case Activity.PostApprove:
           tasks.push(
             this.approvalRepository
               .find({
@@ -124,7 +128,7 @@ export class PerformanceMetricService {
               .then((approvals) =>
                 approvals.forEach((approval) =>
                   storeItem(
-                    'post_approve',
+                    Activity.PostApprove,
                     approval.userId,
                     approval.createdAt,
                   ),
@@ -132,7 +136,7 @@ export class PerformanceMetricService {
               ),
           );
           break;
-        case 'post_delete':
+        case Activity.PostDelete:
           tasks.push(
             this.flagRepository
               .find({
@@ -145,12 +149,16 @@ export class PerformanceMetricService {
               })
               .then((flags) =>
                 flags.forEach((flag) =>
-                  storeItem('post_delete', flag.creatorId, flag.createdAt),
+                  storeItem(
+                    Activity.PostDelete,
+                    flag.creatorId,
+                    flag.createdAt,
+                  ),
                 ),
               ),
           );
           break;
-        case 'post_replacement_create':
+        case Activity.PostReplacementCreate:
           tasks.push(
             this.postReplacementRepository
               .find({
@@ -163,7 +171,7 @@ export class PerformanceMetricService {
               .then((replacements) =>
                 replacements.forEach((replacement) =>
                   storeItem(
-                    'post_replacement_create',
+                    Activity.PostReplacementCreate,
                     replacement.creatorId,
                     replacement.createdAt,
                   ),
@@ -171,7 +179,7 @@ export class PerformanceMetricService {
               ),
           );
           break;
-        case 'post_replacement_approve':
+        case Activity.PostReplacementApprove:
           tasks.push(
             this.postReplacementRepository
               .find({
@@ -184,7 +192,7 @@ export class PerformanceMetricService {
               .then((replacements) =>
                 replacements.forEach((replacement) =>
                   storeItem(
-                    'post_replacement_approve',
+                    Activity.PostReplacementApprove,
                     replacement.approverId!,
                     replacement.updatedAt,
                   ),
@@ -192,7 +200,7 @@ export class PerformanceMetricService {
               ),
           );
           break;
-        case 'ticket_create':
+        case Activity.TicketCreate:
           tasks.push(
             this.ticketRepository
               .find({
@@ -205,7 +213,7 @@ export class PerformanceMetricService {
               .then((tickets) =>
                 tickets.forEach((ticket) =>
                   storeItem(
-                    'ticket_create',
+                    Activity.TicketCreate,
                     ticket.creatorId,
                     ticket.createdAt,
                   ),
@@ -213,7 +221,7 @@ export class PerformanceMetricService {
               ),
           );
           break;
-        case 'ticket_handle':
+        case Activity.TicketHandle:
           tasks.push(
             this.ticketRepository
               .find({
@@ -226,7 +234,7 @@ export class PerformanceMetricService {
               .then((tickets) =>
                 tickets.forEach((ticket) =>
                   storeItem(
-                    'ticket_handle',
+                    Activity.TicketHandle,
                     ticket.handlerId,
                     ticket.updatedAt,
                   ),
@@ -248,7 +256,7 @@ export class PerformanceMetricService {
   ): Promise<PerformanceSummary[]> {
     range = DateRange.fill(range);
 
-    let allKeys: ActivityType[] = [];
+    let allKeys: Activity[] = [];
 
     if (query?.activities?.length) {
       allKeys = query.activities;
@@ -266,13 +274,17 @@ export class PerformanceMetricService {
 
       switch (area) {
         case UserArea.Admin:
-          allKeys = ['ticket_handle'];
+          allKeys = [Activity.TicketHandle];
           break;
         case UserArea.Moderator:
-          allKeys = ['ticket_handle'];
+          allKeys = [Activity.TicketHandle];
           break;
         case UserArea.Janitor:
-          allKeys = ['post_approve', 'post_replacement_approve', 'post_delete'];
+          allKeys = [
+            Activity.PostApprove,
+            Activity.PostReplacementApprove,
+            Activity.PostDelete,
+          ];
           break;
         case UserArea.Member:
           allKeys = [];
@@ -297,12 +309,12 @@ export class PerformanceMetricService {
                 Number(userId),
                 Object.fromEntries(
                   Object.entries(activities).map(([key, dates]) => [
-                    key as ActivityType,
+                    key as Activity,
                     dates,
                   ]),
-                ) as Record<ActivityType, Date[]>,
+                ) as Record<Activity, Date[]>,
               ]),
-            ) as Record<number, Record<ActivityType, Date[]>>,
+            ) as Record<number, Record<Activity, Date[]>>,
         );
       }),
     );
@@ -314,7 +326,7 @@ export class PerformanceMetricService {
             Number(userId),
             Object.entries(activities).reduce(
               (acc, [key, value]) =>
-                acc + value.length * getActivityScore(key as ActivityType),
+                acc + value.length * getActivityScore(key as Activity),
               0,
             ),
           ]),
@@ -331,7 +343,7 @@ export class PerformanceMetricService {
                 key,
                 value.length,
               ]),
-            ) as Record<ActivityType, number>,
+            ) as Record<Activity, number>,
           ),
         }),
       ]),
@@ -430,7 +442,7 @@ export class PerformanceMetricService {
   ): Promise<ActivitySeriesPoint[]> {
     range = DateRange.fill(range);
 
-    let allKeys: ActivityType[] = [];
+    let allKeys: Activity[] = [];
 
     if (query?.activities?.length) {
       allKeys = query.activities;
@@ -448,44 +460,52 @@ export class PerformanceMetricService {
 
       switch (area) {
         case UserArea.Admin:
-          allKeys = query?.userId ? ['post_create', 'ticket_handle'] : [];
+          allKeys = query?.userId
+            ? [Activity.PostCreate, Activity.TicketHandle]
+            : [];
           break;
         case UserArea.Moderator:
           allKeys = query?.userId
-            ? ['post_create', 'ticket_handle']
-            : ['ticket_handle'];
+            ? [Activity.PostCreate, Activity.TicketHandle]
+            : [Activity.TicketHandle];
           break;
         case UserArea.Janitor:
           allKeys = query?.userId
             ? [
-                'post_create',
-                'post_delete',
-                'post_approve',
-                'post_replacement_create',
-                'post_replacement_approve',
-                'ticket_create',
+                Activity.PostCreate,
+                Activity.PostDelete,
+                Activity.PostApprove,
+                Activity.PostReplacementCreate,
+                Activity.PostReplacementApprove,
+                Activity.TicketCreate,
               ]
-            : ['post_approve', 'post_delete', 'post_replacement_approve'];
+            : [
+                Activity.PostApprove,
+                Activity.PostDelete,
+                Activity.PostReplacementApprove,
+              ];
           break;
         case UserArea.Member:
-          allKeys = ['post_create', 'post_replacement_create', 'ticket_create'];
+          allKeys = [
+            Activity.PostCreate,
+            Activity.PostReplacementCreate,
+            Activity.TicketCreate,
+          ];
           break;
       }
     }
 
-    const items: { date: Date; key: ActivityType }[] = [];
+    const items: { date: Date; key: Activity }[] = [];
 
     await this.findActivities(allKeys, range, query?.userId).then((data) => {
       for (const [, activities] of Object.entries(data)) {
         for (const [key, value] of Object.entries(activities)) {
-          value!.forEach((date) =>
-            items.push({ date, key: key as ActivityType }),
-          );
+          value!.forEach((date) => items.push({ date, key: key as Activity }));
         }
       }
     });
 
-    return generateSeriesRecordPoints<Record<ActivityType, number>>(
+    return generateSeriesRecordPoints<Record<Activity, number>>(
       items.map((e) => e.date),
       items.map((e) => e.key),
       allKeys,

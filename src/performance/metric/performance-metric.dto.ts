@@ -3,18 +3,19 @@ import { UserLevel } from 'src/auth/auth.level';
 import { ConvertKeysToCamelCase, Raw } from 'src/common';
 import { UserHead } from 'src/user/head/user-head.dto';
 
-export type ActivityType =
+export enum Activity {
   // Many more, which we are currently not syncing.
-  | 'post_create'
-  | 'post_delete'
-  | 'post_approve'
-  | 'post_replacement_create'
-  | 'post_replacement_approve'
+  PostCreate = 'post_create',
+  PostDelete = 'post_delete',
+  PostApprove = 'post_approve',
+  PostReplacementCreate = 'post_replacement_create',
+  PostReplacementApprove = 'post_replacement_approve',
   // TODO: When a replacement is rejected, the ID of the user that rejected it is not stored.
   // Why is that the case? >:(
-  | 'post_replacement_reject'
-  | 'ticket_create'
-  | 'ticket_handle';
+  PostReplacementReject = 'post_replacement_reject',
+  TicketCreate = 'ticket_create',
+  TicketHandle = 'ticket_handle',
+}
 
 export enum UserArea {
   Admin = 'admin',
@@ -24,7 +25,7 @@ export enum UserArea {
 }
 
 export class ActivitySummary
-  implements ConvertKeysToCamelCase<Record<ActivityType, number>>
+  implements ConvertKeysToCamelCase<Record<Activity, number>>
 {
   constructor(value: Raw<ActivitySummary>) {
     Object.assign(this, value);
@@ -50,7 +51,8 @@ export class PerformanceSummaryQuery {
 
   @ApiProperty({ enum: UserArea, enumName: 'UserArea' })
   area?: UserArea;
-  activities?: ActivityType[];
+  @ApiProperty({ enum: Activity, enumName: 'Activity', isArray: true })
+  activities?: Activity[];
 }
 
 export const getUserAreaFromLevel = (level?: UserLevel): UserArea => {
@@ -66,13 +68,7 @@ export const getUserAreaFromLevel = (level?: UserLevel): UserArea => {
   }
 };
 
-export interface ActivityQuery {
-  userId?: number;
-  area?: UserArea;
-  activities?: ActivityType[];
-}
-
-export const getActivityScore = (activity: ActivityType): number => {
+export const getActivityScore = (activity: Activity): number => {
   switch (activity) {
     case 'ticket_handle':
       return 1;
@@ -166,7 +162,8 @@ export class ActivitySummaryQuery {
   userId?: number;
   @ApiProperty({ enum: UserArea, enumName: 'UserArea' })
   area?: UserArea;
-  activities?: ActivityType[];
+  @ApiProperty({ enum: Activity, enumName: 'Activity', isArray: true })
+  activities?: Activity[];
 }
 
 export class ActivitySeriesPoint extends ActivitySummary {
