@@ -290,7 +290,7 @@ export class PerformanceMetricService {
           endDate: sub(range.endDate!, { [duration]: i }),
         });
 
-        return this.findActivities(allKeys, shiftedRange, query?.userId).then(
+        return this.findActivities(allKeys, shiftedRange, undefined).then(
           (rawData) =>
             Object.fromEntries(
               Object.entries(rawData).map(([userId, activities]) => [
