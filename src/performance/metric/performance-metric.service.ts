@@ -354,7 +354,7 @@ export class PerformanceMetricService {
         Number(userId),
         new Set(
           Object.values(activities).flatMap((dates) =>
-            dates.map((date) => startOfDay(date).getTime()),
+            dates.map((date) => startOfDay(date, range.in()).getTime()),
           ),
         ).size,
       ]),

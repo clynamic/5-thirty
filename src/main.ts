@@ -9,6 +9,8 @@ import { DocsModule } from './app/docs.module';
 import { AppLogger, RequestLogger } from './app/logger.service';
 
 async function bootstrap() {
+  process.env.TZ = 'UTC';
+
   const app = await NestFactory.create(AppModule, {
     logger: new AppLogger(),
   });

@@ -1,8 +1,10 @@
+import { tz, TZDate } from '@date-fns/tz';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsDate, IsEnum, IsOptional, IsTimeZone } from 'class-validator';
 import {
   addDays,
+  ContextOptions,
   Duration,
   endOfMonth,
   formatISO,
@@ -11,7 +13,6 @@ import {
   subDays,
   subMonths,
 } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
 import {
   Between,
   FindOperator,
@@ -126,7 +127,7 @@ export class PartialDateRange {
   @IsOptional()
   @IsDate()
   @Transform(({ value, obj }) =>
-    value ? toZonedTime(parseISO(value), obj.timezone || 'UTC') : undefined,
+    value ? parseISO(value, { in: tz(obj.timezone || 'UTC') }) : undefined,
   )
   startDate?: Date;
 
@@ -136,7 +137,7 @@ export class PartialDateRange {
   @IsOptional()
   @IsDate()
   @Transform(({ value, obj }) =>
-    value ? toZonedTime(parseISO(value), obj.timezone || 'UTC') : undefined,
+    value ? parseISO(value, { in: tz(obj.timezone || 'UTC') }) : undefined,
   )
   endDate?: Date;
 
@@ -179,6 +180,10 @@ export class PartialDateRange {
     };
   }
 
+  in(): ContextOptions<TZDate> {
+    return { in: this.timezone ? tz(this.timezone) : undefined };
+  }
+
   /**
    * Turns a date range into a string fit for an e621 search query.
    * Inclusive on both ends.
@@ -190,17 +195,15 @@ export class PartialDateRange {
     if (this.startDate) {
       // TODO: e6 uses the request timezone, not UTC.
       // How would we determine which timezone that is?
-      start = formatISO(
-        subDays(toZonedTime(this.startDate, this.timezone || 'UTC'), 1),
-        { representation: 'date' },
-      );
+      start = formatISO(subDays(this.startDate, 1, this.in()), {
+        representation: 'date',
+      });
     }
 
     if (this.endDate) {
-      end = formatISO(
-        addDays(toZonedTime(this.endDate, this.timezone || 'UTC'), 1),
-        { representation: 'date' },
-      );
+      end = formatISO(addDays(this.endDate, 1, this.in()), {
+        representation: 'date',
+      });
     }
 
     if (start && !end) {
@@ -232,13 +235,13 @@ export class DateRange extends PartialDateRange {
 
   @IsDate()
   @Transform((opts) =>
-    toZonedTime(parseISO(opts.value), opts.obj.timezone || 'UTC'),
+    parseISO(opts.value, { in: tz(opts.obj.timezone || 'UTC') }),
   )
   override startDate: Date;
 
   @IsDate()
   @Transform((opts) =>
-    toZonedTime(parseISO(opts.value), opts.obj.timezone || 'UTC'),
+    parseISO(opts.value, { in: tz(opts.obj.timezone || 'UTC') }),
   )
   override endDate: Date;
 
@@ -268,16 +271,16 @@ export class DateRange extends PartialDateRange {
     } else if (range?.startDate) {
       return new DateRange({
         startDate: range.startDate,
-        endDate: endOfMonth(
-          toZonedTime(range.startDate, range.timezone || 'UTC'),
-        ),
+        endDate: endOfMonth(range.startDate, {
+          in: tz(range.timezone || 'UTC'),
+        }),
         ...range,
       });
     } else if (range?.endDate) {
       return new DateRange({
-        startDate: startOfMonth(
-          toZonedTime(range.endDate, range.timezone || 'UTC'),
-        ),
+        startDate: startOfMonth(range.endDate, {
+          in: tz(range.timezone || 'UTC'),
+        }),
         endDate: range.endDate,
         ...range,
       });
@@ -293,10 +296,13 @@ export class DateRange extends PartialDateRange {
     months: number = 3,
     value?: Omit<Raw<PartialDateRange>, 'startDate' | 'endDate'>,
   ): DateRange {
-    const now = toZonedTime(new Date(), value?.timezone || 'UTC');
+    const timezone = value?.timezone || 'UTC';
+    const now = new Date();
     return new DateRange({
-      startDate: startOfMonth(subMonths(now, months)),
-      endDate: endOfMonth(now),
+      startDate: startOfMonth(subMonths(now, months, { in: tz(timezone) }), {
+        in: tz(timezone),
+      }),
+      endDate: endOfMonth(now, { in: tz(timezone) }),
       ...value,
     });
   }

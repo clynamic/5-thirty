@@ -1,6 +1,6 @@
+import { tz } from '@date-fns/tz';
 import { BadRequestException } from '@nestjs/common';
 import { add, addYears, endOfDay, getDayOfYear, min, set } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
 
 import { SeriesCountPoint, SeriesPoint } from './chart.dto';
 import { scaleToDuration } from './date-fns';
@@ -72,29 +72,33 @@ export const assignDateBuckets = <T>(
   return bucketAssignments;
 };
 
-const incrementTimeBucket = (date: Date, bucket: TimeScale): Date => {
+const incrementTimeBucket = (
+  date: Date,
+  zone: string,
+  bucket: TimeScale,
+): Date => {
   if (bucket === TimeScale.All) {
-    return addYears(date, 9999);
+    return addYears(date, 9999, { in: tz(zone) });
   } else if (bucket === TimeScale.Decade) {
-    return addYears(date, 10);
+    return addYears(date, 10, { in: tz(zone) });
   } else {
-    return add(date, { [scaleToDuration(bucket)]: 1 });
+    return add(date, { [scaleToDuration(bucket)]: 1 }, { in: tz(zone) });
   }
 };
 
 export const createTimeBuckets = (range: DateRange): Date[] => {
-  const start = toZonedTime(range.startDate, range.timezone);
+  const start = range.startDate;
 
-  const end = min([
-    toZonedTime(range.endDate, range.timezone),
-    endOfDay(toZonedTime(new Date(), range.timezone)),
-  ]);
+  const end = min(
+    [range.endDate, endOfDay(new Date(), range.in())],
+    range.in(),
+  );
 
   const buckets = [];
   for (
     let currentDate = start;
     currentDate <= end;
-    currentDate = incrementTimeBucket(currentDate, range.scale)
+    currentDate = incrementTimeBucket(currentDate, range.timezone, range.scale)
   ) {
     buckets.push(currentDate);
   }
