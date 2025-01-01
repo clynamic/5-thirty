@@ -42,7 +42,9 @@ export const assignDateBuckets = <T>(
       const bucketIndex = binarySearchClosestBucket(buckets, entry);
 
       if (bucketIndex === -1) {
-        throw new Error(`No bucket found for entry: ${entry}`);
+        throw new Error(
+          `No bucket found for entry: ${entry} with buckets: ${buckets}`,
+        );
       }
 
       bucketAssignments[buckets[bucketIndex]!.getTime()]!.push(item);
@@ -57,7 +59,7 @@ export const assignDateBuckets = <T>(
 
       if (startIndex === -1 || endIndex === -1) {
         throw new Error(
-          `Invalid range for entry: ${JSON.stringify(entry)}. StartIndex: ${startIndex}, EndIndex: ${endIndex}`,
+          `Invalid range for entry: ${JSON.stringify(entry)}. StartIndex: ${startIndex}, EndIndex: ${endIndex} with buckets: ${buckets}`,
         );
       }
 
