@@ -116,21 +116,13 @@ export class PostMetricService {
       .leftJoin(
         this.approvalRepository.metadata.tableName,
         'approval',
-        `post_version.post_id = approval.post_id AND approval.createdAt AND approval.createdAt BETWEEN :start AND :end`,
-        {
-          start: range.startDate!.toISOString(),
-          end: range.endDate!.toISOString(),
-        },
+        'post_version.post_id = approval.post_id',
       )
       .leftJoin(
         this.flagRepository.metadata.tableName,
         'flag',
-        `post_version.post_id = flag.post_id AND flag.type = :type AND flag.createdAt BETWEEN :start AND :end`,
-        {
-          type: PostFlagType.deletion,
-          start: range.startDate!.toISOString(),
-          end: range.endDate!.toISOString(),
-        },
+        'post_version.post_id = flag.post_id AND flag.type = :type',
+        { type: PostFlagType.deletion },
       )
       .leftJoin(
         this.permitRepository.metadata.tableName,
@@ -139,17 +131,23 @@ export class PostMetricService {
       )
       .where(
         new Brackets((qb) => {
-          qb.where('post_version.updated_at BETWEEN :start AND :end', {
+          qb.where('approval.createdAt BETWEEN :start AND :end', {
             start: range.startDate!.toISOString(),
             end: range.endDate!.toISOString(),
-          }).andWhere('permit.post_id IS NULL');
+          }).orWhere('flag.createdAt BETWEEN :start AND :end', {
+            start: range.startDate!.toISOString(),
+            end: range.endDate!.toISOString(),
+          });
         }),
       )
       .orWhere(
         new Brackets((qb) => {
-          qb.where('approval.post_id IS NOT NULL').orWhere(
-            'flag.id IS NOT NULL',
-          );
+          qb.where('permit.post_id IS NULL')
+            .andWhere('approval.post_id IS NULL')
+            .andWhere('flag.id IS NULL')
+            .andWhere('post_version.updated_at < :end', {
+              end: range.endDate!.toISOString(),
+            });
         }),
       )
       .groupBy('post_version.post_id')
