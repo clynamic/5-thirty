@@ -30,6 +30,7 @@ import {
   getPerformanceScoreGrade,
   getPerformanceTrendGrade,
   getUserAreaFromLevel,
+  PerformanceRecord,
   PerformanceSummary,
   PerformanceSummaryQuery,
   UserArea,
@@ -396,7 +397,7 @@ export class PerformanceMetricService {
           Math.round(
             Object.values(relativeScores)
               .slice(1)
-              .reduce((acc, e) => acc + e[+userId]!, 0) /
+              .reduce((acc, e) => acc + (e[+userId] ?? 0), 0) /
               (relativeScores.length - 1),
           ),
       ]),
@@ -426,8 +427,14 @@ export class PerformanceMetricService {
             scoreGrade: getPerformanceScoreGrade(e.score),
             trend: trendScores[e.userId]!,
             trendGrade: getPerformanceTrendGrade(trendScores[e.userId]!),
-            previousScores: relativeScores.slice(1).map((d) => d[e.userId]!),
-            activitySummary: activities[e.userId]!,
+            history: relativeScores.map(
+              (d) =>
+                new PerformanceRecord({
+                  score: d[e.userId] ?? 0,
+                  grade: getPerformanceScoreGrade(d[e.userId] ?? 0),
+                }),
+            ),
+            activity: activities[e.userId]!,
             days: days[e.userId]!,
           }),
       )

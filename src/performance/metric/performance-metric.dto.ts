@@ -133,6 +133,16 @@ export const getPerformanceTrendGrade = (trend: number): TrendGrade => {
   return TrendGrade.surge;
 };
 
+export class PerformanceRecord {
+  constructor(value: Raw<PerformanceRecord>) {
+    Object.assign(this, value);
+  }
+
+  score: number;
+  @ApiProperty({ enum: PerformanceGrade, enumName: 'PerformanceGrade' })
+  grade: PerformanceGrade;
+}
+
 export class PerformanceSummary {
   constructor(value: Raw<PerformanceSummary>) {
     Object.assign(this, value);
@@ -149,8 +159,8 @@ export class PerformanceSummary {
   @ApiProperty({ enum: TrendGrade, enumName: 'TrendGrade' })
   trendGrade: TrendGrade;
 
-  previousScores: number[];
-  activitySummary: ActivitySummary;
+  history: PerformanceRecord[];
+  activity: ActivitySummary;
   days: number;
 }
 
