@@ -320,16 +320,26 @@ export class PerformanceMetricService {
       }),
     );
 
+    if (query?.userId) {
+      data.forEach((record) => {
+        if (!record[query.userId!]) {
+          record[query.userId!] = {} as Record<Activity, Date[]>;
+        }
+      });
+    }
+
     const scores = data.map(
       (e) =>
         Object.fromEntries(
           Object.entries(e).map(([userId, activities]) => [
             Number(userId),
-            Object.entries(activities).reduce(
-              (acc, [key, value]) =>
-                acc + value.length * getActivityScore(key as Activity),
-              0,
-            ),
+            Object.keys(activities).length > 0
+              ? Object.entries(activities).reduce(
+                  (acc, [key, value]) =>
+                    acc + value.length * getActivityScore(key as Activity),
+                  0,
+                )
+              : 0,
           ]),
         ) as Record<number, number>,
     );
@@ -374,18 +384,21 @@ export class PerformanceMetricService {
       scores.forEach((score) => delete score[automod!]);
     }
 
-    const averageScores = scores.map(
-      (score) =>
-        Object.values(score).reduce((sum, value) => sum + value, 0) /
-        Object.values(score).length,
-    );
+    const averageScores = scores.map((score) => {
+      const values = Object.values(score);
+      return values.length > 0
+        ? values.reduce((sum, value) => sum + value, 0) / values.length
+        : 0;
+    });
 
     const relativeScores = scores.map(
       (e, i) =>
         Object.fromEntries(
           Object.entries(e).map(([userId, value]) => [
             userId,
-            Math.round((value / averageScores[i]!) * 100),
+            averageScores[i]! > 0
+              ? Math.round((value / averageScores[i]!) * 100)
+              : 0,
           ]),
         ) as Record<number, number>,
     );
@@ -422,7 +435,7 @@ export class PerformanceMetricService {
           new PerformanceSummary({
             userId: e.userId,
             userHead: heads.find((head) => head.id === e.userId),
-            position: i + 1,
+            position: result.length > 1 ? i + 1 : 0,
             score: e.score,
             scoreGrade: getPerformanceScoreGrade(e.score),
             trend: trendScores[e.userId]!,
