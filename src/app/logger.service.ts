@@ -8,7 +8,9 @@ import {
   LogLevel,
   NestInterceptor,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { catchError, Observable, tap } from 'rxjs';
+import { DecodedJwt } from 'src/auth/auth.service';
 
 @Injectable()
 export class AppLogger extends ConsoleLogger implements LoggerService {
@@ -55,32 +57,37 @@ export class RequestLogger implements NestInterceptor {
   logger = new Logger('Requests');
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const req = context.switchToHttp().getRequest();
-    const { method, originalUrl, query } = req;
+    const req = context.switchToHttp().getRequest<Request>();
+    const { method, originalUrl, query, user } = req;
     const url = new URL(`${req.protocol}://${req.get('host')}${originalUrl}`);
+    const jwt = user as DecodedJwt | undefined;
 
     const queryString = new URLSearchParams(
       query as Record<string, string>,
     ).toString();
     url.search = queryString;
 
+    const op = method.toUpperCase();
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const username = jwt ? jwt.username : 'anonymous';
 
     const startTime = Date.now();
 
-    this.logger.log(`[${method.toUpperCase()}] ${ip} -> ${url.href}`);
+    this.logger.log(`[${op}] ${username}@${ip} -> ${url.href}`);
 
     return next.handle().pipe(
       tap(() => {
         const res = context.switchToHttp().getResponse();
         const duration = Date.now() - startTime;
         this.logger.log(
-          `[${method.toUpperCase()}] ${ip} <- ${url.href} : ${res.statusCode} - ${duration}ms`,
+          `[${op}] ${username}@${ip} <- ${url.href} : ${res.statusCode} - ${duration}ms`,
         );
       }),
       catchError((error) => {
         const duration = Date.now() - startTime;
-        this.logger.error(`${ip} x- Error: ${error.message} - ${duration}ms`);
+        this.logger.error(
+          `[${op}] ${username}@${ip} x- Error: ${error.message} - ${duration}ms`,
+        );
         throw error;
       }),
     );
