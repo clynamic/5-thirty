@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { chunk } from 'lodash';
-import { Ticket, tickets, TicketStatus } from 'src/api/e621';
+import { Ticket, tickets } from 'src/api/e621';
 import { MAX_API_LIMIT } from 'src/api/http/params';
 import { AuthService } from 'src/auth/auth.service';
 import {
@@ -28,7 +27,7 @@ import {
 import { UserSyncService } from 'src/user/sync/user-sync.service';
 
 import { TicketEntity, TicketLabelEntity } from '../ticket.entity';
-import { FindIncompleteParams, TicketSyncService } from './ticket-sync.service';
+import { TicketSyncService } from './ticket-sync.service';
 
 @Injectable()
 export class TicketSyncWorker {
@@ -147,55 +146,88 @@ export class TicketSyncWorker {
   }
 
   @Cron(CronExpression.EVERY_5_MINUTES)
-  refreshIncomplete() {
+  runRefresh() {
     this.jobService.add(
       new Job({
-        title: 'Ticket Incomplete Sync',
-        key: `/${ItemType.tickets}/incomplete`,
+        title: 'Ticket Refresh Sync',
+        key: `/${ItemType.tickets}/refresh`,
         execute: async ({ cancelToken }) => {
-          const incomplete = await this.ticketSyncService.findIncomplete(
-            new FindIncompleteParams({
-              // older than 5 minutes, to ignore the current run
-              staleness: 1000 * 60 * 5,
-            }),
-          );
+          const axiosConfig = this.authService.getServerAxiosConfig();
 
-          this.logger.log(`Found ${incomplete.length} incomplete tickets`);
+          const manifests = await this.manifestService.list(undefined, {
+            type: [ItemType.tickets],
+          });
 
-          const chunks = chunk(incomplete, 100);
-          const results: Ticket[] = [];
+          for (const manifest of manifests) {
+            let refreshDate = manifest.refreshedAt;
 
-          for (const chunk of chunks) {
-            cancelToken.ensureRunning();
+            if (!refreshDate) {
+              refreshDate = (
+                await this.ticketSyncService.firstFromId(manifest.lowerId)
+              )?.updatedAt;
+            }
 
-            const result = await rateLimit(
-              tickets(
-                {
-                  limit: 100,
-                  'search[id]': chunk.join(','),
-                },
-                this.authService.getServerAxiosConfig(),
-              ),
-            );
+            if (!refreshDate) continue;
 
-            results.push(...result);
+            const now = new Date();
+            const results: Ticket[] = [];
+            const loopGuard = new LoopGuard();
+            let page = 1;
 
-            await this.ticketSyncService.save(
-              result.map(
-                (ticket) =>
-                  new TicketEntity({
-                    ...convertKeysToCamelCase(ticket),
-                    cache: new TicketLabelEntity(ticket),
+            while (true) {
+              cancelToken.ensureRunning();
+
+              const rangeString = new PartialDateRange({
+                startDate: refreshDate,
+              }).toE621RangeString();
+              const idString = getIdRangeString(
+                manifest.lowerId,
+                manifest.upperId,
+              );
+
+              this.logger.log(
+                `Fetching tickets for refresh date ${rangeString} with ids ${idString}`,
+              );
+
+              const result = await rateLimit(
+                tickets(
+                  loopGuard.iter({
+                    page,
+                    limit: MAX_API_LIMIT,
+                    'search[updated_at]': rangeString,
+                    'search[id]': idString,
+                    'search[order]': 'id',
                   }),
-              ),
-            );
+                  axiosConfig,
+                ),
+              );
+
+              results.push(...result);
+
+              const updated = await this.ticketSyncService.countUpdated(
+                result.map(
+                  (ticket) =>
+                    new TicketEntity({
+                      ...convertKeysToCamelCase(ticket),
+                      cache: new TicketLabelEntity(ticket),
+                    }),
+                ),
+              );
+
+              this.logger.log(`Found ${updated} updated tickets`);
+
+              const exhausted = result.length < MAX_API_LIMIT;
+
+              if (exhausted) break;
+
+              page++;
+            }
+
+            await this.manifestService.save({
+              id: manifest.id,
+              refreshedAt: now,
+            });
           }
-
-          const completed = results.filter(
-            (ticket) => ticket.status === TicketStatus.approved,
-          );
-
-          this.logger.log(`Found ${completed.length} newly completed tickets`);
         },
       }),
     );

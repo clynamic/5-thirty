@@ -16,19 +16,19 @@ export class PostReplacementSyncService {
   );
 
   async countUpdated(
-    replacements: Pick<PostReplacementEntity, 'id' | 'updatedAt'>[],
+    updated: Pick<PostReplacementEntity, 'id' | 'updatedAt'>[],
   ): Promise<number> {
-    const ids = replacements.map((r) => r.id);
-    const dbReplacements = await this.postReplacementRepository.findBy({
+    const ids = updated.map((r) => r.id);
+    const stored = await this.postReplacementRepository.findBy({
       id: In(ids),
     });
 
     const dbUpdatedAtMap = new Map(
-      dbReplacements.map((r) => [r.id, r.updatedAt.toISOString()]),
+      stored.map((r) => [r.id, r.updatedAt.toISOString()]),
     );
 
     let count = 0;
-    for (const replacement of replacements) {
+    for (const replacement of updated) {
       const dbUpdatedAt = dbUpdatedAtMap.get(replacement.id);
       if (dbUpdatedAt && dbUpdatedAt !== replacement.updatedAt.toISOString()) {
         count++;

@@ -1,23 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { TicketStatus } from 'src/api/e621';
 import { DateRange } from 'src/common';
-import { LessThan, Not, Repository } from 'typeorm';
+import { In, MoreThanOrEqual, Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
-
-export class FindIncompleteParams {
-  constructor(value?: FindIncompleteParams) {
-    if (value) {
-      Object.assign(this, value);
-    }
-  }
-
-  /**
-   * Minimum age of the cached data in milliseconds.
-   */
-  staleness?: number;
-}
 
 @Injectable()
 export class TicketSyncService {
@@ -26,23 +12,38 @@ export class TicketSyncService {
     private readonly ticketRepository: Repository<TicketEntity>,
   ) {}
 
-  async findIncomplete(
-    params?: FindIncompleteParams,
-  ): Promise<TicketEntity['id'][]> {
-    return this.ticketRepository
-      .find({
-        where: {
-          status: Not(TicketStatus.approved),
-          cache: params?.staleness
-            ? {
-                refreshedAt: LessThan(new Date(Date.now() - params.staleness)),
-              }
-            : undefined,
-        },
-        select: ['id'],
-        relations: ['cache'],
-      })
-      .then((tickets) => tickets.map((ticket) => ticket.id));
+  firstFromId(id: number) {
+    return this.ticketRepository.findOne({
+      where: {
+        id: MoreThanOrEqual(id),
+      },
+      order: {
+        id: 'ASC',
+      },
+    });
+  }
+
+  async countUpdated(
+    updated: Pick<TicketEntity, 'id' | 'updatedAt'>[],
+  ): Promise<number> {
+    const ids = updated.map((r) => r.id);
+    const stored = await this.ticketRepository.findBy({
+      id: In(ids),
+    });
+
+    const dbUpdatedAtMap = new Map(
+      stored.map((r) => [r.id, r.updatedAt.toISOString()]),
+    );
+
+    let count = 0;
+    for (const replacement of updated) {
+      const dbUpdatedAt = dbUpdatedAtMap.get(replacement.id);
+      if (dbUpdatedAt && dbUpdatedAt !== replacement.updatedAt.toISOString()) {
+        count++;
+      }
+    }
+
+    return count;
   }
 
   async findReporters(range?: DateRange): Promise<number[]> {
