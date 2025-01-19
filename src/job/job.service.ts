@@ -22,8 +22,21 @@ export class JobService {
       }
     }
 
+    // limit the queue to 1000 items to prevent potential infinite backlog:
+    if (this.queue.length >= 1000) {
+      this.logger.warn(
+        `Queue is full. Skipping job "${job.title}" with key "${job.key}".`,
+      );
+      return;
+    }
     this.queue.push(job as Job<unknown>);
+
+    // limit the jobs array to 5000 items to prevent outrageous memory usage:
+    if (this.jobs.length >= 5000) {
+      this.jobs = this.jobs.slice(-5000);
+    }
     this.jobs.push(job as Job<unknown>);
+
     this.logger.log(
       `[#${job.id}] [${job.title}] added to the queue. (${this.queue.length} jobs in queue)`,
     );
