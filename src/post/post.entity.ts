@@ -1,4 +1,5 @@
 import { Post, PostRating, Tags } from 'src/api/e621';
+import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
@@ -33,10 +34,10 @@ export class PostEntity extends LabelLink {
   @PrimaryColumn({ type: 'int' })
   id: number;
 
-  @Column({ type: 'datetime' })
+  @DateTimeColumn()
   createdAt: Date;
 
-  @Column({ type: 'datetime' })
+  @DateTimeColumn()
   updatedAt: Date;
 
   @Column({ type: 'text', nullable: true })

@@ -1,7 +1,7 @@
 import { ModAction, ModActionAction } from 'src/api';
+import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
-
 @Entity('mod_actions')
 @Index(['action', 'createdAt'])
 export class ModActionEntity extends LabelLink {
@@ -16,10 +16,10 @@ export class ModActionEntity extends LabelLink {
   @Column({ type: 'int' })
   creatorId: number;
 
-  @Column({ type: 'datetime' })
+  @DateTimeColumn()
   createdAt: Date;
 
-  @Column({ type: 'datetime' })
+  @DateTimeColumn()
   updatedAt: Date;
 
   // We intentionally use a text instead of an enum here, because mod actions can be added or removed over time.

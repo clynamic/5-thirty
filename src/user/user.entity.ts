@@ -1,4 +1,5 @@
 import { User } from 'src/api/e621';
+import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
@@ -36,7 +37,7 @@ export class UserEntity extends LabelLink {
   @Column({ type: 'boolean' })
   canUploadFree: boolean;
 
-  @Column({ type: 'datetime' })
+  @DateTimeColumn()
   createdAt: Date;
 }
 

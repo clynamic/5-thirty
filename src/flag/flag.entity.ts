@@ -1,4 +1,5 @@
 import { PostFlag, PostFlagType } from 'src/api';
+import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
@@ -28,11 +29,11 @@ export class FlagEntity extends LabelLink {
   @Column({ type: 'simple-enum', enum: PostFlagType })
   type: PostFlagType;
 
-  @Column({ type: 'datetime' })
+  @DateTimeColumn()
   @Index()
   createdAt: Date;
 
-  @Column({ type: 'datetime' })
+  @DateTimeColumn()
   updatedAt: Date;
 }
 

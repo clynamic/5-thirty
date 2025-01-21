@@ -1,10 +1,5 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { CreateDateTimeColumn } from 'src/common';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 /**
  * A Permit is a computed record that represents that a Post is not in Pending status.
@@ -40,6 +35,6 @@ export class PermitEntity {
    *
    * This is usually whenever the server runs a sync job.
    */
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateTimeColumn()
   createdAt: Date;
 }

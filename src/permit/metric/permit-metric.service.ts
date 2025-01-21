@@ -33,10 +33,14 @@ export class PermitMetricService {
         'permit',
         'permit.postId = post_version.post_id',
       )
-      .getRawMany<{ updated_at: string }>()
+      .getRawMany<{ updated_at: Date | string }>()
       .then((results) =>
         results.map((result) => ({
-          updatedAt: new Date(result.updated_at.replace(' ', 'T') + 'Z'),
+          updatedAt:
+            // TODO: implement this more elegantly
+            result.updated_at instanceof Date
+              ? result.updated_at
+              : new Date(result.updated_at.replace(' ', 'T') + 'Z'),
         })),
       );
 

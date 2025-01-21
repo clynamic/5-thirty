@@ -1,10 +1,5 @@
-import {
-  Entity,
-  JoinColumn,
-  OneToOne,
-  PrimaryColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { UpdateDateTimeColumn } from 'src/common';
+import { Entity, JoinColumn, OneToOne, PrimaryColumn } from 'typeorm';
 
 export enum ItemType {
   approvals = 'approvals',
@@ -34,7 +29,7 @@ export class LabelEntity {
   @PrimaryColumn({ type: 'text' })
   id: string;
 
-  @UpdateDateColumn({ type: 'datetime' })
+  @UpdateDateTimeColumn()
   refreshedAt: Date;
 }
 

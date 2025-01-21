@@ -1,4 +1,5 @@
 import { Approval } from 'src/api/e621';
+import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
@@ -19,7 +20,7 @@ export class ApprovalEntity extends LabelLink {
   @Column({ type: 'int' })
   userId: number;
 
-  @Column({ type: 'datetime' })
+  @DateTimeColumn()
   @Index()
   createdAt: Date;
 }

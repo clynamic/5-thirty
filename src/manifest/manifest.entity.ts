@@ -1,4 +1,5 @@
 import { DateRange, WithDate, WithId } from 'src/common';
+import { DateTimeColumn } from 'src/common';
 import { ItemType } from 'src/label/label.entity';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -14,13 +15,13 @@ export class ManifestEntity {
   @Column({ type: 'simple-enum', enum: ItemType })
   type: ItemType;
 
-  @Column({ type: 'datetime' })
+  @DateTimeColumn()
   startDate: Date;
 
-  @Column({ type: 'datetime' })
+  @DateTimeColumn()
   endDate: Date;
 
-  @Column({ type: 'datetime', nullable: true })
+  @DateTimeColumn({ nullable: true })
   refreshedAt?: Date;
 
   get range(): DateRange {

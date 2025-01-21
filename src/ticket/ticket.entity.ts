@@ -1,4 +1,5 @@
 import { Ticket, TicketQtype, TicketStatus } from 'src/api/e621';
+import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
@@ -43,11 +44,11 @@ export class TicketEntity extends LabelLink {
   @Index()
   status: TicketStatus;
 
-  @Column({ type: 'datetime' })
+  @DateTimeColumn()
   @Index()
   createdAt: Date;
 
-  @Column({ type: 'datetime' })
+  @DateTimeColumn()
   updatedAt: Date;
 }
 

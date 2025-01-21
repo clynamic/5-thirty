@@ -39,9 +39,9 @@ export class PostMetricService {
     const posts = await this.postVersionRepository
       .createQueryBuilder('post_version')
       .select('post_version.post_id', 'post_id')
-      .addSelect('MAX(approval.createdAt)', 'approval_date')
-      .addSelect('MAX(flag.createdAt)', 'deletion_date')
-      .addSelect('MAX(permit.createdAt)', 'permit_date')
+      .addSelect('MAX(approval.created_at)', 'approval_date')
+      .addSelect('MAX(flag.created_at)', 'deletion_date')
+      .addSelect('MAX(permit.created_at)', 'permit_date')
       .leftJoin(
         this.approvalRepository.metadata.tableName,
         'approval',
@@ -110,9 +110,9 @@ export class PostMetricService {
     const posts = await this.postVersionRepository
       .createQueryBuilder('post_version')
       .select('post_version.post_id', 'post_id')
-      .addSelect('post_version.updated_at', 'updated_at')
-      .addSelect('MAX(approval.createdAt)', 'approval_date')
-      .addSelect('MAX(flag.createdAt)', 'deletion_date')
+      .addSelect('MAX(post_version.updated_at)', 'updated_at')
+      .addSelect('MAX(approval.created_at)', 'approval_date')
+      .addSelect('MAX(flag.created_at)', 'deletion_date')
       .leftJoin(
         this.approvalRepository.metadata.tableName,
         'approval',
@@ -131,10 +131,10 @@ export class PostMetricService {
       )
       .where(
         new Brackets((qb) => {
-          qb.where('approval.createdAt BETWEEN :start AND :end', {
+          qb.where('approval.created_at BETWEEN :start AND :end', {
             start: range.startDate!.toISOString(),
             end: range.endDate!.toISOString(),
-          }).orWhere('flag.createdAt BETWEEN :start AND :end', {
+          }).orWhere('flag.created_at BETWEEN :start AND :end', {
             start: range.startDate!.toISOString(),
             end: range.endDate!.toISOString(),
           });
