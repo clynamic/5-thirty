@@ -23,7 +23,9 @@ export function constructFirstFromId<T extends WithId>(
 export function constructCountUpdated<T extends WithId & WithDate>(
   repository: Repository<T>,
 ) {
-  return async function (updated: T[]): Promise<number> {
+  return async function (
+    updated: (Pick<T, 'id'> & WithDate)[],
+  ): Promise<number> {
     const ids = updated.map((r) => r.id);
     const stored = await repository.findBy({
       id: In(ids),
