@@ -17,7 +17,7 @@ export const AppDataSourceOptions = {
     process.env['DB_NAME'] ||
     (dbType === 'sqlite' ? `${dataDir}/db.sqlite` : undefined),
   entities: ['**/*.entity.js'],
-  migrations: ['src/migration/*.js'],
+  migrations: [`src/migration/${dbType}/*.js`],
   migrationsRun: process.env['NODE_ENV'] === 'production',
   synchronize: process.env['NODE_ENV'] !== 'production',
   namingStrategy: new SnakeNamingStrategy(),

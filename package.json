@@ -12,6 +12,7 @@
     "lint": "eslint src --fix",
     "format": "prettier --write src",
     "typeorm": "typeorm-ts-node-commonjs",
+    "migrate": "typeorm-ts-node-commonjs migration:generate -d src/data-source.ts",
     "generate": "orval"
   },
   "dependencies": {

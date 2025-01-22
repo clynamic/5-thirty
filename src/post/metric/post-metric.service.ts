@@ -60,8 +60,8 @@ export class PostMetricService {
         'post_version.post_id = permit.post_id',
       )
       .where('post_version.updated_at BETWEEN :start AND :end', {
-        start: range.startDate!.toISOString(),
-        end: range.endDate!.toISOString(),
+        start: range.startDate,
+        end: range.endDate,
       })
       .orWhere(
         new Brackets((qb) => {
@@ -133,11 +133,11 @@ export class PostMetricService {
       .where(
         new Brackets((qb) => {
           qb.where('approval.created_at BETWEEN :start AND :end', {
-            start: range.startDate!.toISOString(),
-            end: range.endDate!.toISOString(),
+            start: range.startDate,
+            end: range.endDate,
           }).orWhere('flag.created_at BETWEEN :start AND :end', {
-            start: range.startDate!.toISOString(),
-            end: range.endDate!.toISOString(),
+            start: range.startDate,
+            end: range.endDate,
           });
         }),
       )
@@ -147,7 +147,7 @@ export class PostMetricService {
             .andWhere('approval.post_id IS NULL')
             .andWhere('flag.id IS NULL')
             .andWhere('post_version.updated_at < :end', {
-              end: range.endDate!.toISOString(),
+              end: range.endDate,
             });
         }),
       )

@@ -1,20 +1,29 @@
-import { CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { CreateDateColumn, DataSource, UpdateDateColumn } from 'typeorm';
 
 import { DefaultColumn, MetaColumn } from './meta-column';
 
+const resolveDatetimeColumnForDataSource = (dataSource: DataSource) => {
+  switch (dataSource.options.type) {
+    case 'sqlite':
+      return 'datetime';
+    case 'postgres':
+      return 'timestamptz';
+    default:
+      throw new Error('Unsupported database type');
+  }
+};
+
 export const DateTimeColumn = MetaColumn(DefaultColumn, (dataSource) => {
-  const isSQLite = dataSource.options.type === 'sqlite';
   return {
-    type: isSQLite ? 'datetime' : 'timestamp',
+    type: resolveDatetimeColumnForDataSource(dataSource),
   };
 });
 
 export const CreateDateTimeColumn = MetaColumn(
   CreateDateColumn,
   (dataSource) => {
-    const isSQLite = dataSource.options.type === 'sqlite';
     return {
-      type: isSQLite ? 'datetime' : 'timestamp',
+      type: resolveDatetimeColumnForDataSource(dataSource),
     };
   },
 );
@@ -22,9 +31,8 @@ export const CreateDateTimeColumn = MetaColumn(
 export const UpdateDateTimeColumn = MetaColumn(
   UpdateDateColumn,
   (dataSource) => {
-    const isSQLite = dataSource.options.type === 'sqlite';
     return {
-      type: isSQLite ? 'datetime' : 'timestamp',
+      type: resolveDatetimeColumnForDataSource(dataSource),
     };
   },
 );
