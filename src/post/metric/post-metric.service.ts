@@ -7,6 +7,7 @@ import { ApprovalEntity } from 'src/approval/approval.entity';
 import {
   collapseTimeScaleDuration,
   convertKeysToCamelCase,
+  convertKeysToDate,
   DateRange,
   generateSeriesCountPoints,
   PartialDateRange,
@@ -153,11 +154,21 @@ export class PostMetricService {
       .groupBy('post_version.post_id')
       .getRawMany<{
         post_id: number;
-        updated_at: Date;
-        approval_date: Date | null;
-        deletion_date: Date | null;
+        updated_at: string;
+        approval_date: string | null;
+        deletion_date: string | null;
       }>()
-      .then((results) => results.map(convertKeysToCamelCase));
+      .then((results) =>
+        results
+          .map(convertKeysToCamelCase)
+          .map((result) =>
+            convertKeysToDate(result, [
+              'updatedAt',
+              'approvalDate',
+              'deletionDate',
+            ]),
+          ),
+      );
 
     const scale = collapseTimeScaleDuration(range.scale!);
 

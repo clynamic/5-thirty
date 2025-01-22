@@ -7,6 +7,8 @@ import {
   endOfMonth,
   endOfWeek,
   endOfYear,
+  isValid,
+  parseISO,
   startOfDay,
   startOfDecade,
   startOfHour,
@@ -85,3 +87,35 @@ export const collapseTimeScaleDuration = (scale: TimeScale): keyof Duration => {
     )[scale] || 'days'
   );
 };
+
+export function convertKeysToDate<
+  T extends Record<string, any>,
+  K extends keyof T,
+>(
+  obj: T,
+  keys: K[],
+): {
+  [P in keyof T]: P extends K
+    ? T[P] extends string
+      ? Date
+      : T[P] extends string | null
+        ? Date | null
+        : T[P]
+    : T[P];
+} {
+  return Object.entries(obj).reduce((acc, [key, value]) => {
+    if (keys.includes(key as K)) {
+      (acc as any)[key] =
+        value instanceof Date
+          ? value
+          : value === null
+            ? null
+            : isValid(parseISO(value))
+              ? parseISO(value)
+              : value;
+    } else {
+      (acc as any)[key] = value;
+    }
+    return acc;
+  }, {} as any);
+}
