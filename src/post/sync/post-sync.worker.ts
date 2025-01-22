@@ -22,7 +22,7 @@ export class PostSyncWorker {
 
   private readonly logger = new Logger(PostSyncWorker.name);
 
-  @Cron(CronExpression.EVERY_HOUR)
+  @Cron(CronExpression.EVERY_10_MINUTES)
   async fetchAvatars() {
     this.jobService.add(
       new Job({
