@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DateRange } from 'src/common';
-import { In, MoreThanOrEqual, Repository } from 'typeorm';
+import {
+  constructCountUpdated,
+  constructFirstFromId,
+  DateRange,
+} from 'src/common';
+import { Repository } from 'typeorm';
 
 import { TicketEntity } from '../ticket.entity';
 
@@ -11,40 +15,6 @@ export class TicketSyncService {
     @InjectRepository(TicketEntity)
     private readonly ticketRepository: Repository<TicketEntity>,
   ) {}
-
-  firstFromId(id: number) {
-    return this.ticketRepository.findOne({
-      where: {
-        id: MoreThanOrEqual(id),
-      },
-      order: {
-        id: 'ASC',
-      },
-    });
-  }
-
-  async countUpdated(
-    updated: Pick<TicketEntity, 'id' | 'updatedAt'>[],
-  ): Promise<number> {
-    const ids = updated.map((r) => r.id);
-    const stored = await this.ticketRepository.findBy({
-      id: In(ids),
-    });
-
-    const dbUpdatedAtMap = new Map(
-      stored.map((r) => [r.id, r.updatedAt.toISOString()]),
-    );
-
-    let count = 0;
-    for (const replacement of updated) {
-      const dbUpdatedAt = dbUpdatedAtMap.get(replacement.id);
-      if (dbUpdatedAt && dbUpdatedAt !== replacement.updatedAt.toISOString()) {
-        count++;
-      }
-    }
-
-    return count;
-  }
 
   async findReporters(range?: DateRange): Promise<number[]> {
     return (
@@ -62,6 +32,9 @@ export class TicketSyncService {
         }>()
     ).map((row) => Number(row.user_id));
   }
+
+  firstFromId = constructFirstFromId(this.ticketRepository);
+  countUpdated = constructCountUpdated(this.ticketRepository);
 
   save = this.ticketRepository.save.bind(this.ticketRepository);
 }

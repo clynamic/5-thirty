@@ -11,3 +11,4 @@ export * from './loop';
 export * from './meta-column';
 export * from './pagination.dto';
 export * from './raw';
+export * from './repository';
