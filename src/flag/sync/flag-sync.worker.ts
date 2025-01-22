@@ -138,4 +138,92 @@ export class FlagSyncWorker {
       }),
     );
   }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async runRefresh() {
+    this.jobService.add(
+      new Job({
+        title: 'Flag Refresh Sync',
+        key: `/${ItemType.flags}/refresh`,
+        execute: async ({ cancelToken }) => {
+          const axiosConfig = this.authService.getServerAxiosConfig();
+
+          const manifests = await this.manifestService.list(undefined, {
+            type: [ItemType.flags],
+          });
+
+          for (const manifest of manifests) {
+            let refreshDate = manifest.refreshedAt;
+
+            if (!refreshDate) {
+              refreshDate = (
+                await this.flagSyncService.firstFromId(manifest.lowerId)
+              )?.updatedAt;
+            }
+
+            if (!refreshDate) continue;
+
+            const now = new Date();
+            const results: PostFlag[] = [];
+            const loopGuard = new LoopGuard();
+            let page = 1;
+
+            while (true) {
+              cancelToken.ensureRunning();
+
+              const rangeString = new PartialDateRange({
+                startDate: refreshDate,
+              }).toE621RangeString();
+              const idString = getIdRangeString(
+                manifest.lowerId,
+                manifest.upperId,
+              );
+
+              this.logger.log(
+                `Fetching flags for refresh date ${rangeString} with ids ${idString}`,
+              );
+
+              const result = await rateLimit(
+                postFlags(
+                  loopGuard.iter({
+                    page,
+                    limit: MAX_API_LIMIT,
+                    'search[updated_at]': rangeString,
+                    'search[id]': idString,
+                    'search[order]': 'id',
+                  }),
+                  axiosConfig,
+                ),
+              );
+
+              results.push(...result);
+
+              const updated = await this.flagSyncService.countUpdated(
+                result.map(
+                  (flag) =>
+                    new FlagEntity({
+                      ...convertKeysToCamelCase(flag),
+                      cache: new FlagLabelEntity(flag),
+                    }),
+                ),
+              );
+
+              this.logger.log(`Found ${updated} updated flags`);
+
+              const exhausted = result.length < MAX_API_LIMIT;
+
+              if (exhausted) break;
+
+              page++;
+            }
+
+            await this.manifestService.save({
+              id: manifest.id,
+              refreshedAt: now,
+            });
+          }
+        },
+      }),
+    );
+  }
 }
