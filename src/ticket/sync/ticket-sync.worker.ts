@@ -205,6 +205,10 @@ export class TicketSyncWorker {
               results.push(...result);
 
               const updated = await this.ticketSyncService.countUpdated(
+                result.map(convertKeysToCamelCase),
+              );
+
+              await this.ticketSyncService.save(
                 result.map(
                   (ticket) =>
                     new TicketEntity({

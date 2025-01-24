@@ -198,6 +198,10 @@ export class FlagSyncWorker {
               results.push(...result);
 
               const updated = await this.flagSyncService.countUpdated(
+                result.map(convertKeysToCamelCase),
+              );
+
+              this.flagSyncService.save(
                 result.map(
                   (flag) =>
                     new FlagEntity({
