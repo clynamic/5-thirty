@@ -1080,6 +1080,368 @@ paths:
           description: Moderation action not found
         '500':
           description: Server error
+  /bulk_update_requests.json:
+    get:
+      operationId: getBulkUpdateRequests
+      tags:
+        - bulk_update_requests
+      summary: Get a list of bulk update requests
+      description: Returns a list of bulk update requests filtered by various criteria.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: The page number to retrieve
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          description: The number of bulk update requests to retrieve per page
+          schema:
+            type: integer
+        - name: search[user_name]
+          in: query
+          required: false
+          description: Filter by the username of the creator
+          schema:
+            type: string
+        - name: search[approver_name]
+          in: query
+          required: false
+          description: Filter by the username of the approver
+          schema:
+            type: string
+        - name: search[title_matches]
+          in: query
+          required: false
+          description: Filter by the title of the request
+          schema:
+            type: string
+        - name: search[script_matches]
+          in: query
+          required: false
+          description: Filter by script content in the request
+          schema:
+            type: string
+        - name: search[status]
+          in: query
+          required: false
+          description: Filter by the status of the request
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+        - name: search[order]
+          in: query
+          required: false
+          description: Order the results by a specific field
+          schema:
+            type: string
+            enum: [status_desc, updated_at_desc, id_desc, id_asc]
+        - name: search[created_at]
+          in: query
+          required: false
+          description: Filter by the creation date of the request
+          schema:
+            type: string
+        - name: search[updated_at]
+          in: query
+          required: false
+          description: Filter by the last update date of the request
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of bulk update requests matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BulkUpdateRequest'
+        '400':
+          description: Invalid request parameters
+        '500':
+          description: Server error
+  /bulk_update_requests/{id}.json:
+    get:
+      operationId: getBulkUpdateRequest
+      tags:
+        - bulk_update_requests
+      summary: Get a bulk update request by ID
+      description: Returns detailed information about a specific bulk update request identified by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique ID of the bulk update request to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response containing bulk update request details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkUpdateRequest'
+        '404':
+          description: Bulk update request not found
+        '500':
+          description: Server error
+  /tag_aliases.json:
+    get:
+      operationId: getTagAliases
+      tags:
+        - tag_aliases
+      summary: Get a list of tag aliases
+      description: Returns a list of tag aliases filtered by various criteria.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: The page number to retrieve
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          description: The number of tag aliases to retrieve per page
+          schema:
+            type: integer
+        - name: search[name_matches]
+          in: query
+          required: false
+          description: Filter by matching names
+          schema:
+            type: string
+        - name: search[antecedent_name]
+          in: query
+          required: false
+          description: Filter by the antecedent name of the alias
+          schema:
+            type: string
+        - name: search[consequent_name]
+          in: query
+          required: false
+          description: Filter by the consequent name of the alias
+          schema:
+            type: string
+        - name: search[creator_name]
+          in: query
+          required: false
+          description: Filter by the creator's username
+          schema:
+            type: string
+        - name: search[approver_name]
+          in: query
+          required: false
+          description: Filter by the approver's username
+          schema:
+            type: string
+        - name: search[antecedent_tag_category]
+          in: query
+          required: false
+          description: Filter by the tag category of the antecedent tag
+          schema:
+            type: integer
+        - name: search[consequent_tag_category]
+          in: query
+          required: false
+          description: Filter by the tag category of the consequent tag
+          schema:
+            type: integer
+        - name: search[status]
+          in: query
+          required: false
+          description: Filter by the status of the tag alias
+          schema:
+            type: string
+            enum:
+              [Approved, Active, Pending, Deleted, Retired, Processing, Queued]
+        - name: search[order]
+          in: query
+          required: false
+          description: Order the results by a specific field
+          schema:
+            type: string
+            enum: [status, created_at, updated_at, name, tag_count]
+        - name: search[created_at]
+          in: query
+          required: false
+          description: Filter by the creation date of the request
+          schema:
+            type: string
+        - name: search[updated_at]
+          in: query
+          required: false
+          description: Filter by the last update date of the request
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of tag aliases matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TagAlias'
+        '400':
+          description: Invalid request parameters
+        '500':
+          description: Server error
+  /tag_aliases/{id}.json:
+    get:
+      operationId: getTagAlias
+      tags:
+        - tag_aliases
+      summary: Get a tag alias by ID
+      description: Returns detailed information about a specific tag alias identified by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique ID of the tag alias to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response containing tag alias details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagAlias'
+        '404':
+          description: Tag alias not found
+        '500':
+          description: Server error
+  /tag_implications.json:
+    get:
+      operationId: getTagImplications
+      tags:
+        - tag_implications
+      summary: Get a list of tag implications
+      description: Returns a list of tag implications filtered by various criteria.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: The page number to retrieve
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          description: The number of tag implications to retrieve per page
+          schema:
+            type: integer
+        - name: search[name_matches]
+          in: query
+          required: false
+          description: Filter by matching names
+          schema:
+            type: string
+        - name: search[antecedent_name]
+          in: query
+          required: false
+          description: Filter by the antecedent name of the implication
+          schema:
+            type: string
+        - name: search[consequent_name]
+          in: query
+          required: false
+          description: Filter by the consequent name of the implication
+          schema:
+            type: string
+        - name: search[creator_name]
+          in: query
+          required: false
+          description: Filter by the creator's username
+          schema:
+            type: string
+        - name: search[approver_name]
+          in: query
+          required: false
+          description: Filter by the approver's username
+          schema:
+            type: string
+        - name: search[antecedent_tag_category]
+          in: query
+          required: false
+          description: Filter by the tag category of the antecedent tag
+          schema:
+            type: integer
+        - name: search[consequent_tag_category]
+          in: query
+          required: false
+          description: Filter by the tag category of the consequent tag
+          schema:
+            type: integer
+        - name: search[status]
+          in: query
+          required: false
+          description: Filter by the status of the tag implication
+          schema:
+            type: string
+            enum:
+              [Approved, Active, Pending, Deleted, Retired, Processing, Queued]
+        - name: search[order]
+          in: query
+          required: false
+          description: Order the results by a specific field
+          schema:
+            type: string
+            enum: [status]
+        - name: search[created_at]
+          in: query
+          required: false
+          description: Filter by the creation date of the request
+          schema:
+            type: string
+        - name: search[updated_at]
+          in: query
+          required: false
+          description: Filter by the last update date of the request
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of tag implications matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TagImplication'
+        '400':
+          description: Invalid request parameters
+        '500':
+          description: Server error
+  /tag_implications/{id}.json:
+    get:
+      operationId: getTagImplication
+      tags:
+        - tag_implications
+      summary: Get a tag implication by ID
+      description: Returns detailed information about a specific tag implication identified by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique ID of the tag implication to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response containing tag implication details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagImplication'
+        '404':
+          description: Tag implication not found
+        '500':
+          description: Server error
 
 components:
   schemas:
@@ -2087,3 +2449,153 @@ components:
           description: Additional details or parameters related to the moderation action
           additionalProperties:
             type: string
+    BulkUpdateRequest:
+      type: object
+      required:
+        - id
+        - user_id
+        - forum_topic_id
+        - script
+        - status
+        - created_at
+        - updated_at
+        - title
+      properties:
+        id:
+          type: integer
+          description: The unique ID of the bulk update request
+        user_id:
+          type: integer
+          description: The ID of the user who created the request
+        forum_topic_id:
+          type: integer
+          description: The ID of the forum topic associated with the request
+        script:
+          type: string
+          description: The script content of the bulk update request
+        status:
+          type: string
+          description: The current status of the request
+          enum: [pending, approved, rejected]
+        created_at:
+          type: string
+          description: The timestamp when the request was created
+        updated_at:
+          type: string
+          description: The timestamp when the request was last updated
+        approver_id:
+          type: integer
+          nullable: true
+          description: The ID of the user who approved the request, if applicable
+        forum_post_id:
+          type: integer
+          description: The ID of the forum post associated with the request
+        title:
+          type: string
+          description: The title of the bulk update request
+    TagAlias:
+      type: object
+      required:
+        - id
+        - antecedent_name
+        - consequent_name
+        - status
+        - created_at
+        - updated_at
+        - creator_id
+      properties:
+        id:
+          type: integer
+          description: The unique ID of the tag alias
+        antecedent_name:
+          type: string
+          description: The name of the antecedent tag
+        consequent_name:
+          type: string
+          description: The name of the consequent tag
+        status:
+          type: string
+          description: The current status of the tag alias
+          enum:
+            [approved, active, pending, deleted, retired, processing, queued]
+        created_at:
+          type: string
+          format: date-time
+          description: The timestamp when the tag alias was created
+        updated_at:
+          type: string
+          format: date-time
+          description: The timestamp when the tag alias was last updated
+        reason:
+          type: string
+          description: The reason for creating the tag alias
+        creator_id:
+          type: integer
+          description: The ID of the user who created the tag alias
+        approver_id:
+          type: integer
+          nullable: true
+          description: The ID of the user who approved the tag alias, if applicable
+        forum_post_id:
+          type: integer
+          description: The ID of the associated forum post
+        forum_topic_id:
+          type: integer
+          description: The ID of the associated forum topic
+        post_count:
+          type: integer
+          description: The number of posts associated with the tag alias
+    TagImplication:
+      type: object
+      required:
+        - id
+        - antecedent_name
+        - consequent_name
+        - status
+        - created_at
+        - updated_at
+        - creator_id
+      properties:
+        id:
+          type: integer
+          description: The unique ID of the tag implication
+        antecedent_name:
+          type: string
+          description: The name of the antecedent tag
+        consequent_name:
+          type: string
+          description: The name of the consequent tag
+        status:
+          type: string
+          description: The current status of the tag implication
+          enum:
+            [approved, active, pending, deleted, retired, processing, queued]
+        created_at:
+          type: string
+          format: date-time
+          description: The timestamp when the tag implication was created
+        updated_at:
+          type: string
+          format: date-time
+          description: The timestamp when the tag implication was last updated
+        reason:
+          type: string
+          description: The reason for creating the tag implication
+        creator_id:
+          type: integer
+          description: The ID of the user who created the tag implication
+        approver_id:
+          type: integer
+          nullable: true
+          description: The ID of the user who approved the tag implication, if applicable
+        forum_post_id:
+          type: integer
+          description: The ID of the associated forum post
+        forum_topic_id:
+          type: integer
+          description: The ID of the associated forum topic
+        descendant_names:
+          type: array
+          items:
+            type: string
+          description: A list of descendant tag names derived from this implication

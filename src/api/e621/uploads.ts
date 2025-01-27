@@ -5,8 +5,8 @@
  * An API for accessing user information and other resources on e621 and e926.
  * OpenAPI spec version: 1.0.0
  */
-import { makeRequest } from '../http/axios';
 import type { GetUploadsParams, Upload } from './model';
+import { makeRequest } from '../http/axios';
 
 type SecondParameter<T extends (...args: any) => any> = Parameters<T>[1];
 
