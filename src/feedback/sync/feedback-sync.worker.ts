@@ -95,7 +95,7 @@ export class FeedbackSyncWorker {
                   (feedback) =>
                     new FeedbackEntity({
                       ...convertKeysToCamelCase(feedback),
-                      cache: new FeedbackLabelEntity(feedback),
+                      label: new FeedbackLabelEntity(feedback),
                     }),
                 ),
               );

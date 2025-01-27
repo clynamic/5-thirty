@@ -90,7 +90,7 @@ export class FlagSyncWorker {
                   (flag) =>
                     new FlagEntity({
                       ...convertKeysToCamelCase(flag),
-                      cache: new FlagLabelEntity(flag),
+                      label: new FlagLabelEntity(flag),
                     }),
                 ),
               );
@@ -206,7 +206,7 @@ export class FlagSyncWorker {
                   (flag) =>
                     new FlagEntity({
                       ...convertKeysToCamelCase(flag),
-                      cache: new FlagLabelEntity(flag),
+                      label: new FlagLabelEntity(flag),
                     }),
                 ),
               );

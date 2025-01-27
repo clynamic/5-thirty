@@ -58,7 +58,7 @@ export class UserSyncWorker {
                 (user) =>
                   new UserEntity({
                     ...convertKeysToCamelCase(user),
-                    cache: new UserLabelEntity(user),
+                    label: new UserLabelEntity(user),
                   }),
               ),
             );
@@ -112,7 +112,7 @@ export class UserSyncWorker {
                   (user) =>
                     new UserEntity({
                       ...convertKeysToCamelCase(user),
-                      cache: new UserLabelEntity(user),
+                      label: new UserLabelEntity(user),
                     }),
                 ),
               );

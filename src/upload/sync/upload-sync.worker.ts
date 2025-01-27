@@ -105,7 +105,7 @@ export class UploadSyncWorker {
                   (postVersion) =>
                     new PostVersionEntity({
                       ...convertKeysToCamelCase(postVersion),
-                      cache: new PostVersionLabelEntity(postVersion),
+                      label: new PostVersionLabelEntity(postVersion),
                     }),
                 ),
               );

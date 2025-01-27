@@ -38,7 +38,7 @@ export class UserHeadService {
     const users = await this.userRepository.find({
       where: {
         id: In(ids),
-        cache: params?.staleness
+        label: params?.staleness
           ? {
               refreshedAt: MoreThan(
                 subMilliseconds(new Date(), params.staleness),
@@ -64,7 +64,7 @@ export class UserHeadService {
             (user) =>
               new UserEntity({
                 ...convertKeysToCamelCase(user),
-                cache: new UserLabelEntity(user),
+                label: new UserLabelEntity(user),
               }),
           ),
         );

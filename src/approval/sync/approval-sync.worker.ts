@@ -95,7 +95,7 @@ export class ApprovalSyncWorker {
                   (approval) =>
                     new ApprovalEntity({
                       ...convertKeysToCamelCase(approval),
-                      cache: new ApprovalLabelEntity(approval),
+                      label: new ApprovalLabelEntity(approval),
                     }),
                 ),
               );

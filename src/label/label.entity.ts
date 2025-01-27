@@ -36,5 +36,5 @@ export class LabelEntity {
 export class LabelLink {
   @OneToOne(() => LabelEntity, { eager: false, cascade: true })
   @JoinColumn({ name: 'label_id' })
-  cache: LabelEntity;
+  label: LabelEntity;
 }

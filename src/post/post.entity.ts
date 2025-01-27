@@ -27,7 +27,7 @@ export class PostEntity extends LabelLink {
       approverId: value.approver_id,
       tags: value.tags,
       deleted: value.flags.deleted,
-      cache: new PostLabelEntity(value),
+      label: new PostLabelEntity(value),
     });
   }
 

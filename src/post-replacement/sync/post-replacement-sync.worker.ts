@@ -93,7 +93,7 @@ export class PostReplacementSyncWorker {
                   (replacement) =>
                     new PostReplacementEntity({
                       ...convertKeysToCamelCase(replacement),
-                      cache: new PostReplacementLabelEntity(replacement),
+                      label: new PostReplacementLabelEntity(replacement),
                     }),
                 ),
               );
@@ -213,7 +213,7 @@ export class PostReplacementSyncWorker {
                   (replacement) =>
                     new PostReplacementEntity({
                       ...convertKeysToCamelCase(replacement),
-                      cache: new PostReplacementLabelEntity(replacement),
+                      label: new PostReplacementLabelEntity(replacement),
                     }),
                 ),
               );

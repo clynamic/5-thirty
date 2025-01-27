@@ -90,7 +90,7 @@ export class ModActionSyncWorker {
                   (action) =>
                     new ModActionEntity({
                       ...convertKeysToCamelCase(action),
-                      cache: new ModActionLabelEntity(action),
+                      label: new ModActionLabelEntity(action),
                     }),
                 ),
               );

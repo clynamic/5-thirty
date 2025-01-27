@@ -69,7 +69,7 @@ export class UserSyncService {
       .find({
         where: {
           id: In(users),
-          cache: {
+          label: {
             refreshedAt: MoreThanOrEqual(
               subMilliseconds(new Date(), staleness),
             ),

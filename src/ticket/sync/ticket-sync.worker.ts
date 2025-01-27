@@ -96,7 +96,7 @@ export class TicketSyncWorker {
                   (ticket) =>
                     new TicketEntity({
                       ...convertKeysToCamelCase(ticket),
-                      cache: new TicketLabelEntity(ticket),
+                      label: new TicketLabelEntity(ticket),
                     }),
                 ),
               );
@@ -213,7 +213,7 @@ export class TicketSyncWorker {
                   (ticket) =>
                     new TicketEntity({
                       ...convertKeysToCamelCase(ticket),
-                      cache: new TicketLabelEntity(ticket),
+                      label: new TicketLabelEntity(ticket),
                     }),
                 ),
               );
