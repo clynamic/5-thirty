@@ -47,7 +47,7 @@ export class UserHeadService {
           : undefined,
       },
       select: ['id', 'name', 'avatarId', 'levelString'],
-      relations: ['cache'],
+      relations: ['label'],
     });
 
     if (params?.fetchMissing) {

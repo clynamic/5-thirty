@@ -76,7 +76,7 @@ export class UserSyncService {
           },
         },
         select: ['id'],
-        relations: ['cache'],
+        relations: ['label'],
       })
       .then((ids) => users.filter((id) => !ids.some((user) => user.id === id)));
   }
