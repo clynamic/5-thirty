@@ -70,13 +70,13 @@ export const getUserAreaFromLevel = (level?: UserLevel): UserArea => {
 
 export const getActivityScore = (activity: Activity): number => {
   switch (activity) {
-    case 'ticket_handle':
+    case Activity.TicketHandle:
       return 1;
-    case 'post_approve':
+    case Activity.PostApprove:
       return 1;
-    case 'post_delete':
+    case Activity.PostDelete:
       return 1.25;
-    case 'post_replacement_approve':
+    case Activity.PostReplacementApprove:
       return 1.1;
     default:
       return 0;
