@@ -26,9 +26,12 @@ export const checkCredentials = async (
   }
 };
 
+export const encodeCredentials = (credentials: UserCredentials) =>
+  `Basic ${btoa(`${credentials.username}:${credentials.password}`)}`;
+
 export const setAxiosAuth = (credentials: UserCredentials) => {
   AXIOS_INSTANCE.defaults.headers.common['Authorization'] =
-    `Basic ${btoa(`${credentials.username}:${credentials.password}`)}`;
+    encodeCredentials(credentials);
 };
 
 export const clearAxiosAuth = () => {

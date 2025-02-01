@@ -2,8 +2,9 @@ import { AxiosResponse } from 'axios';
 import { isValid, parseISO } from 'date-fns';
 
 const deserializeDates = <T>(body: T): T => {
-  if (body === null || (typeof body !== 'object' && typeof body !== 'string'))
+  if (body === null || (typeof body !== 'object' && typeof body !== 'string')) {
     return body;
+  }
 
   if (typeof body === 'string') {
     const date = parseISO(body);
@@ -23,12 +24,17 @@ const deserializeDates = <T>(body: T): T => {
 };
 
 /**
- * Deserialize dates from string to Date.
- * Dates are expected to be in the format 'yyyy-MM-dd' or 'yyyy-MM-ddTHH:mm:ss.sssZ'.
+ * Deserialize dates from string to Date, but only if the response is JSON.
  */
 export const dateDeserializeInterceptor = (
   response: AxiosResponse,
-): AxiosResponse => ({
-  ...response,
-  data: deserializeDates(response.data),
-});
+): AxiosResponse => {
+  if (!response.headers['content-type']?.includes('application/json')) {
+    return response;
+  }
+
+  return {
+    ...response,
+    data: deserializeDates(response.data),
+  };
+};
