@@ -7,6 +7,12 @@ import {
   endOfMonth,
   endOfWeek,
   endOfYear,
+  isSameDay,
+  isSameHour,
+  isSameMinute,
+  isSameMonth,
+  isSameWeek,
+  isSameYear,
   isValid,
   parseISO,
   startOfDay,
@@ -74,6 +80,31 @@ export const endOf = (unit: TimeScale, date: Date): Date => {
       return endOfDecade(date);
     case TimeScale.All:
       return new Date(9999);
+  }
+};
+
+export const isSameOf = (
+  unit: TimeScale,
+  dateLeft: Date,
+  dateRight: Date,
+): boolean => {
+  switch (unit) {
+    case TimeScale.Minute:
+      return isSameMinute(dateLeft, dateRight);
+    case TimeScale.Hour:
+      return isSameHour(dateLeft, dateRight);
+    case TimeScale.Day:
+      return isSameDay(dateLeft, dateRight);
+    case TimeScale.Week:
+      return isSameWeek(dateLeft, dateRight);
+    case TimeScale.Month:
+      return isSameMonth(dateLeft, dateRight);
+    case TimeScale.Year:
+      return isSameYear(dateLeft, dateRight);
+    case TimeScale.Decade:
+      return isSameYear(startOfDecade(dateLeft), startOfDecade(dateRight));
+    case TimeScale.All:
+      return true;
   }
 };
 
