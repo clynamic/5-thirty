@@ -1,3 +1,5 @@
+import { PartialDateRange } from './date-range.dto';
+
 /**
  * An object with a date denoting a creation time.
  */
@@ -33,7 +35,7 @@ export const resolveWithDate = <T extends WithDate | undefined>(
 };
 
 /**
- * Finds the least recent creation date in a list of items.
+ * Finds the lowest date in a list of items.
  */
 export const findLowestDate = <T extends WithDate>(
   items: T[] | undefined,
@@ -45,7 +47,7 @@ export const findLowestDate = <T extends WithDate>(
 };
 
 /**
- * Finds the most recent creation date in a list of items.
+ * Finds the highest date in a list of items.
  */
 export const findHighestDate = <T extends WithDate>(
   items: T[] | undefined,
@@ -54,4 +56,16 @@ export const findHighestDate = <T extends WithDate>(
   return items.reduce((prev, current) =>
     resolveWithDate(prev) > resolveWithDate(current) ? prev : current,
   );
+};
+
+/**
+ * Finds the bounds of a list of items by date.
+ */
+export const findDateBounds = <T extends WithDate>(
+  items: T[] | undefined,
+): PartialDateRange => {
+  return new PartialDateRange({
+    startDate: resolveWithDate(findLowestDate(items)),
+    endDate: resolveWithDate(findHighestDate(items)),
+  });
 };

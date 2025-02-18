@@ -10,14 +10,10 @@ import { AuthService } from 'src/auth/auth.service';
 import {
   convertKeysToCamelCase,
   DateRange,
-  findContiguityGaps,
-  findHighestDate,
-  findHighestId,
-  findLowestDate,
-  findLowestId,
-  getIdRangeString,
+  logContiguityGaps,
+  logOrderFetch,
+  logOrderResult,
   LoopGuard,
-  PartialDateRange,
   rateLimit,
 } from 'src/common';
 import { Job } from 'src/job/job.entity';
@@ -51,12 +47,12 @@ export class FeedbackSyncWorker {
 
           const recentlyRange = DateRange.recentMonths();
 
-          const feedbacks = await this.manifestService.listOrdersByRange(
+          const orders = await this.manifestService.listOrdersByRange(
             ItemType.feedbacks,
             recentlyRange,
           );
 
-          for (const feedback of feedbacks) {
+          for (const order of orders) {
             const results: UserFeedback[] = [];
 
             const loopGuard = new LoopGuard();
@@ -64,16 +60,9 @@ export class FeedbackSyncWorker {
             while (true) {
               cancelToken.ensureRunning();
 
-              const dateRange = feedback.toDateRange();
-              const lowerId = feedback.lowerId;
-              const upperId = feedback.upperId;
+              const { idRange, dateRange } = order;
 
-              this.logger.log(
-                `Fetching user feedbacks for ${dateRange.toE621RangeString()} with ids ${getIdRangeString(
-                  lowerId,
-                  upperId,
-                )}`,
-              );
+              logOrderFetch(this.logger, ItemType.feedbacks, order);
 
               const result = await rateLimit(
                 userFeedbacks(
@@ -82,7 +71,7 @@ export class FeedbackSyncWorker {
                     limit: MAX_API_LIMIT,
                     'search[deleted]': GetUserFeedbacksSearchDeleted.included,
                     'search[created_at]': dateRange.toE621RangeString(),
-                    'search[id]': getIdRangeString(lowerId, upperId),
+                    'search[id]': idRange.toE621RangeString(),
                   }),
                   axiosConfig,
                 ),
@@ -100,37 +89,19 @@ export class FeedbackSyncWorker {
                 ),
               );
 
-              this.logger.log(
-                `Found ${stored.length} feedbacks with ids ${
-                  getIdRangeString(
-                    findLowestId(stored)?.id,
-                    findHighestId(stored)?.id,
-                  ) || 'none'
-                } and dates ${
-                  new PartialDateRange({
-                    startDate: findLowestDate(stored)?.createdAt,
-                    endDate: findHighestDate(stored)?.createdAt,
-                  }).toE621RangeString() || 'none'
-                }`,
-              );
+              logOrderResult(this.logger, ItemType.feedbacks, stored);
 
               const exhausted = result.length < MAX_API_LIMIT;
 
               await this.manifestService.saveResults({
                 type: ItemType.feedbacks,
-                order: feedback,
+                order: order,
                 items: stored,
                 exhausted,
               });
 
               if (exhausted) {
-                const gaps = findContiguityGaps(results);
-                if (gaps.length > 0) {
-                  this.logger.warn(
-                    `Found ${gaps.length} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
-                  );
-                }
-
+                logContiguityGaps(this.logger, ItemType.feedbacks, results);
                 break;
               }
             }

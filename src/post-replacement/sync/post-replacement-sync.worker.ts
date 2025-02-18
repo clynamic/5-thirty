@@ -6,12 +6,9 @@ import { AuthService } from 'src/auth/auth.service';
 import {
   convertKeysToCamelCase,
   DateRange,
-  findContiguityGaps,
-  findHighestDate,
-  findHighestId,
-  findLowestDate,
-  findLowestId,
-  getIdRangeString,
+  logContiguityGaps,
+  logOrderFetch,
+  logOrderResult,
   LoopGuard,
   PartialDateRange,
   rateLimit,
@@ -62,24 +59,17 @@ export class PostReplacementSyncWorker {
             while (true) {
               cancelToken.ensureRunning();
 
-              const dateRange = order.toDateRange();
-              const lowerId = order.lowerId;
-              const upperId = order.upperId;
+              const { idRange, dateRange } = order;
 
-              const rangeString = dateRange.toE621RangeString();
-              const idString = getIdRangeString(lowerId, upperId);
-
-              this.logger.log(
-                `Fetching post replacements for ${rangeString} with ids ${idString}`,
-              );
+              logOrderFetch(this.logger, ItemType.postReplacements, order);
 
               const result = await rateLimit(
                 postReplacements(
                   loopGuard.iter({
                     page: 1,
                     limit: MAX_API_LIMIT,
-                    'search[created_at]': rangeString,
-                    'search[id]': idString,
+                    'search[created_at]': dateRange.toE621RangeString(),
+                    'search[id]': idRange.toE621RangeString(),
                     'search[order]': 'id',
                   }),
                   axiosConfig,
@@ -98,19 +88,7 @@ export class PostReplacementSyncWorker {
                 ),
               );
 
-              this.logger.log(
-                `Found ${result.length} post replacements with ids ${
-                  getIdRangeString(
-                    findLowestId(result)?.id,
-                    findHighestId(result)?.id,
-                  ) || 'none'
-                } and dates ${
-                  new PartialDateRange({
-                    startDate: findLowestDate(stored)?.createdAt,
-                    endDate: findHighestDate(stored)?.createdAt,
-                  }).toE621RangeString() || 'none'
-                }`,
-              );
+              logOrderResult(this.logger, ItemType.postReplacements, stored);
 
               const exhausted = result.length < MAX_API_LIMIT;
 
@@ -122,12 +100,11 @@ export class PostReplacementSyncWorker {
               });
 
               if (exhausted) {
-                const gaps = findContiguityGaps(results);
-                if (gaps.length > 0) {
-                  this.logger.warn(
-                    `Found ${gaps.length} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
-                  );
-                }
+                logContiguityGaps(
+                  this.logger,
+                  ItemType.postReplacements,
+                  stored,
+                );
                 break;
               }
             }
@@ -179,10 +156,7 @@ export class PostReplacementSyncWorker {
               const rangeString = new PartialDateRange({
                 startDate: refreshDate,
               }).toE621RangeString();
-              const idString = getIdRangeString(
-                manifest.lowerId,
-                manifest.upperId,
-              );
+              const idString = manifest.idRange.toE621RangeString();
 
               this.logger.log(
                 `Fetching post replacements for refresh date ${rangeString} with ids ${idString}`,

@@ -7,11 +7,9 @@ import { AuthService } from 'src/auth/auth.service';
 import {
   convertKeysToCamelCase,
   DateRange,
-  findContiguityGaps,
-  findHighestId,
-  findLowestDate,
-  findLowestId,
-  getIdRangeString,
+  logContiguityGaps,
+  logOrderFetch,
+  logOrderResult,
   LoopGuard,
   PartialDateRange,
   rateLimit,
@@ -60,16 +58,9 @@ export class FlagSyncWorker {
             while (true) {
               cancelToken.ensureRunning();
 
-              const dateRange = order.toDateRange();
-              const lowerId = order.lowerId;
-              const upperId = order.upperId;
+              const { idRange, dateRange } = order;
 
-              this.logger.log(
-                `Fetching flags for ${dateRange.toE621RangeString()} with ids ${getIdRangeString(
-                  lowerId,
-                  upperId,
-                )}`,
-              );
+              logOrderFetch(this.logger, ItemType.flags, order);
 
               const result = await rateLimit(
                 postFlags(
@@ -77,7 +68,7 @@ export class FlagSyncWorker {
                     page: 1,
                     limit: MAX_API_LIMIT,
                     'search[created_at]': dateRange.toE621RangeString(),
-                    'search[id]': getIdRangeString(lowerId, upperId),
+                    'search[id]': idRange.toE621RangeString(),
                   }),
                   axiosConfig,
                 ),
@@ -95,19 +86,7 @@ export class FlagSyncWorker {
                 ),
               );
 
-              this.logger.log(
-                `Found ${result.length} flags with ids ${
-                  getIdRangeString(
-                    findLowestId(result)?.id,
-                    findHighestId(result)?.id,
-                  ) || 'none'
-                } and dates ${
-                  new PartialDateRange({
-                    startDate: findLowestDate(stored)?.createdAt,
-                    endDate: findHighestId(stored)?.createdAt,
-                  }).toE621RangeString() || 'none'
-                }`,
-              );
+              logOrderResult(this.logger, ItemType.flags, stored);
 
               const exhausted = result.length < MAX_API_LIMIT;
 
@@ -123,13 +102,7 @@ export class FlagSyncWorker {
               }
 
               if (exhausted) {
-                const gaps = findContiguityGaps(results);
-                if (gaps.length > 0) {
-                  this.logger.warn(
-                    `Found ${gaps.length} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
-                  );
-                }
-
+                logContiguityGaps(this.logger, ItemType.flags, results);
                 break;
               }
             }
@@ -174,10 +147,7 @@ export class FlagSyncWorker {
               const rangeString = new PartialDateRange({
                 startDate: refreshDate,
               }).toE621RangeString();
-              const idString = getIdRangeString(
-                manifest.lowerId,
-                manifest.upperId,
-              );
+              const idString = manifest.idRange.toE621RangeString();
 
               this.logger.log(
                 `Fetching flags for refresh date ${rangeString} with ids ${idString}`,

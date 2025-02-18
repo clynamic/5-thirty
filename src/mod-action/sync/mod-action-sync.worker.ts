@@ -6,14 +6,10 @@ import { AuthService } from 'src/auth/auth.service';
 import {
   convertKeysToCamelCase,
   DateRange,
-  findContiguityGaps,
-  findHighestDate,
-  findHighestId,
-  findLowestDate,
-  findLowestId,
-  getIdRangeString,
+  logContiguityGaps,
+  logOrderFetch,
+  logOrderResult,
   LoopGuard,
-  PartialDateRange,
   rateLimit,
 } from 'src/common';
 import { Job } from 'src/job/job.entity';
@@ -59,24 +55,17 @@ export class ModActionSyncWorker {
             while (true) {
               cancelToken.ensureRunning();
 
-              const dateRange = order.toDateRange();
-              const lowerId = order.lowerId;
-              const upperId = order.upperId;
+              const { idRange, dateRange } = order;
 
-              const rangeString = dateRange.toE621RangeString();
-              const idString = getIdRangeString(lowerId, upperId);
-
-              this.logger.log(
-                `Fetching mod actions for ${rangeString} with ids ${idString}`,
-              );
+              logOrderFetch(this.logger, ItemType.modActions, order);
 
               const result = await rateLimit(
                 modActions(
                   loopGuard.iter({
                     page: 1,
                     limit: MAX_API_LIMIT,
-                    'search[created_at]': rangeString,
-                    'search[id]': idString,
+                    'search[created_at]': dateRange.toE621RangeString(),
+                    'search[id]': idRange.toE621RangeString(),
                     'search[order]': 'id',
                   }),
                   axiosConfig,
@@ -95,19 +84,7 @@ export class ModActionSyncWorker {
                 ),
               );
 
-              this.logger.log(
-                `Found ${result.length} mod actions with ids ${
-                  getIdRangeString(
-                    findLowestId(result)?.id,
-                    findHighestId(result)?.id,
-                  ) || 'none'
-                } and dates ${
-                  new PartialDateRange({
-                    startDate: findLowestDate(stored)?.createdAt,
-                    endDate: findHighestDate(stored)?.createdAt,
-                  }).toE621RangeString() || 'none'
-                }`,
-              );
+              logOrderResult(this.logger, ItemType.modActions, stored);
 
               const exhausted = result.length < MAX_API_LIMIT;
 
@@ -119,12 +96,7 @@ export class ModActionSyncWorker {
               });
 
               if (exhausted) {
-                const gaps = findContiguityGaps(results);
-                if (gaps.length > 0) {
-                  this.logger.warn(
-                    `Found ${gaps.length} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
-                  );
-                }
+                logContiguityGaps(this.logger, ItemType.modActions, results);
                 break;
               }
             }

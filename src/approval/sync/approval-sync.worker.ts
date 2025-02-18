@@ -7,14 +7,10 @@ import { AuthService } from 'src/auth/auth.service';
 import {
   convertKeysToCamelCase,
   DateRange,
-  findContiguityGaps,
-  findHighestDate,
-  findHighestId,
-  findLowestDate,
-  findLowestId,
-  getIdRangeString,
+  logContiguityGaps,
+  logOrderFetch,
+  logOrderResult,
   LoopGuard,
-  PartialDateRange,
   rateLimit,
 } from 'src/common';
 import { Job } from 'src/job/job.entity';
@@ -62,16 +58,9 @@ export class ApprovalSyncWorker {
             while (true) {
               cancelToken.ensureRunning();
 
-              const dateRange = order.toDateRange();
-              const lowerId = order.lowerId;
-              const upperId = order.upperId;
+              const { idRange, dateRange } = order;
 
-              this.logger.log(
-                `Fetching approvals for ${dateRange.toE621RangeString()} with ids ${getIdRangeString(
-                  lowerId,
-                  upperId,
-                )}`,
-              );
+              logOrderFetch(this.logger, ItemType.approvals, order);
 
               const result = await rateLimit(
                 postApprovals(
@@ -82,7 +71,7 @@ export class ApprovalSyncWorker {
                     // because post_approvals are ordered properly id descending,
                     // we can rely on always getting (almost) contiguous results
                     // some approval IDs seem to just not exist, but that's fine for this use case
-                    'search[id]': getIdRangeString(lowerId, upperId),
+                    'search[id]': idRange.toE621RangeString(),
                   }),
                   axiosConfig,
                 ),
@@ -100,19 +89,7 @@ export class ApprovalSyncWorker {
                 ),
               );
 
-              this.logger.log(
-                `Found ${stored.length} approvals with ids ${
-                  getIdRangeString(
-                    findLowestId(stored)?.id,
-                    findHighestId(stored)?.id,
-                  ) || 'none'
-                } and dates ${
-                  new PartialDateRange({
-                    startDate: findLowestDate(stored)?.createdAt,
-                    endDate: findHighestDate(stored)?.createdAt,
-                  }).toE621RangeString() || 'none'
-                }`,
-              );
+              logOrderResult(this.logger, ItemType.approvals, stored);
 
               const exhausted = result.length < MAX_API_LIMIT;
 
@@ -128,15 +105,9 @@ export class ApprovalSyncWorker {
               }
 
               if (exhausted) {
-                const gaps = findContiguityGaps(results);
                 // as long as the gaps are not too big, one or two IDs, we can ignore them
                 // these can be accounted for by the deleted (?) approvals
-                if (gaps.length > 0) {
-                  this.logger.warn(
-                    `Found ${gaps.length} gaps in ID contiguity: ${JSON.stringify(gaps)},`,
-                  );
-                }
-
+                logContiguityGaps(this.logger, ItemType.approvals, results);
                 break;
               }
             }

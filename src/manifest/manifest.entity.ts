@@ -1,4 +1,10 @@
-import { DateRange, WithDate, WithId } from 'src/common';
+import {
+  DateRange,
+  IdRange,
+  PartialIdRange,
+  WithDate,
+  WithId,
+} from 'src/common';
 import { DateTimeColumn } from 'src/common';
 import { ItemType } from 'src/label/label.entity';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
@@ -21,21 +27,28 @@ export class ManifestEntity {
   @DateTimeColumn()
   endDate: Date;
 
-  @DateTimeColumn({ nullable: true })
-  refreshedAt?: Date;
-
-  get range(): DateRange {
+  get dateRange(): DateRange {
     return new DateRange({
       startDate: this.startDate,
       endDate: this.endDate,
     });
   }
 
+  @DateTimeColumn({ nullable: true })
+  refreshedAt?: Date;
+
   @Column({ type: 'int' })
   lowerId: number;
 
   @Column({ type: 'int' })
   upperId: number;
+
+  get idRange(): IdRange {
+    return new IdRange({
+      startId: this.lowerId,
+      endId: this.upperId,
+    });
+  }
 
   /**
    * In-place extend the manifest entity in the given direction.
@@ -116,6 +129,13 @@ export class Order {
     return Order.getBoundaryDate(this.upper, 'start');
   }
 
+  get dateRange(): DateRange {
+    return new DateRange({
+      startDate: this.lowerDate,
+      endDate: this.upperDate,
+    });
+  }
+
   get lowerId(): number | undefined {
     return this.lower instanceof ManifestEntity
       ? this.lower.upperId
@@ -128,10 +148,10 @@ export class Order {
       : undefined;
   }
 
-  toDateRange(): DateRange {
-    return new DateRange({
-      startDate: this.lowerDate,
-      endDate: this.upperDate,
+  get idRange(): PartialIdRange {
+    return new PartialIdRange({
+      startId: this.lowerId,
+      endId: this.upperId,
     });
   }
 }

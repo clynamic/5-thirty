@@ -1,24 +1,61 @@
+import { IsInt, IsOptional } from 'class-validator';
+
 export interface WithId {
   id: number;
 }
 
-/**
- * Turns a range of IDs into a string fit for an e621 search query.
- * Exclusive on both ends.
- */
-export const getIdRangeString = (
-  start: number | undefined,
-  end: number | undefined,
-): string => {
-  if (start && !end) {
-    return `>${start}`;
-  } else if (!start && end) {
-    return `<${end}`;
-  } else if (start && end) {
-    return `${start}..${end}`;
+export class PartialIdRange {
+  constructor(partial: Partial<PartialIdRange>) {
+    Object.assign(this, partial);
   }
-  return '';
-};
+
+  /**
+   * Start of the ID range, inclusive.
+   */
+  @IsOptional()
+  @IsInt()
+  startId?: number;
+
+  /**
+   * End of the ID range, inclusive.
+   */
+  @IsOptional()
+  @IsInt()
+  endId?: number;
+
+  /**
+   * Turns the ID range into a string fit for an e621 search query.
+   * Inclusive on both ends.
+   */
+  toE621RangeString(): string {
+    if (this.startId && !this.endId) {
+      return `>=${this.startId}`;
+    } else if (!this.startId && this.endId) {
+      return `<=${this.endId}`;
+    } else if (this.startId && this.endId) {
+      return `${this.startId}..${this.endId}`;
+    }
+    return '';
+  }
+}
+
+export class IdRange extends PartialIdRange {
+  constructor(idRange: Partial<IdRange>) {
+    super(idRange);
+  }
+
+  /**
+   * Start of the ID range, inclusive.
+   */
+  @IsInt()
+  override startId: number;
+
+  /**
+   * End of the ID range, inclusive.
+   */
+  @IsInt()
+  override endId: number;
+}
 
 /**
  * Finds the lowest ID in a list of items.
@@ -47,12 +84,13 @@ export const findHighestId = <T extends WithId>(
 /**
  * Finds the bounds of a list of items by ID.
  */
-export const findIdBounds = <T extends WithId>(items: T[] | undefined) => {
-  return {
-    lowest: findLowestId(items),
-    highest: findHighestId(items),
-  };
-};
+export const findIdBounds = <T extends WithId>(
+  items: T[] | undefined,
+): PartialIdRange =>
+  new PartialIdRange({
+    startId: findLowestId(items)?.id,
+    endId: findHighestId(items)?.id,
+  });
 
 /**
  * Finds gaps in the contiguity of IDs in a list of items.

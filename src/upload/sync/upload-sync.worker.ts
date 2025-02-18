@@ -11,13 +11,9 @@ import { AuthService } from 'src/auth/auth.service';
 import {
   convertKeysToCamelCase,
   DateRange,
-  findHighestDate,
-  findHighestId,
-  findLowestDate,
-  findLowestId,
-  getIdRangeString,
+  logOrderFetch,
+  logOrderResult,
   LoopGuard,
-  PartialDateRange,
   rateLimit,
 } from 'src/common';
 import { Job } from 'src/job/job.entity';
@@ -73,25 +69,18 @@ export class UploadSyncWorker {
             while (true) {
               cancelToken.ensureRunning();
 
-              const dateRange = order.toDateRange();
-              const lowerId = order.lowerId;
-              const upperId = order.upperId;
+              const { idRange, dateRange } = order;
 
-              this.logger.log(
-                `Fetching post uploads for ${dateRange.toE621RangeString()} with ids ${getIdRangeString(
-                  lowerId,
-                  upperId,
-                )}`,
-              );
+              logOrderFetch(this.logger, ItemType.postVersions, order);
 
               const result = await rateLimit(
                 postVersions(
                   loopGuard.iter({
                     page: 1,
                     limit: MAX_API_LIMIT,
-                    'search[updated_at]': dateRange.toE621RangeString(),
-                    'search[id]': getIdRangeString(lowerId, upperId),
                     'search[uploads]': GetPostVersionsSearchUploads.only,
+                    'search[updated_at]': dateRange.toE621RangeString(),
+                    'search[id]': idRange.toE621RangeString(),
                     'search[order]': 'id',
                   }),
                   axiosConfig,
@@ -110,19 +99,7 @@ export class UploadSyncWorker {
                 ),
               );
 
-              this.logger.log(
-                `Found ${result.length} post versions with ids ${
-                  getIdRangeString(
-                    findLowestId(result)?.id,
-                    findHighestId(result)?.id,
-                  ) || 'none'
-                } and dates ${
-                  new PartialDateRange({
-                    startDate: findLowestDate(stored)?.updatedAt,
-                    endDate: findHighestDate(stored)?.updatedAt,
-                  }).toE621RangeString() || 'none'
-                }`,
-              );
+              logOrderResult(this.logger, ItemType.postVersions, stored);
 
               const exhausted = result.length < MAX_API_LIMIT;
 
@@ -137,7 +114,10 @@ export class UploadSyncWorker {
                 this.cacheManager.delDep(PostVersionEntity);
               }
 
-              if (exhausted) break;
+              if (exhausted) {
+                // upload-only post versions will never be contiguous, so we can skip that check
+                break;
+              }
             }
           }
 
