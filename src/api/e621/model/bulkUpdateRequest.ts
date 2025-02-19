@@ -14,11 +14,11 @@ export interface BulkUpdateRequest {
    */
   approver_id?: number | null;
   /** The timestamp when the request was created */
-  created_at: string;
+  created_at: Date;
   /** The ID of the forum post associated with the request */
   forum_post_id?: number;
   /** The ID of the forum topic associated with the request */
-  forum_topic_id: number;
+  forum_topic_id?: number;
   /** The unique ID of the bulk update request */
   id: number;
   /** The script content of the bulk update request */
@@ -28,7 +28,7 @@ export interface BulkUpdateRequest {
   /** The title of the bulk update request */
   title: string;
   /** The timestamp when the request was last updated */
-  updated_at: string;
+  updated_at: Date;
   /** The ID of the user who created the request */
   user_id: number;
 }

@@ -1,0 +1,50 @@
+import { BulkUpdateRequest, BulkUpdateRequestStatus } from 'src/api';
+import { DateTimeColumn } from 'src/common';
+import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
+
+@Entity('bulk_update_requests')
+export class BulkUpdateRequestEntity extends LabelLink {
+  constructor(partial?: Partial<BulkUpdateRequestEntity>) {
+    super();
+    Object.assign(this, partial);
+  }
+
+  @PrimaryColumn({ type: 'int' })
+  id: number;
+
+  @DateTimeColumn()
+  createdAt: Date;
+
+  @DateTimeColumn()
+  updatedAt: Date;
+
+  @Column({ type: 'int' })
+  userId: number;
+
+  @Column({ type: 'int', nullable: true })
+  approverId: number | null;
+
+  @Column({ type: 'int', nullable: true })
+  forumTopicId: number | null;
+
+  @Column({ type: 'int', nullable: true })
+  forumPostId: number | null;
+
+  @Column({ type: 'text' })
+  title: string;
+
+  @Column({ type: 'text' })
+  script: string;
+
+  @Column({ type: 'simple-enum', enum: BulkUpdateRequestStatus })
+  status: BulkUpdateRequestStatus;
+}
+
+export class BulkUpdateRequestLabelEntity extends LabelEntity {
+  constructor(value: BulkUpdateRequest) {
+    super({
+      id: `/${ItemType.bulkUpdateRequests}/${value.id}`,
+    });
+  }
+}

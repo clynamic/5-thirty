@@ -2454,7 +2454,6 @@ components:
       required:
         - id
         - user_id
-        - forum_topic_id
         - script
         - status
         - created_at
@@ -2479,9 +2478,11 @@ components:
           enum: [pending, approved, rejected]
         created_at:
           type: string
+          format: date-time
           description: The timestamp when the request was created
         updated_at:
           type: string
+          format: date-time
           description: The timestamp when the request was last updated
         approver_id:
           type: integer

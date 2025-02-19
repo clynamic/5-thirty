@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApprovalEntity } from 'src/approval/approval.entity';
+import { BulkUpdateRequestEntity } from 'src/bulk-update-request/bulk-update-request.entity';
 import { FeedbackEntity } from 'src/feedback/feedback.entity';
 import { FlagEntity } from 'src/flag/flag.entity';
 import { ManifestEntity } from 'src/manifest/manifest.entity';
@@ -23,6 +24,7 @@ import { HealthService } from './health.service';
       PostVersionEntity,
       PostReplacementEntity,
       ModActionEntity,
+      BulkUpdateRequestEntity,
     ]),
   ],
   controllers: [HealthController],

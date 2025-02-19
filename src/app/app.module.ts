@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ApprovalModule } from 'src/approval/approval.module';
 import { AuthModule } from 'src/auth/auth.module';
+import { BulkUpdateRequestModule } from 'src/bulk-update-request/bulk-update-request.module';
 import { DashboardModule } from 'src/dashboard/dashboard.module';
 import { DeletionModule } from 'src/deletion/deletion.module';
 import { FeedbackModule } from 'src/feedback/feedback.module';
@@ -40,6 +41,7 @@ import { DatabaseModule } from './database.module';
     DashboardModule,
     LabelModule,
     ManifestModule,
+    PerformanceModule,
     ApprovalModule,
     TicketModule,
     UserModule,
@@ -52,7 +54,7 @@ import { DatabaseModule } from './database.module';
     UploadModule,
     PermitModule,
     ModActionModule,
-    PerformanceModule,
+    BulkUpdateRequestModule,
   ],
 })
 export class AppModule {}

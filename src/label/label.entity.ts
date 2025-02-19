@@ -12,7 +12,15 @@ export enum ItemType {
   postVersions = 'post_versions',
   postReplacements = 'post_replacements',
   modActions = 'mod_actions',
+  bulkUpdateRequests = 'bulk_update_requests',
 }
+
+export const getItemName = (type: ItemType) => {
+  return type
+    .split('_')
+    .map((word) => word[0]!.toUpperCase() + word.slice(1))
+    .join(' ');
+};
 
 /**
  * A label, like a shipping label,

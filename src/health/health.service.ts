@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ApprovalEntity } from 'src/approval/approval.entity';
+import { BulkUpdateRequestEntity } from 'src/bulk-update-request/bulk-update-request.entity';
 import { WithId } from 'src/common';
 import { FeedbackEntity } from 'src/feedback/feedback.entity';
 import { FlagEntity } from 'src/flag/flag.entity';
@@ -34,6 +35,8 @@ export class HealthService {
     private readonly postReplacementRepository: Repository<PostReplacementEntity>,
     @InjectRepository(ModActionEntity)
     private readonly modActionRepository: Repository<ModActionEntity>,
+    @InjectRepository(BulkUpdateRequestEntity)
+    private readonly bulkUpdateRequestRepository: Repository<BulkUpdateRequestEntity>,
   ) {}
 
   private itemRepositories: Partial<Record<ItemType, Repository<WithId>>> = {
@@ -44,6 +47,7 @@ export class HealthService {
     [ItemType.postVersions]: this.postVersionRepository,
     [ItemType.postReplacements]: this.postReplacementRepository,
     [ItemType.modActions]: this.modActionRepository,
+    [ItemType.bulkUpdateRequests]: this.bulkUpdateRequestRepository,
   };
 
   async getManifestHealth(): Promise<ManifestHealth[]> {
