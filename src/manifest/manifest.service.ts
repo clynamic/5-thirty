@@ -336,9 +336,20 @@ export class ManifestService {
     lower: ManifestEntity,
     upper: ManifestEntity,
   ): Promise<ManifestEntity> {
-    lower.extendWith(upper, 'end');
+    if ((lower.id && !upper.id) || lower.id <= upper.id) {
+      lower.extendWith(upper, 'end');
 
-    await this.manifestRepository.remove(upper);
-    return this.manifestRepository.save(lower);
+      if (upper.id) {
+        await this.manifestRepository.remove(upper);
+      }
+      return this.manifestRepository.save(lower);
+    } else {
+      upper.extendWith(lower, 'start');
+
+      if (lower.id) {
+        await this.manifestRepository.remove(lower);
+      }
+      return this.manifestRepository.save(upper);
+    }
   }
 }
