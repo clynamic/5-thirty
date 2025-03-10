@@ -14,6 +14,7 @@ export enum ItemType {
   modActions = 'mod_actions',
   bulkUpdateRequests = 'bulk_update_requests',
   tagAliases = 'tag_aliases',
+  tagImplications = 'tag_implications',
 }
 
 export const getItemName = (type: ItemType) => {

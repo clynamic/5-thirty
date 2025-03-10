@@ -196,12 +196,14 @@ export class PartialDateRange {
       // TODO: e6 uses the request timezone, not UTC.
       // How would we determine which timezone that is?
       start = formatISO(subDays(this.startDate, 1, this.in()), {
+        ...this.in(),
         representation: 'date',
       });
     }
 
     if (this.endDate) {
       end = formatISO(addDays(this.endDate, 1, this.in()), {
+        ...this.in(),
         representation: 'date',
       });
     }

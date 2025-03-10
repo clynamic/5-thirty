@@ -150,6 +150,7 @@ export class TagAliasSyncWorker {
                     limit: MAX_API_LIMIT,
                     'search[updated_at]': rangeString,
                     'search[id]': idString,
+                    'search[order]': GetTagAliasesSearchOrder.id_desc,
                   }),
                   axiosConfig,
                 ),

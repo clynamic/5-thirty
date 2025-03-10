@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
-  BulkUpdateRequest,
-  bulkUpdateRequests,
-  GetBulkUpdateRequestsSearchOrder,
+  GetTagImplicationsSearchOrder,
+  TagImplication,
+  tagImplications,
 } from 'src/api';
 import { MAX_API_LIMIT } from 'src/api/http/params';
 import { AuthService } from 'src/auth/auth.service';
@@ -25,22 +25,22 @@ import { getItemName, ItemType } from 'src/label/label.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 
 import {
-  BulkUpdateRequestEntity,
-  BulkUpdateRequestLabelEntity,
-} from '../bulk-update-request.entity';
-import { BulkUpdateRequestSyncService } from './bulk-update-request-sync.service';
+  TagImplicationEntity,
+  TagImplicationLabelEntity,
+} from '../tag-implication.entity';
+import { TagImplicationSyncService } from './tag-implication-sync.service';
 
 @Injectable()
-export class BulkUpdateRequestSyncWorker {
+export class TagImplicationSyncWorker {
   constructor(
     private readonly jobService: JobService,
     private readonly authService: AuthService,
-    private readonly bulkUpdateRequestSyncService: BulkUpdateRequestSyncService,
+    private readonly tagImplicationSyncService: TagImplicationSyncService,
     private readonly manifestService: ManifestService,
   ) {}
 
-  private readonly logger = new Logger(BulkUpdateRequestSyncWorker.name);
-  private readonly type = ItemType.bulkUpdateRequests;
+  private readonly logger = new Logger(TagImplicationSyncWorker.name);
+  private readonly type = ItemType.tagImplications;
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async runOrders() {
@@ -51,7 +51,6 @@ export class BulkUpdateRequestSyncWorker {
         timeout: 1000 * 60 * 5,
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.authService.getServerAxiosConfig();
-
           const recentlyRange = DateRange.recentMonths();
 
           const orders = await this.manifestService.listOrdersByRange(
@@ -60,24 +59,22 @@ export class BulkUpdateRequestSyncWorker {
           );
 
           for (const order of orders) {
-            const results: BulkUpdateRequest[] = [];
+            const results: TagImplication[] = [];
             const loopGuard = new LoopGuard();
 
             while (true) {
               cancelToken.ensureRunning();
-
               const { idRange, dateRange } = order;
-
               logOrderFetch(this.logger, this.type, order);
 
               const result = await rateLimit(
-                bulkUpdateRequests(
+                tagImplications(
                   loopGuard.iter({
                     page: 1,
                     limit: MAX_API_LIMIT,
                     'search[created_at]': dateRange.toE621RangeString(),
                     'search[id]': idRange.toE621RangeString(),
-                    'search[order]': GetBulkUpdateRequestsSearchOrder.id_desc,
+                    'search[order]': GetTagImplicationsSearchOrder.id_desc,
                   }),
                   axiosConfig,
                 ),
@@ -85,18 +82,17 @@ export class BulkUpdateRequestSyncWorker {
 
               results.push(...result);
 
-              const stored = await this.bulkUpdateRequestSyncService.save(
+              const stored = await this.tagImplicationSyncService.save(
                 result.map(
-                  (request) =>
-                    new BulkUpdateRequestEntity({
-                      ...convertKeysToCamelCase(request),
-                      label: new BulkUpdateRequestLabelEntity(request),
+                  (implication) =>
+                    new TagImplicationEntity({
+                      ...convertKeysToCamelCase(implication),
+                      label: new TagImplicationLabelEntity(implication),
                     }),
                 ),
               );
 
               logOrderResult(this.logger, this.type, stored);
-
               const exhausted = result.length < MAX_API_LIMIT;
 
               await this.manifestService.saveResults({
@@ -112,7 +108,6 @@ export class BulkUpdateRequestSyncWorker {
               }
             }
           }
-
           await this.manifestService.mergeInRange(this.type, recentlyRange);
         },
       }),
@@ -127,48 +122,44 @@ export class BulkUpdateRequestSyncWorker {
         key: `/${this.type}/refresh`,
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.authService.getServerAxiosConfig();
-
           const manifests = await this.manifestService.list(undefined, {
             type: [this.type],
           });
 
           for (const manifest of manifests) {
             let refreshDate = manifest.refreshedAt;
-
             if (!refreshDate) {
               refreshDate = (
-                await this.bulkUpdateRequestSyncService.firstFromId(
+                await this.tagImplicationSyncService.firstFromId(
                   manifest.lowerId,
                 )
               )?.updatedAt;
             }
-
             if (!refreshDate) continue;
 
-            const results: BulkUpdateRequest[] = [];
+            const results: TagImplication[] = [];
             const loopGuard = new LoopGuard();
             let page = 1;
 
             while (true) {
               cancelToken.ensureRunning();
-
               const rangeString = new PartialDateRange({
                 startDate: refreshDate,
               }).toE621RangeString();
               const idString = manifest.idRange.toE621RangeString();
 
               this.logger.log(
-                `Fetching bulk update requests for refresh date ${rangeString} with ids ${idString}`,
+                `Fetching tag implications for refresh date ${rangeString} with ids ${idString}`,
               );
 
               const result = await rateLimit(
-                bulkUpdateRequests(
+                tagImplications(
                   loopGuard.iter({
                     page,
                     limit: MAX_API_LIMIT,
                     'search[updated_at]': rangeString,
                     'search[id]': idString,
-                    'search[order]': GetBulkUpdateRequestsSearchOrder.id_desc,
+                    'search[order]': GetTagImplicationsSearchOrder.id_desc,
                   }),
                   axiosConfig,
                 ),
@@ -176,17 +167,16 @@ export class BulkUpdateRequestSyncWorker {
 
               results.push(...result);
 
-              const updated =
-                await this.bulkUpdateRequestSyncService.countUpdated(
-                  result.map(convertKeysToCamelCase),
-                );
+              const updated = await this.tagImplicationSyncService.countUpdated(
+                result.map(convertKeysToCamelCase),
+              );
 
-              const stored = await this.bulkUpdateRequestSyncService.save(
+              const stored = await this.tagImplicationSyncService.save(
                 result.map(
-                  (request) =>
-                    new BulkUpdateRequestEntity({
-                      ...convertKeysToCamelCase(request),
-                      label: new BulkUpdateRequestLabelEntity(request),
+                  (implication) =>
+                    new TagImplicationEntity({
+                      ...convertKeysToCamelCase(implication),
+                      label: new TagImplicationLabelEntity(implication),
                     }),
                 ),
               );
@@ -197,12 +187,9 @@ export class BulkUpdateRequestSyncWorker {
                   resolveWithDate(findHighestDate(stored)) ?? refreshDate,
               });
 
-              this.logger.log(`Found ${updated} updated bulk update requests`);
-
+              this.logger.log(`Found ${updated} updated tag implications`);
               const exhausted = result.length < MAX_API_LIMIT;
-
               if (exhausted) break;
-
               page++;
             }
           }
