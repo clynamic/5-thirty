@@ -3,7 +3,7 @@ import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
-@Entity('users')
+@Entity(ItemType.users)
 export class UserEntity extends LabelLink {
   constructor(partial?: Partial<UserEntity>) {
     super();

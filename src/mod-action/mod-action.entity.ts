@@ -2,7 +2,8 @@ import { ModAction, ModActionAction } from 'src/api';
 import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
-@Entity('mod_actions')
+
+@Entity(ItemType.modActions)
 @Index(['action', 'createdAt'])
 export class ModActionEntity extends LabelLink {
   constructor(partial: Partial<ModActionEntity>) {

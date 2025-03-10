@@ -2,7 +2,8 @@ import { PostVersion, PostVersionRating } from 'src/api/e621';
 import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
-@Entity('post_versions')
+
+@Entity(ItemType.postVersions)
 @Index(['version', 'updatedAt'])
 export class PostVersionEntity extends LabelLink {
   constructor(partial?: Partial<PostVersionEntity>) {

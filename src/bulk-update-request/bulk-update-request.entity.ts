@@ -3,7 +3,7 @@ import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
-@Entity('bulk_update_requests')
+@Entity(ItemType.bulkUpdateRequests)
 export class BulkUpdateRequestEntity extends LabelLink {
   constructor(partial?: Partial<BulkUpdateRequestEntity>) {
     super();
