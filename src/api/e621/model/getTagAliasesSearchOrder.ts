@@ -7,6 +7,8 @@
  */
 
 export enum GetTagAliasesSearchOrder {
+  id_desc = 'id_desc',
+  id_asc = 'id_asc',
   status = 'status',
   created_at = 'created_at',
   updated_at = 'updated_at',

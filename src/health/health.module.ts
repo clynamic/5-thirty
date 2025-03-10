@@ -8,6 +8,7 @@ import { ManifestEntity } from 'src/manifest/manifest.entity';
 import { ModActionEntity } from 'src/mod-action/mod-action.entity';
 import { PostReplacementEntity } from 'src/post-replacement/post-replacement.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
+import { TagAliasEntity } from 'src/tag-alias/tag-alias.entity';
 import { TicketEntity } from 'src/ticket/ticket.entity';
 
 import { HealthController } from './health.controller';
@@ -25,6 +26,7 @@ import { HealthService } from './health.service';
       PostReplacementEntity,
       ModActionEntity,
       BulkUpdateRequestEntity,
+      TagAliasEntity,
     ]),
   ],
   controllers: [HealthController],

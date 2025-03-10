@@ -18,6 +18,7 @@ import { PostModule } from 'src/post/post.module';
 import { PostReplacementModule } from 'src/post-replacement/post-replacement.module';
 import { PostVersionModule } from 'src/post-version/post-version.module';
 import { ProxyModule } from 'src/proxy/proxy.module';
+import { TagAliasModule } from 'src/tag-alias/tag-alias.module';
 import { TicketModule } from 'src/ticket/ticket.module';
 import { UploadModule } from 'src/upload/upload.module';
 import { UserModule } from 'src/user/user.module';
@@ -55,6 +56,7 @@ import { DatabaseModule } from './database.module';
     PermitModule,
     ModActionModule,
     BulkUpdateRequestModule,
+    TagAliasModule,
   ],
 })
 export class AppModule {}

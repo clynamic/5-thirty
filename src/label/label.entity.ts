@@ -13,6 +13,7 @@ export enum ItemType {
   postReplacements = 'post_replacements',
   modActions = 'mod_actions',
   bulkUpdateRequests = 'bulk_update_requests',
+  tagAliases = 'tag_aliases',
 }
 
 export const getItemName = (type: ItemType) => {

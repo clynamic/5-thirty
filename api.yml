@@ -1264,7 +1264,8 @@ paths:
           description: Order the results by a specific field
           schema:
             type: string
-            enum: [status, created_at, updated_at, name, tag_count]
+            enum:
+              [id_desc, id_asc, status, created_at, updated_at, name, tag_count]
         - name: search[created_at]
           in: query
           required: false
