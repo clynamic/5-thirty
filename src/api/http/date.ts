@@ -1,4 +1,4 @@
-import { AxiosResponse } from 'axios';
+import { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { isValid, parseISO } from 'date-fns';
 
 const deserializeDates = <T>(body: T): T => {
@@ -37,4 +37,18 @@ export const dateDeserializeInterceptor = (
     ...response,
     data: deserializeDates(response.data),
   };
+};
+
+export const timezoneInjectorInterceptor = (
+  config: InternalAxiosRequestConfig,
+): InternalAxiosRequestConfig => {
+  if (config.params) {
+    const hasSearchCreatedAt = 'search[created_at]' in config.params;
+    const hasSearchUpdatedAt = 'search[updated_at]' in config.params;
+
+    if (hasSearchCreatedAt || hasSearchUpdatedAt) {
+      config.params.time_zone = 'UTC';
+    }
+  }
+  return config;
 };
