@@ -68,9 +68,6 @@ export class ApprovalSyncWorker {
                     page: 1,
                     limit: MAX_API_LIMIT,
                     'search[created_at]': dateRange.toE621RangeString(),
-                    // because post_approvals are ordered properly id descending,
-                    // we can rely on always getting (almost) contiguous results
-                    // some approval IDs seem to just not exist, but that's fine for this use case
                     'search[id]': idRange.toE621RangeString(),
                   }),
                   axiosConfig,
@@ -105,8 +102,7 @@ export class ApprovalSyncWorker {
               }
 
               if (exhausted) {
-                // as long as the gaps are not too big, one or two IDs, we can ignore them
-                // these can be accounted for by the deleted (?) approvals
+                // Approvals cannot be deleted.If there are gaps, something went wrong.
                 logContiguityGaps(this.logger, ItemType.approvals, results);
                 break;
               }
