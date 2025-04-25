@@ -42,7 +42,11 @@ export class ProxyController {
         responseType: 'stream',
       });
 
-      res.set(response.headers);
+      for (const [key, value] of Object.entries(response.headers)) {
+        if (!key.toLowerCase().startsWith('access-control-')) {
+          res.setHeader(key, value as string);
+        }
+      }
 
       response.data.pipe(res);
     } catch (e) {
