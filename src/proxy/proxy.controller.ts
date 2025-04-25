@@ -5,12 +5,13 @@ import {
   HttpStatus,
   Query,
   Req,
-  Res,
+  StreamableFile,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { AxiosError, AxiosInstance } from 'axios';
-import { Request, Response } from 'express';
+import { AxiosInstance } from 'axios';
+import { Request } from 'express';
 import { AXIOS_INSTANCE } from 'src/api';
+import { Readable } from 'stream';
 
 @ApiTags('Proxy')
 @Controller('proxy')
@@ -26,40 +27,25 @@ export class ProxyController {
   async proxyRequest(
     @Query() queryParams: Record<string, string>,
     @Req() req: Request,
-    @Res() res: Response,
-  ) {
-    try {
-      const proxyPath = req.originalUrl.replace(/^\/proxy\//, '');
+  ): Promise<StreamableFile> {
+    const proxyPath = req.originalUrl.replace(/^\/proxy\//, '');
 
-      if (!proxyPath || proxyPath.includes('://')) {
-        throw new HttpException('Invalid path', HttpStatus.BAD_REQUEST);
-      }
-
-      const fullUrl = `${this.STATIC_HOST}/${proxyPath}`;
-
-      const response = await this.axios.get(fullUrl, {
-        params: queryParams,
-        responseType: 'stream',
-      });
-
-      for (const [key, value] of Object.entries(response.headers)) {
-        if (!key.toLowerCase().startsWith('access-control-')) {
-          res.setHeader(key, value as string);
-        }
-      }
-
-      response.data.pipe(res);
-    } catch (e) {
-      const error = e as AxiosError;
-      console.error('Failed to fetch resource', error);
-      if (error.response) {
-        res.status(error.response.status).send(error.response.data);
-      } else {
-        throw new HttpException(
-          'Failed to fetch resource',
-          HttpStatus.BAD_GATEWAY,
-        );
-      }
+    if (!proxyPath || proxyPath.includes('://')) {
+      throw new HttpException('Invalid path', HttpStatus.BAD_REQUEST);
     }
+
+    const fullUrl = `${this.STATIC_HOST}/${proxyPath}`;
+
+    const response = await this.axios.get(fullUrl, {
+      params: queryParams,
+      responseType: 'stream',
+    });
+
+    const stream = response.data as Readable;
+
+    return new StreamableFile(stream, {
+      type: response.headers['content-type'],
+      disposition: `inline; filename="${proxyPath.split('/').pop()}"`,
+    });
   }
 }
