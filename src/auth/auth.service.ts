@@ -58,7 +58,7 @@ export class AuthService {
       username: user.name,
       level: user.level_string,
     };
-    return this.jwtService.sign(payload, { expiresIn: '3d' });
+    return this.jwtService.sign(payload, { expiresIn: '14d' });
   }
 
   async validateToken(token: string): Promise<DecodedJwt> {
