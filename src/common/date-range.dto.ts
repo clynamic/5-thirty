@@ -38,7 +38,9 @@ export enum TimeScale {
   All = 'all',
 }
 
-export const getClosestTimeScale = (dateRange: DateRange): TimeScale => {
+export const getClosestTimeScale = (
+  dateRange: Pick<DateRange, 'startDate' | 'endDate'>,
+): TimeScale => {
   const { startDate, endDate } = dateRange;
   const diffInMs = Math.abs(endDate.getTime() - startDate.getTime());
 
@@ -110,6 +112,35 @@ export const inferScaleForCycle = (
   const index = orderedScales.indexOf(cycle) - 1;
   if (index < 0) return undefined;
   return orderedScales[index];
+};
+
+export const inferDefaultScale = (
+  dateRange: PartialBy<
+    Pick<DateRange, 'startDate' | 'endDate' | 'cycle'>,
+    'cycle'
+  >,
+): TimeScale => {
+  let scale = inferScaleForCycle(dateRange.cycle);
+  if (!scale) {
+    scale = getClosestTimeScale(dateRange);
+    const orderedScales: TimeScale[] = [
+      TimeScale.Minute,
+      TimeScale.Hour,
+      TimeScale.Day,
+      TimeScale.Week,
+      TimeScale.Month,
+      TimeScale.Year,
+      TimeScale.Decade,
+      TimeScale.All,
+    ];
+    const index = orderedScales.indexOf(scale) - 1;
+    if (index < 0) {
+      scale = TimeScale.Minute;
+    } else {
+      scale = orderedScales[index]!;
+    }
+  }
+  return scale;
 };
 
 /**
@@ -227,7 +258,7 @@ export class DateRange extends PartialDateRange {
   ) {
     super({
       timezone: 'UTC',
-      scale: inferScaleForCycle(value.cycle) || TimeScale.Day,
+      scale: inferDefaultScale(value),
       cycle: TimeScale.All,
       ...value,
     });
