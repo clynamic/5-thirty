@@ -120,27 +120,26 @@ export const inferDefaultScale = (
     'cycle'
   >,
 ): TimeScale => {
-  let scale = inferScaleForCycle(dateRange.cycle);
-  if (!scale) {
-    scale = getClosestTimeScale(dateRange);
-    const orderedScales: TimeScale[] = [
-      TimeScale.Minute,
-      TimeScale.Hour,
-      TimeScale.Day,
-      TimeScale.Week,
-      TimeScale.Month,
-      TimeScale.Year,
-      TimeScale.Decade,
-      TimeScale.All,
-    ];
-    const index = orderedScales.indexOf(scale) - 1;
-    if (index < 0) {
-      scale = TimeScale.Minute;
-    } else {
-      scale = orderedScales[index]!;
-    }
-  }
-  return scale;
+  const { startDate, endDate, cycle } = dateRange;
+
+  const cycleBased = inferScaleForCycle(cycle);
+  if (cycleBased) return cycleBased;
+
+  if (!startDate || !endDate) return TimeScale.Day;
+
+  const diffInMs = Math.abs(endDate.getTime() - startDate.getTime());
+  const hours = diffInMs / (1000 * 60 * 60);
+  const days = diffInMs / (1000 * 60 * 60 * 24);
+  const months = days / 30;
+  const years = days / 365;
+
+  if (hours <= 2) return TimeScale.Minute;
+  if (days <= 2) return TimeScale.Hour;
+  if (months <= 1.1) return TimeScale.Day;
+  if (months <= 2) return TimeScale.Week;
+  if (years <= 2) return TimeScale.Month;
+  if (years <= 10) return TimeScale.Year;
+  return TimeScale.Decade;
 };
 
 /**
