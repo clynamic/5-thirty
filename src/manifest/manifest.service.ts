@@ -1,5 +1,5 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { add, addMilliseconds, isEqual, min } from 'date-fns';
+import { add, addMilliseconds, isEqual, min, startOfDay } from 'date-fns';
 import {
   DateRange,
   endOf,
@@ -85,18 +85,41 @@ export class ManifestService {
     });
   }
 
-  async listByRange(
-    type: ItemType,
-    range: DateRange,
-  ): Promise<ManifestEntity[]> {
-    return this.manifestRepository.find({
-      where: this.whereInRange(range, { type }),
-    });
+  async listOrdersByRange(type: ItemType, range: DateRange): Promise<Order[]> {
+    const manifests = await this.list(range, { type: [type] });
+    return ManifestService.computeOrders(manifests, range);
   }
 
-  async listOrdersByRange(type: ItemType, range: DateRange): Promise<Order[]> {
-    const manifests = await this.listByRange(type, range);
-    return ManifestService.computeOrders(manifests, range);
+  async available(range: DateRange, type: ItemType[]): Promise<boolean> {
+    const manifests = await this.list(range, { type: type });
+    const rangeStart = range.startDate.getTime();
+    const rangeEnd = range.endDate.getTime();
+    const nowTime = startOfDay(Date.now()).getTime();
+
+    const totalDuration = rangeEnd - rangeStart;
+    const pastDuration = Math.max(0, Math.min(nowTime, rangeEnd) - rangeStart);
+    const futureDuration = totalDuration - pastDuration;
+
+    const maxMissingFraction = 0.25;
+
+    for (const itemType of type) {
+      const filtered = manifests.filter((m) => m.type === itemType);
+      if (filtered.length === 0) return false;
+
+      const orders = ManifestService.computeOrders(filtered, range);
+      if (orders.length > 1) return false;
+      if (orders.length === 0) continue;
+
+      const order = orders[0]!;
+      const orderStart = Math.max(order.lowerDate.getTime(), rangeStart);
+      const orderEnd = Math.min(order.upperDate.getTime(), rangeEnd);
+      const orderDuration = Math.max(0, orderEnd - orderStart);
+
+      const unavailability = (orderDuration - futureDuration) / pastDuration;
+      if (unavailability > maxMissingFraction) return false;
+    }
+
+    return true;
   }
 
   static areBoundariesContiguous(
@@ -302,7 +325,7 @@ export class ManifestService {
   }
 
   async mergeInRange(type: ItemType, range: DateRange): Promise<void> {
-    const manifests = await this.listByRange(type, range);
+    const manifests = await this.list(range, { type: [type] });
 
     manifests.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 

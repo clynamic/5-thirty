@@ -14,9 +14,13 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ServerAdminGuard } from 'src/auth/auth.guard';
-import { DateRange } from 'src/common';
+import { DateRange, PartialDateRange } from 'src/common';
 
-import { Manifest, ManifestQuery } from './manifest.dto';
+import {
+  Manifest,
+  ManifestAvailableQuery,
+  ManifestQuery,
+} from './manifest.dto';
 import { ManifestService } from './manifest.service';
 
 @ApiTags('Manifests')
@@ -25,6 +29,28 @@ import { ManifestService } from './manifest.service';
 @ApiBearerAuth()
 export class ManifestController {
   constructor(private readonly manifestService: ManifestService) {}
+
+  @Get('available')
+  @ApiOperation({
+    summary: 'Check manifest availability for a date range',
+    description:
+      'Returns true if manifests cover the date range, false otherwise',
+    operationId: 'checkManifestAvailability',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Manifest availability',
+    type: Boolean,
+  })
+  async available(
+    @Query() range: PartialDateRange,
+    @Query() query: ManifestAvailableQuery,
+  ) {
+    return await this.manifestService.available(
+      DateRange.fill(range),
+      query?.type ?? [],
+    );
+  }
 
   @Get(':id')
   @ApiOperation({
@@ -54,10 +80,7 @@ export class ManifestController {
     description: 'List of manifests',
     type: [Manifest],
   })
-  async list(
-    @Query('range') range?: DateRange,
-    @Query('query') query?: ManifestQuery,
-  ) {
+  async list(@Query() range?: DateRange, @Query() query?: ManifestQuery) {
     return this.manifestService
       .list(range, query)
       .then((result) => result.map((item) => new Manifest(item)));

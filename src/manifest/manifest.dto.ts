@@ -30,3 +30,14 @@ export class ManifestQuery {
   @ApiProperty({ enum: ItemType, enumName: 'ItemType' })
   type?: ItemType[];
 }
+
+export class ManifestAvailableQuery {
+  constructor(value: Raw<ManifestAvailableQuery> = {}) {
+    Object.assign(this, value);
+  }
+
+  @IsOptional()
+  @IsArray()
+  @ApiProperty({ enum: ItemType, enumName: 'ItemType' })
+  type?: ItemType[];
+}
