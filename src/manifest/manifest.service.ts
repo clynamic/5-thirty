@@ -107,15 +107,18 @@ export class ManifestService {
       if (filtered.length === 0) return false;
 
       const orders = ManifestService.computeOrders(filtered, range);
-      if (orders.length > 1) return false;
       if (orders.length === 0) continue;
 
-      const order = orders[0]!;
-      const orderStart = Math.max(order.lowerDate.getTime(), rangeStart);
-      const orderEnd = Math.min(order.upperDate.getTime(), rangeEnd);
-      const orderDuration = Math.max(0, orderEnd - orderStart);
+      let total = 0;
 
-      const unavailability = (orderDuration - futureDuration) / pastDuration;
+      for (const order of orders) {
+        const orderStart = Math.max(order.lowerDate.getTime(), rangeStart);
+        const orderEnd = Math.min(order.upperDate.getTime(), rangeEnd);
+        const orderDuration = Math.max(0, orderEnd - orderStart);
+        total += orderDuration;
+      }
+
+      const unavailability = (total - futureDuration) / pastDuration;
       if (unavailability > maxMissingFraction) return false;
     }
 
