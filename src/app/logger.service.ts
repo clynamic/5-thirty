@@ -2,6 +2,7 @@ import {
   CallHandler,
   ConsoleLogger,
   ExecutionContext,
+  HttpException,
   Injectable,
   Logger,
   LoggerService,
@@ -85,9 +86,12 @@ export class RequestLogger implements NestInterceptor {
       }),
       catchError((error) => {
         const duration = Date.now() - startTime;
-        this.logger.error(
-          `[${op}] ${username}@${ip} x- Error: ${error.message} - ${duration}ms`,
-        );
+        const msg = `[${op}] ${username}@${ip} x- Error: ${error.message} - ${duration}ms`;
+        if (error.status && error.status < 500) {
+          this.logger.warn(msg);
+        } else {
+          this.logger.error(msg);
+        }
         throw error;
       }),
     );
