@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { startOfDay, sub } from 'date-fns';
-import { PostFlagType, TicketStatus } from 'src/api';
+import { PostFlagType, PostReplacementStatus, TicketStatus } from 'src/api';
 import { ApprovalEntity } from 'src/approval/approval.entity';
 import { getUserLevelFromString } from 'src/auth/auth.level';
 import {
@@ -187,6 +187,7 @@ export class PerformanceMetricService {
                 where: {
                   ...range.where(),
                   approverId: userId ? userId : Not(IsNull()),
+                  status: Not(PostReplacementStatus.original),
                 },
                 select: ['approverId', 'updatedAt'],
               })
