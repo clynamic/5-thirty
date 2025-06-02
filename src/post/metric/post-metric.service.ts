@@ -67,7 +67,8 @@ export class PostMetricService {
         new Brackets((qb) => {
           qb.where('approval.post_id IS NULL')
             .andWhere('flag.id IS NULL')
-            .andWhere('permit.post_id IS NULL');
+            .andWhere('permit.post_id IS NULL')
+            .andWhere('post_version.updated_at <= :end');
         }),
       )
       .groupBy('post_version.post_id')
