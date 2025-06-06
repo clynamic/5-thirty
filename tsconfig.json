@@ -37,7 +37,9 @@
     "skipLibCheck": true,
     "declaration": true,
     "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
   },
   "watchOptions": { "watchFile": "fixedPollingInterval" }
 }
