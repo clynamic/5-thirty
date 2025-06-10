@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
+import path from 'path';
 
 dotenv.config();
 
@@ -16,8 +17,8 @@ export const AppDataSourceOptions = {
   database:
     process.env['DB_NAME'] ||
     (dbType === 'sqlite' ? `${dataDir}/db.sqlite` : undefined),
-  entities: ['**/*.entity.js'],
-  migrations: [`migration/${dbType}/*.js`],
+  entities: [path.join(__dirname, '**', '*.entity.js')],
+  migrations: [path.join(__dirname, 'migration', dbType, '*.js')],
   migrationsRun: process.env['NODE_ENV'] === 'production',
   synchronize: process.env['NODE_ENV'] !== 'production',
   namingStrategy: new SnakeNamingStrategy(),
