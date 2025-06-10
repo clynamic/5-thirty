@@ -15,8 +15,6 @@ services:
       DATA_DIR: /data
     volumes:
       - app-data:/data
-    ports:
-      - '3000:3000'
     depends_on:
       - five-thirty-postgres
     networks:
