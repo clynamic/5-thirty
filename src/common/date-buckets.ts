@@ -97,7 +97,7 @@ export const createTimeBuckets = (range: DateRange): Date[] => {
   const buckets = [];
   for (
     let currentDate = start;
-    currentDate <= end;
+    currentDate < end;
     currentDate = incrementTimeBucket(currentDate, range.timezone, range.scale)
   ) {
     buckets.push(currentDate);
