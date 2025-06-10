@@ -117,14 +117,8 @@ export class PostMetricService {
       .createQueryBuilder('post_version')
       .select('post_version.post_id', 'post_id')
       .addSelect('MAX(post_version.updated_at)', 'updated_at')
-      .addSelect(
-        'MIN(CASE WHEN approval.created_at BETWEEN :start AND :end THEN approval.created_at END)',
-        'approval_date',
-      )
-      .addSelect(
-        'MIN(CASE WHEN flag.created_at BETWEEN :start AND :end THEN flag.created_at END)',
-        'deletion_date',
-      )
+      .addSelect('MIN(approval.created_at)', 'approval_date')
+      .addSelect('MIN(flag.created_at)', 'deletion_date')
       .leftJoin(
         this.approvalRepository.metadata.tableName,
         'approval',
@@ -141,25 +135,24 @@ export class PostMetricService {
         'permit',
         'post_version.post_id = permit.post_id',
       )
-      .where(
+      .where('post_version.updated_at <= :end', {
+        end: range.endDate,
+      })
+      .andWhere('permit.post_id IS NULL')
+      .andWhere(
         new Brackets((qb) => {
-          qb.where('approval.created_at BETWEEN :start AND :end', {
-            start: range.startDate,
-            end: range.endDate,
-          }).orWhere('flag.created_at BETWEEN :start AND :end', {
-            start: range.startDate,
-            end: range.endDate,
-          });
+          qb.where('approval.created_at IS NULL').orWhere(
+            'approval.created_at > :start',
+            { start: range.startDate },
+          );
         }),
       )
-      .orWhere(
+      .andWhere(
         new Brackets((qb) => {
-          qb.where('permit.post_id IS NULL')
-            .andWhere('approval.post_id IS NULL')
-            .andWhere('flag.id IS NULL')
-            .andWhere('post_version.updated_at < :end', {
-              end: range.endDate,
-            });
+          qb.where('flag.created_at IS NULL').orWhere(
+            'flag.created_at > :start',
+            { start: range.startDate },
+          );
         }),
       )
       .groupBy('post_version.post_id')
@@ -194,7 +187,7 @@ export class PostMetricService {
           range.endDate,
         ]);
 
-        if (startDate >= endDate) return null;
+        if (startDate > endDate) return null;
 
         return new DateRange({ startDate, endDate });
       })
