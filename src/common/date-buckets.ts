@@ -89,10 +89,7 @@ const incrementTimeBucket = (
 export const createTimeBuckets = (range: DateRange): Date[] => {
   const start = range.startDate;
 
-  const end = min(
-    [range.endDate, endOfDay(new Date(), range.in())],
-    range.in(),
-  );
+  const end = min([range.endDate, new Date()], range.in());
 
   const buckets = [];
   for (
