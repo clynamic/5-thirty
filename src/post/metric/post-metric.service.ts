@@ -34,8 +34,10 @@ export class PostMetricService {
     private readonly permitRepository: Repository<PermitEntity>,
   ) {}
 
-  async statusSummary(range?: PartialDateRange): Promise<PostStatusSummary> {
-    range = DateRange.fill(range);
+  async statusSummary(
+    partialRange?: PartialDateRange,
+  ): Promise<PostStatusSummary> {
+    const range = DateRange.fill(partialRange);
 
     const posts = await this.postVersionRepository
       .createQueryBuilder('post_version')
@@ -106,15 +108,23 @@ export class PostMetricService {
     dependencies: [PostVersionEntity, PermitEntity, ApprovalEntity, FlagEntity],
     disable: true,
   })
-  async pendingSeries(range?: PartialDateRange): Promise<SeriesCountPoint[]> {
-    range = DateRange.fill(range);
+  async pendingSeries(
+    partialRange?: PartialDateRange,
+  ): Promise<SeriesCountPoint[]> {
+    const range = DateRange.fill(partialRange);
 
     const posts = await this.postVersionRepository
       .createQueryBuilder('post_version')
       .select('post_version.post_id', 'post_id')
       .addSelect('MAX(post_version.updated_at)', 'updated_at')
-      .addSelect('MAX(approval.created_at)', 'approval_date')
-      .addSelect('MAX(flag.created_at)', 'deletion_date')
+      .addSelect(
+        'MIN(CASE WHEN approval.created_at BETWEEN :start AND :end THEN approval.created_at END)',
+        'approval_date',
+      )
+      .addSelect(
+        'MIN(CASE WHEN flag.created_at BETWEEN :start AND :end THEN flag.created_at END)',
+        'deletion_date',
+      )
       .leftJoin(
         this.approvalRepository.metadata.tableName,
         'approval',
@@ -171,22 +181,24 @@ export class PostMetricService {
           ),
       );
 
-    const scale = collapseTimeScaleDuration(range.scale!);
+    const scale = collapseTimeScaleDuration(range.scale);
 
-    const dates = posts.map((post) => {
-      const startDate = max([post.updatedAt, range.startDate!]);
+    const dates = posts
+      .map((post) => {
+        const startDate = max([post.updatedAt, range.startDate]);
 
-      const handledDate = post.approvalDate || post.deletionDate;
-      const endDate = max([
-        min([
+        const handledDate = post.approvalDate ?? post.deletionDate;
+
+        const endDate = min([
           handledDate ? sub(handledDate, { [scale]: 1 }) : new Date(),
-          range.endDate!,
-        ]),
-        range.startDate!,
-      ]);
+          range.endDate,
+        ]);
 
-      return new DateRange({ startDate, endDate });
-    });
+        if (startDate >= endDate) return null;
+
+        return new DateRange({ startDate, endDate });
+      })
+      .filter((date): date is DateRange => date !== null);
 
     return generateSeriesCountPoints(dates, range);
   }

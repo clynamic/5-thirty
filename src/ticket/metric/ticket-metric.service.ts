@@ -104,8 +104,10 @@ export class TicketMetricService {
     });
   }
 
-  async openSeries(range?: PartialDateRange): Promise<SeriesCountPoint[]> {
-    range = DateRange.fill(range);
+  async openSeries(
+    partialRange?: PartialDateRange,
+  ): Promise<SeriesCountPoint[]> {
+    const range = DateRange.fill(partialRange);
     const tickets = await this.ticketRepository.find({
       where: [
         ...this.whereCreatedOrUpdated(range),
@@ -120,24 +122,27 @@ export class TicketMetricService {
       ],
     });
 
-    const scale = collapseTimeScaleDuration(range.scale!);
+    const scale = collapseTimeScaleDuration(range.scale);
 
-    const dates = tickets.map((ticket) => {
-      return new DateRange({
-        startDate: max([ticket.createdAt, range.startDate!]),
-        endDate: max([
-          min([
-            ticket.status === TicketStatus.approved
-              ? sub(ticket.updatedAt, { [scale]: 1 })
-              : range.endDate!,
-            range.endDate!,
-          ]),
-          range.startDate!,
-        ]),
-      });
-    });
+    const dates = tickets
+      .map((ticket) => {
+        const startDate = max([ticket.createdAt, range.startDate]);
 
-    return generateSeriesCountPoints(dates, range!);
+        const handledDate =
+          ticket.status === TicketStatus.approved ? ticket.updatedAt : null;
+
+        const endDate = min([
+          handledDate ? sub(handledDate, { [scale]: 1 }) : new Date(),
+          range.endDate,
+        ]);
+
+        if (startDate >= endDate) return null;
+
+        return new DateRange({ startDate, endDate });
+      })
+      .filter((date): date is DateRange => date !== null);
+
+    return generateSeriesCountPoints(dates, range);
   }
 
   async createdSeries(
