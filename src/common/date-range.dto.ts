@@ -129,7 +129,7 @@ export const inferDefaultScale = (
 
   const diffInMs = Math.abs(endDate.getTime() - startDate.getTime());
   const hours = diffInMs / (1000 * 60 * 60);
-  const days = diffInMs / (1000 * 60 * 60 * 24);
+  const days = hours / 24;
   const months = days / 30;
   const years = days / 365;
 
