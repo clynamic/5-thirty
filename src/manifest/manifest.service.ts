@@ -1,5 +1,5 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { add, addMilliseconds, isEqual, min, startOfDay } from 'date-fns';
+import { add, addMilliseconds, isEqual, min, startOfDay, sub } from 'date-fns';
 import {
   DateRange,
   endOf,
@@ -86,6 +86,11 @@ export class ManifestService {
   }
 
   async listOrdersByRange(type: ItemType, range: DateRange): Promise<Order[]> {
+    range = new DateRange({
+      ...range,
+      startDate: sub(range.startDate, { days: 1 }),
+      endDate: add(range.endDate, { days: 1 }),
+    });
     const manifests = await this.list(range, { type: [type] });
     return ManifestService.computeOrders(manifests, range);
   }
