@@ -29,6 +29,9 @@ export class FlagEntity extends LabelLink {
   @Column({ type: 'simple-enum', enum: PostFlagType })
   type: PostFlagType;
 
+  @Column({ type: 'text', nullable: true })
+  note: string | null;
+
   @DateTimeColumn()
   @Index()
   createdAt: Date;

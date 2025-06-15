@@ -21,6 +21,11 @@ export interface PostFlag {
   is_deletion: boolean;
   /** Whether the flag has been resolved */
   is_resolved: boolean;
+  /**
+   * Additional explanation regarding the flag
+   * @nullable
+   */
+  note?: string | null;
   /** The ID of the post that the flag is related to */
   post_id: number;
   /** The reason for the flag or deletion request */

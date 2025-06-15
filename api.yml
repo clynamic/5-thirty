@@ -2165,6 +2165,10 @@ components:
           type: string
           description: The type of the flag (e.g., flag or deletion)
           enum: [flag, deletion]
+        note:
+          type: string
+          nullable: true
+          description: Additional explanation regarding the flag
     PostVersion:
       type: object
       description: A version of a post, representing changes made to the post.
