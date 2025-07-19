@@ -91,12 +91,23 @@ export class AuthService {
   }
 
   readServerAdminCredentials = (): UserCredentials => ({
-    username: this.configService.getOrThrow(AppConfigKeys.E621_GLOBAL_USERNAME),
-    password: this.configService.getOrThrow(AppConfigKeys.E621_GLOBAL_API_KEY),
+    username: this.configService
+      .getOrThrow<string>(AppConfigKeys.E621_GLOBAL_USERNAME)
+      .trim(),
+    password: this.configService
+      .getOrThrow<string>(AppConfigKeys.E621_GLOBAL_API_KEY)
+      .trim(),
   });
 
-  isServerAdmin = (user: DecodedJwt): boolean =>
-    isEqual(user.credentials, this.readServerAdminCredentials());
+  isServerAdmin = (user: DecodedJwt): boolean => {
+    const userCredentials = user.credentials;
+    const adminCredentials = this.readServerAdminCredentials();
+    return (
+      userCredentials.username.toLowerCase() ===
+        adminCredentials.username.toLowerCase() &&
+      userCredentials.password === adminCredentials.password
+    );
+  };
 
   getServerAxiosConfig = (): AxiosRequestConfig => ({
     headers: {
