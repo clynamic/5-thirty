@@ -145,6 +145,7 @@ export class PerformanceMetricService {
                   ...range.where(),
                   type: PostFlagType.deletion,
                   creatorId: userId,
+                  isResolved: false,
                 },
                 select: ['creatorId', 'createdAt'],
               })
