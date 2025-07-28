@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ApprovalEntity } from 'src/approval/approval.entity';
 import { BulkUpdateRequestEntity } from 'src/bulk-update-request/bulk-update-request.entity';
-import { WithId } from 'src/common';
+import { WithId, PaginationParams } from 'src/common';
 import { FeedbackEntity } from 'src/feedback/feedback.entity';
 import { FlagEntity } from 'src/flag/flag.entity';
 import { ItemType } from 'src/label/label.entity';
@@ -58,47 +58,53 @@ export class HealthService {
     [ItemType.tagImplications]: this.tagImplicationRepository,
   };
 
-  async getManifestHealth(): Promise<ManifestHealth[]> {
+  async getManifestHealth(pages?: PaginationParams): Promise<ManifestHealth[]> {
     const health: ManifestHealth[] = [];
+    pages = new PaginationParams({
+      limit: 5, // Ignore global default page size, as these items are very expensive to fetch
+      ...pages,
+    });
 
-    for (const itemType of Object.keys(this.itemRepositories) as ItemType[]) {
-      const repository = this.itemRepositories[itemType];
+    const manifests = await this.manifestRepository.find({
+      order: {
+        startDate: 'DESC',
+      },
+      take: pages.limit,
+      skip: PaginationParams.calculateOffset(pages),
+    });
+
+    for (const manifest of manifests) {
+      const repository = this.itemRepositories[manifest.type];
       if (!repository) continue;
 
-      const manifests = await this.manifestRepository.find({
-        where: { type: itemType },
+      const allIds: { id: number }[] = await repository.find({
+        select: ['id'],
+        where: {
+          id: Between(manifest.lowerId, manifest.upperId),
+        },
+        order: {
+          id: 'ASC',
+        },
       });
 
-      for (const manifest of manifests) {
-        const allIds: { id: number }[] = await repository.find({
-          select: ['id'],
-          where: {
-            id: Between(manifest.lowerId, manifest.upperId),
-          },
-          order: {
-            id: 'ASC',
-          },
-        });
+      const slices = generateManifestSlices({
+        allIds,
+        lowerId: manifest.lowerId,
+        upperId: manifest.upperId,
+      });
 
-        const slices = generateManifestSlices({
-          allIds,
-          lowerId: manifest.lowerId,
-          upperId: manifest.upperId,
-        });
-
-        health.push(
-          new ManifestHealth({
-            id: manifest.id,
-            type: itemType,
-            startDate: manifest.startDate,
-            endDate: manifest.endDate,
-            startId: manifest.lowerId,
-            endId: manifest.upperId,
-            count: allIds.length,
-            slices: slices,
-          }),
-        );
-      }
+      health.push(
+        new ManifestHealth({
+          id: manifest.id,
+          type: manifest.type,
+          startDate: manifest.startDate,
+          endDate: manifest.endDate,
+          startId: manifest.lowerId,
+          endId: manifest.upperId,
+          count: allIds.length,
+          slices: slices,
+        }),
+      );
     }
 
     return health;

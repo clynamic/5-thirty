@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -6,6 +6,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ServerAdminGuard } from 'src/auth/auth.guard';
+import { PaginationParams } from 'src/common/pagination.dto';
 
 import { ManifestHealth } from './health.dto';
 import { HealthService } from './health.service';
@@ -42,7 +43,9 @@ export class HealthController {
   })
   @UseGuards(ServerAdminGuard)
   @ApiBearerAuth()
-  async getManifestHealth(): Promise<ManifestHealth[]> {
-    return this.healthService.getManifestHealth();
+  async getManifestHealth(
+    @Query() pages?: PaginationParams,
+  ): Promise<ManifestHealth[]> {
+    return this.healthService.getManifestHealth(pages);
   }
 }

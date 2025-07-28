@@ -7,9 +7,7 @@ import { Raw } from './raw';
 
 export class PaginationParams {
   constructor(value?: Raw<PaginationParams>) {
-    if (value) {
-      Object.assign(this, value);
-    }
+    Object.assign(this, value);
   }
 
   static DEFAULT_PAGE_SIZE = 80;
