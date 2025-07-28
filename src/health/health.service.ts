@@ -67,7 +67,7 @@ export class HealthService {
 
     const manifests = await this.manifestRepository.find({
       order: {
-        startDate: 'DESC',
+        endDate: 'DESC',
       },
       take: pages.limit,
       skip: PaginationParams.calculateOffset(pages),
