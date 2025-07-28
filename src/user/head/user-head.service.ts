@@ -2,8 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { subMilliseconds } from 'date-fns';
 import { postsMany, usersMany } from 'src/api';
+import { Cacheable } from 'src/app/browser.module';
 import { AuthService } from 'src/auth/auth.service';
-import { convertKeysToCamelCase } from 'src/common';
+import { convertKeysToCamelCase, toRawQuery } from 'src/common';
 import { PostEntity } from 'src/post/post.entity';
 import { In, IsNull, MoreThan, Not, Repository } from 'typeorm';
 
@@ -25,9 +26,20 @@ export class UserHeadService {
     private readonly authService: AuthService,
   ) {}
 
+  static getUserHeadKey(
+    id: number | number[],
+    params?: UserHeadParams,
+  ): string {
+    return `user-head?${toRawQuery({ id, ...params })}`;
+  }
+
   get(id: number, params?: UserHeadParams): Promise<UserHead>;
   get(id: number[], params?: UserHeadParams): Promise<UserHead[]>;
 
+  @Cacheable(UserHeadService.getUserHeadKey, {
+    ttl: 5 * 60 * 1000,
+    dependencies: [UserEntity, PostEntity],
+  })
   async get(
     id: number | number[],
     params?: UserHeadParams,
