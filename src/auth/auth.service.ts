@@ -99,7 +99,27 @@ export class AuthService {
       .trim(),
   });
 
+  private getServerAdminUsernames(): string[] {
+    const serverAdmins = this.configService
+      .get<string>(AppConfigKeys.SERVER_ADMINS, '')
+      .trim();
+
+    if (!serverAdmins) {
+      return [];
+    }
+
+    return serverAdmins
+      .split(',')
+      .map((username) => username.trim().toLowerCase())
+      .filter((username) => username.length > 0);
+  }
+
   isServerAdmin = (user: DecodedJwt): boolean => {
+    const adminUsernames = this.getServerAdminUsernames();
+    if (adminUsernames.includes(user.username.toLowerCase())) {
+      return true;
+    }
+
     const userCredentials = user.credentials;
     const adminCredentials = this.readServerAdminCredentials();
     return (

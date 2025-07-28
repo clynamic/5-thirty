@@ -7,6 +7,7 @@ export enum AppConfigKeys {
   E621_GLOBAL_API_KEY = 'E621_GLOBAL_API_KEY',
   CORS_ALLOWED_ORIGINS = 'CORS_ALLOWED_ORIGINS',
   DATA_DIR = 'DATA_DIR',
+  SERVER_ADMINS = 'SERVER_ADMINS',
 }
 
 @Module({
@@ -21,6 +22,7 @@ export enum AppConfigKeys {
           .try(Joi.string(), Joi.array().items(Joi.string()))
           .optional(),
         DATA_DIR: Joi.string().optional().default('./data'),
+        SERVER_ADMINS: Joi.string().optional().default(''),
       }),
     }),
   ],

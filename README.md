@@ -30,6 +30,25 @@ yarn
 yarn dev
 ```
 
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Required: E621 API credentials for server operations
+E621_GLOBAL_USERNAME=your_username
+E621_GLOBAL_API_KEY=your_api_key
+
+# Optional: CORS configuration
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+
+# Optional: Data directory
+DATA_DIR=./data
+
+# Optional: Users which have admin privileges for managing the server
+SERVER_ADMINS=admin1,admin2,admin3
+```
+
 ## Stack
 
 - [NestJS](https://nestjs.com/) - js backend framework
