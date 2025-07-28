@@ -7,10 +7,12 @@ import {
   PaginationParams,
   PartialDateRange,
   SeriesCountPoint,
+  toRawQuery,
 } from 'src/common';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import { Repository } from 'typeorm';
+import { Cacheable } from 'src/app/browser.module';
 
 import {
   PostUploaderSummary,
@@ -25,6 +27,17 @@ export class UploadMetricService {
     private readonly userHeadService: UserHeadService,
   ) {}
 
+  static getCountKey(
+    range?: PartialDateRange,
+    query?: PostUploadSeriesQuery,
+  ): string {
+    return `upload-count?${toRawQuery({ ...range, ...query })}`;
+  }
+
+  @Cacheable(UploadMetricService.getCountKey, {
+    ttl: 10 * 60 * 1000,
+    dependencies: [PostVersionEntity],
+  })
   async count(
     range?: PartialDateRange,
     query?: PostUploadSeriesQuery,
@@ -46,6 +59,17 @@ export class UploadMetricService {
     );
   }
 
+  static getUploadersKey(
+    range?: PartialDateRange,
+    pages?: PaginationParams,
+  ): string {
+    return `upload-uploaders?${toRawQuery({ ...range, ...pages })}`;
+  }
+
+  @Cacheable(UploadMetricService.getUploadersKey, {
+    ttl: 15 * 60 * 1000,
+    dependencies: [PostVersionEntity, 'UserHeadService'],
+  })
   async uploaders(
     range?: PartialDateRange,
     pages?: PaginationParams,

@@ -7,9 +7,11 @@ import {
   PaginationParams,
   PartialDateRange,
   SeriesCountPoint,
+  toRawQuery,
 } from 'src/common';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import { Repository } from 'typeorm';
+import { Cacheable } from 'src/app/browser.module';
 
 import { ApprovalEntity } from '../approval.entity';
 import {
@@ -26,6 +28,15 @@ export class ApprovalMetricService {
     private readonly userHeadService: UserHeadService,
   ) {}
 
+  static getCountSummaryKey(range?: PartialDateRange): string {
+    range = DateRange.fill(range);
+    return `approval-count-summary?${toRawQuery(range)}`;
+  }
+
+  @Cacheable(ApprovalMetricService.getCountSummaryKey, {
+    ttl: 10 * 60 * 1000,
+    dependencies: [ApprovalEntity],
+  })
   async countSummary(range?: PartialDateRange): Promise<ApprovalCountSummary> {
     return new ApprovalCountSummary({
       total: await this.approvalRepository.count({
@@ -34,6 +45,17 @@ export class ApprovalMetricService {
     });
   }
 
+  static getCountSeriesKey(
+    range?: PartialDateRange,
+    query?: ApprovalCountSeriesQuery,
+  ): string {
+    return `approval-count-series?${toRawQuery({ ...range, ...query })}`;
+  }
+
+  @Cacheable(ApprovalMetricService.getCountSeriesKey, {
+    ttl: 10 * 60 * 1000,
+    dependencies: [ApprovalEntity],
+  })
   async countSeries(
     range?: PartialDateRange,
     query?: ApprovalCountSeriesQuery,
@@ -52,6 +74,17 @@ export class ApprovalMetricService {
     );
   }
 
+  static getApproverSummaryKey(
+    range?: PartialDateRange,
+    pages?: PaginationParams,
+  ): string {
+    return `approval-approver-summary?${toRawQuery({ ...range, ...pages })}`;
+  }
+
+  @Cacheable(ApprovalMetricService.getApproverSummaryKey, {
+    ttl: 15 * 60 * 1000,
+    dependencies: [ApprovalEntity, UserHeadService],
+  })
   async approverSummary(
     range?: PartialDateRange,
     pages?: PaginationParams,

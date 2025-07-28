@@ -133,6 +133,28 @@ export function Invalidates(
   };
 }
 
+export function withInvalidation<T extends (...args: any[]) => any>(
+  fn: T,
+  resourceKeys: ResourceKey | ResourceKey[],
+): T {
+  return (async (...args: any[]) => {
+    const cacheManager = CacheManager.getInstance();
+
+    try {
+      const result = await fn(...args);
+      const keys = Array.isArray(resourceKeys) ? resourceKeys : [resourceKeys];
+
+      for (const entityType of keys) {
+        await cacheManager.delDep(entityType);
+      }
+
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }) as T;
+}
+
 @Global()
 @Module({
   imports: [

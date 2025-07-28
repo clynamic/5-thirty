@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { constructCountUpdated, constructFirstFromId } from 'src/common';
 import { Repository } from 'typeorm';
+import { withInvalidation } from 'src/app/browser.module';
 
 import { PostReplacementEntity } from '../post-replacement.entity';
 
@@ -12,8 +13,9 @@ export class PostReplacementSyncService {
     private readonly postReplacementRepository: Repository<PostReplacementEntity>,
   ) {}
 
-  save = this.postReplacementRepository.save.bind(
-    this.postReplacementRepository,
+  save = withInvalidation(
+    this.postReplacementRepository.save.bind(this.postReplacementRepository),
+    PostReplacementEntity,
   );
 
   firstFromId = constructFirstFromId(this.postReplacementRepository);

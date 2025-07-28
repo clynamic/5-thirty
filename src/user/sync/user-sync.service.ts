@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { subMilliseconds } from 'date-fns';
 import { In, MoreThanOrEqual, Repository } from 'typeorm';
+import { withInvalidation } from 'src/app/browser.module';
 
 import { NotableUserEntity } from '../notable-user.entity';
 import { UserEntity } from '../user.entity';
@@ -55,11 +56,20 @@ export class UserSyncService {
       .then((users) => users.map((user) => user.avatar_id));
   }
 
-  note = this.notableUserRepository.save.bind(this.notableUserRepository);
+  note = withInvalidation(
+    this.notableUserRepository.save.bind(this.notableUserRepository),
+    NotableUserEntity,
+  );
 
-  denote = this.notableUserRepository.remove.bind(this.notableUserRepository);
+  denote = withInvalidation(
+    this.notableUserRepository.remove.bind(this.notableUserRepository),
+    NotableUserEntity,
+  );
 
-  create = this.userRepository.save.bind(this.userRepository);
+  create = withInvalidation(
+    this.userRepository.save.bind(this.userRepository),
+    UserEntity,
+  );
 
   async findOutdated(
     users: number[],

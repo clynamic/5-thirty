@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ApprovalEntity } from 'src/approval/approval.entity';
 import { BulkUpdateRequestEntity } from 'src/bulk-update-request/bulk-update-request.entity';
-import { WithId, PaginationParams } from 'src/common';
+import { WithId, PaginationParams, toRawQuery } from 'src/common';
 import { FeedbackEntity } from 'src/feedback/feedback.entity';
 import { FlagEntity } from 'src/flag/flag.entity';
 import { ItemType } from 'src/label/label.entity';
@@ -14,6 +14,7 @@ import { TagAliasEntity } from 'src/tag-alias/tag-alias.entity';
 import { TagImplicationEntity } from 'src/tag-implication/tag-implication.entity';
 import { TicketEntity } from 'src/ticket/ticket.entity';
 import { Between, Repository } from 'typeorm';
+import { Cacheable } from 'src/app/browser.module';
 
 import { ManifestHealth } from './health.dto';
 import { generateManifestSlices } from './health.utils';
@@ -58,6 +59,26 @@ export class HealthService {
     [ItemType.tagImplications]: this.tagImplicationRepository,
   };
 
+  static getManifestHealthKey(pages?: PaginationParams): string {
+    return `manifest-health?${toRawQuery(pages)}`;
+  }
+
+  @Cacheable(HealthService.getManifestHealthKey, {
+    ttl: 15 * 60 * 1000,
+    dependencies: [
+      ManifestEntity,
+      ApprovalEntity,
+      TicketEntity,
+      FlagEntity,
+      FeedbackEntity,
+      PostVersionEntity,
+      PostReplacementEntity,
+      ModActionEntity,
+      BulkUpdateRequestEntity,
+      TagAliasEntity,
+      TagImplicationEntity,
+    ],
+  })
   async getManifestHealth(pages?: PaginationParams): Promise<ManifestHealth[]> {
     const health: ManifestHealth[] = [];
     pages = new PaginationParams({

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { withInvalidation } from 'src/app/browser.module';
 
 import { ApprovalEntity } from '../approval.entity';
 
@@ -15,5 +16,8 @@ export class ApprovalSyncService {
     return this.approvalRepository.findOneBy({ id });
   }
 
-  save = this.approvalRepository.save.bind(this.approvalRepository);
+  save = withInvalidation(
+    this.approvalRepository.save.bind(this.approvalRepository),
+    ApprovalEntity,
+  );
 }

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DateRange } from 'src/common';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { Repository } from 'typeorm';
+import { withInvalidation } from 'src/app/browser.module';
 
 @Injectable()
 export class UploadSyncService {
@@ -11,7 +12,10 @@ export class UploadSyncService {
     private readonly postVersionRepository: Repository<PostVersionEntity>,
   ) {}
 
-  save = this.postVersionRepository.save.bind(this.postVersionRepository);
+  save = withInvalidation(
+    this.postVersionRepository.save.bind(this.postVersionRepository),
+    PostVersionEntity,
+  );
 
   async findUploaders(range?: DateRange): Promise<number[]> {
     return (

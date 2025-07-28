@@ -15,7 +15,10 @@ export const toRaws = <T extends object>(obj: T): Partial<Raw<T>> => {
   }, {} as Partial<T>);
 };
 
-export const toRawQuery = <T extends object>(obj: T): string => {
+export const toRawQuery = <T extends object>(obj?: T): string => {
+  if (!obj || Object.keys(obj).length === 0) {
+    return '';
+  }
   const raw = toRaws(obj);
   return Object.keys(raw)
     .map((key) => {

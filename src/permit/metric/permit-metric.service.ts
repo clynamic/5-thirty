@@ -7,9 +7,11 @@ import {
   generateSeriesCountPoints,
   PartialDateRange,
   SeriesCountPoint,
+  toRawQuery,
 } from 'src/common';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { Repository } from 'typeorm';
+import { Cacheable } from 'src/app/browser.module';
 
 import { PermitEntity } from '../permit.entity';
 
@@ -22,6 +24,15 @@ export class PermitMetricService {
     private readonly postVersionRepository: Repository<PostVersionEntity>,
   ) {}
 
+  static getCountKey(range?: PartialDateRange): string {
+    range = DateRange.fill(range);
+    return `permit-count?${toRawQuery(range)}`;
+  }
+
+  @Cacheable(PermitMetricService.getCountKey, {
+    ttl: 10 * 60 * 1000,
+    dependencies: [PermitEntity, PostVersionEntity],
+  })
   async count(range?: PartialDateRange): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
 

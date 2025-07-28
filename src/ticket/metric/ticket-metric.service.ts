@@ -12,9 +12,11 @@ import {
   PartialDateRange,
   Raw,
   SeriesCountPoint,
+  toRawQuery,
 } from 'src/common';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import { FindOptionsWhere, LessThan, MoreThan, Not, Repository } from 'typeorm';
+import { Cacheable } from 'src/app/browser.module';
 
 import { TicketEntity } from '../ticket.entity';
 import {
@@ -55,6 +57,15 @@ export class TicketMetricService {
     ];
   }
 
+  static getStatusKey(range?: PartialDateRange): string {
+    range = DateRange.fill(range);
+    return `ticket-status?${toRawQuery(range)}`;
+  }
+
+  @Cacheable(TicketMetricService.getStatusKey, {
+    ttl: 10 * 60 * 1000,
+    dependencies: [TicketEntity],
+  })
   async status(range?: PartialDateRange): Promise<TicketStatusSeriesPoint[]> {
     range = DateRange.fill(range);
 
@@ -82,6 +93,17 @@ export class TicketMetricService {
     );
   }
 
+  static getTypeSummaryKey(
+    range?: PartialDateRange,
+    query?: TicketTypeSummaryQuery,
+  ): string {
+    return `ticket-type-summary?${toRawQuery({ ...range, ...query })}`;
+  }
+
+  @Cacheable(TicketMetricService.getTypeSummaryKey, {
+    ttl: 15 * 60 * 1000,
+    dependencies: [TicketEntity],
+  })
   async typeSummary(
     range?: PartialDateRange,
     query?: TicketTypeSummaryQuery,
@@ -104,6 +126,15 @@ export class TicketMetricService {
     });
   }
 
+  static getOpenSeriesKey(partialRange?: PartialDateRange): string {
+    const range = DateRange.fill(partialRange);
+    return `ticket-open-series?${toRawQuery(range)}`;
+  }
+
+  @Cacheable(TicketMetricService.getOpenSeriesKey, {
+    ttl: 10 * 60 * 1000,
+    dependencies: [TicketEntity],
+  })
   async openSeries(
     partialRange?: PartialDateRange,
   ): Promise<SeriesCountPoint[]> {

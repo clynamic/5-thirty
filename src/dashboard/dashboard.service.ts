@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Cacheable, Invalidates } from 'src/app/browser.module';
 
 import { DashboardUpdate } from './dashboard.dto';
 import { DashboardEntity, DashboardType } from './dashboard.entity';
+import { toRawQuery } from 'src/common';
 
 @Injectable()
 export class DashboardService {
@@ -12,6 +14,14 @@ export class DashboardService {
     private readonly dashboardRepository: Repository<DashboardEntity>,
   ) {}
 
+  static getDashboardKey(userId: number, type: DashboardType): string {
+    return `dashboard?${toRawQuery({ userId, type })}`;
+  }
+
+  @Cacheable(DashboardService.getDashboardKey, {
+    ttl: 30 * 60 * 1000,
+    dependencies: [DashboardEntity],
+  })
   async get(
     userId: number,
     type: DashboardType,
@@ -21,6 +31,7 @@ export class DashboardService {
     });
   }
 
+  @Invalidates(DashboardEntity)
   async update(
     userId: number,
     type: DashboardType,
@@ -42,6 +53,7 @@ export class DashboardService {
     });
   }
 
+  @Invalidates(DashboardEntity)
   async delete(userId: number, type: DashboardType): Promise<void> {
     const dashboard = await this.dashboardRepository.findOne({
       where: { userId, type },

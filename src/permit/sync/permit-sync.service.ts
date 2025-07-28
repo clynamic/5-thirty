@@ -6,6 +6,7 @@ import { FlagEntity } from 'src/flag/flag.entity';
 import { PostEntity } from 'src/post/post.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { Brackets, In, Repository } from 'typeorm';
+import { withInvalidation } from 'src/app/browser.module';
 
 import { PermitEntity } from '../permit.entity';
 
@@ -29,11 +30,20 @@ export class PermitSyncService {
     private readonly flagRepository: Repository<FlagEntity>,
   ) {}
 
-  save = this.permitRepository.save.bind(this.permitRepository);
+  save = withInvalidation(
+    this.permitRepository.save.bind(this.permitRepository),
+    PermitEntity,
+  );
 
-  remove = this.permitRepository.remove.bind(this.permitRepository);
+  remove = withInvalidation(
+    this.permitRepository.remove.bind(this.permitRepository),
+    PermitEntity,
+  );
 
-  savePosts = this.postRepository.save.bind(this.postRepository);
+  savePosts = withInvalidation(
+    this.postRepository.save.bind(this.postRepository),
+    PostEntity,
+  );
 
   /**
    * Unexplained posts are ones that are potentially in Pending status.

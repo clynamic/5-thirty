@@ -6,6 +6,7 @@ import {
   DateRange,
 } from 'src/common';
 import { Repository } from 'typeorm';
+import { withInvalidation } from 'src/app/browser.module';
 
 import { TicketEntity } from '../ticket.entity';
 
@@ -36,5 +37,8 @@ export class TicketSyncService {
   firstFromId = constructFirstFromId(this.ticketRepository);
   countUpdated = constructCountUpdated(this.ticketRepository);
 
-  save = this.ticketRepository.save.bind(this.ticketRepository);
+  save = withInvalidation(
+    this.ticketRepository.save.bind(this.ticketRepository),
+    TicketEntity,
+  );
 }

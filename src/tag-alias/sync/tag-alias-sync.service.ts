@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { constructCountUpdated, constructFirstFromId } from 'src/common';
 import { Repository } from 'typeorm';
+import { withInvalidation } from 'src/app/browser.module';
 
 import { TagAliasEntity } from '../tag-alias.entity';
 
@@ -15,5 +16,8 @@ export class TagAliasSyncService {
   firstFromId = constructFirstFromId(this.TagAliasRepository);
   countUpdated = constructCountUpdated(this.TagAliasRepository);
 
-  save = this.TagAliasRepository.save.bind(this.TagAliasRepository);
+  save = withInvalidation(
+    this.TagAliasRepository.save.bind(this.TagAliasRepository),
+    TagAliasEntity,
+  );
 }

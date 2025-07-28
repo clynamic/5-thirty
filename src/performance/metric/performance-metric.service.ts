@@ -12,6 +12,7 @@ import {
   getDurationKeyForScale,
   PartialDateRange,
   WithDate,
+  toRawQuery,
 } from 'src/common';
 import { FlagEntity } from 'src/flag/flag.entity';
 import { PostReplacementEntity } from 'src/post-replacement/post-replacement.entity';
@@ -20,6 +21,7 @@ import { TicketEntity } from 'src/ticket/ticket.entity';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import { UserEntity } from 'src/user/user.entity';
 import { FindOptionsWhere, IsNull, Not, Repository } from 'typeorm';
+import { Cacheable } from 'src/app/browser.module';
 
 import {
   Activity,
@@ -253,6 +255,24 @@ export class PerformanceMetricService {
     return items;
   }
 
+  static getPerformanceKey(
+    range?: PartialDateRange,
+    query?: PerformanceSummaryQuery,
+  ): string {
+    return `performance?${toRawQuery({ ...range, ...query })}`;
+  }
+
+  @Cacheable(PerformanceMetricService.getPerformanceKey, {
+    ttl: 30 * 60 * 1000,
+    dependencies: [
+      UserEntity,
+      PostVersionEntity,
+      PostReplacementEntity,
+      TicketEntity,
+      ApprovalEntity,
+      FlagEntity,
+    ],
+  })
   async performance(
     range?: PartialDateRange,
     query?: PerformanceSummaryQuery,
@@ -458,6 +478,24 @@ export class PerformanceMetricService {
       );
   }
 
+  static getActivityKey(
+    range?: PartialDateRange,
+    query?: ActivitySummaryQuery,
+  ): string {
+    return `activity?${toRawQuery({ ...range, ...query })}`;
+  }
+
+  @Cacheable(PerformanceMetricService.getActivityKey, {
+    ttl: 15 * 60 * 1000, // 15 minutes
+    dependencies: [
+      UserEntity,
+      PostVersionEntity,
+      PostReplacementEntity,
+      TicketEntity,
+      ApprovalEntity,
+      FlagEntity,
+    ],
+  })
   async activity(
     range?: PartialDateRange,
     query?: ActivitySummaryQuery,

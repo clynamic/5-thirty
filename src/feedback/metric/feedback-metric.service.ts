@@ -5,8 +5,10 @@ import {
   generateSeriesRecordPoints,
   PartialDateRange,
   Raw,
+  toRawQuery,
 } from 'src/common';
 import { Repository } from 'typeorm';
+import { Cacheable } from 'src/app/browser.module';
 
 import { FeedbackEntity } from '../feedback.entity';
 import {
@@ -22,6 +24,17 @@ export class FeedbackMetricService {
     private readonly feedbackRepository: Repository<FeedbackEntity>,
   ) {}
 
+  static getTypeKey(
+    range?: PartialDateRange,
+    query?: FeedbackTypeQuery,
+  ): string {
+    return `feedback-type?${toRawQuery({ ...range, ...query })}`;
+  }
+
+  @Cacheable(FeedbackMetricService.getTypeKey, {
+    ttl: 10 * 60 * 1000,
+    dependencies: [FeedbackEntity],
+  })
   async type(
     range?: PartialDateRange,
     query?: FeedbackTypeQuery,

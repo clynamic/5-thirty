@@ -9,6 +9,7 @@ import {
   resolveWithDate,
   startOf,
   TimeScale,
+  toRawQuery,
 } from 'src/common';
 import { ItemType } from 'src/label/label.entity';
 import {
@@ -19,6 +20,7 @@ import {
   MoreThan,
   Repository,
 } from 'typeorm';
+import { Cacheable, withInvalidation } from 'src/app/browser.module';
 
 import { ManifestQuery } from './manifest.dto';
 import {
@@ -35,15 +37,29 @@ export class ManifestService {
     private readonly manifestRepository: Repository<ManifestEntity>,
   ) {}
 
+  save = withInvalidation(
+    this.manifestRepository.save.bind(this.manifestRepository),
+    ManifestEntity,
+  );
+
+  remove = withInvalidation(
+    this.manifestRepository.remove.bind(this.manifestRepository),
+    ManifestEntity,
+  );
+
+  static getManifestKey(id: number): string {
+    return `manifest?${toRawQuery({ id })}`;
+  }
+
+  @Cacheable(ManifestService.getManifestKey, {
+    ttl: 60 * 60 * 1000,
+    dependencies: [ManifestEntity],
+  })
   async get(id: number): Promise<ManifestEntity | null> {
     return this.manifestRepository.findOne({
       where: { id },
     });
   }
-
-  save = this.manifestRepository.save.bind(this.manifestRepository);
-
-  remove = this.manifestRepository.remove.bind(this.manifestRepository);
 
   private whereInRange(
     range?: DateRange,
@@ -74,6 +90,14 @@ export class ManifestService {
     ];
   }
 
+  static getListKey(range?: DateRange, query?: ManifestQuery): string {
+    return `manifest-list?${toRawQuery({ ...range, ...query })}`;
+  }
+
+  @Cacheable(ManifestService.getListKey, {
+    ttl: 30 * 60 * 1000,
+    dependencies: [ManifestEntity],
+  })
   async list(
     range?: DateRange,
     query?: ManifestQuery,
@@ -85,6 +109,14 @@ export class ManifestService {
     });
   }
 
+  static getOrdersByRangeKey(type: ItemType, range: DateRange): string {
+    return `orders-list?${toRawQuery({ type, ...range })}`;
+  }
+
+  @Cacheable(ManifestService.getOrdersByRangeKey, {
+    ttl: 15 * 60 * 1000,
+    dependencies: [ManifestEntity],
+  })
   async listOrdersByRange(type: ItemType, range: DateRange): Promise<Order[]> {
     range = new DateRange({
       ...range,
@@ -95,6 +127,14 @@ export class ManifestService {
     return ManifestService.computeOrders(manifests, range);
   }
 
+  static getAvailableKey(range: DateRange, type: ItemType[]): string {
+    return `manifest-available?${toRawQuery({ ...range, type })}`;
+  }
+
+  @Cacheable(ManifestService.getAvailableKey, {
+    ttl: 10 * 60 * 1000,
+    dependencies: [ManifestEntity],
+  })
   async available(range: DateRange, type: ItemType[]): Promise<boolean> {
     const manifests = await this.list(range, { type: type });
     const rangeStart = range.startDate.getTime();

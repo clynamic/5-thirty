@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
+import { Invalidates } from 'src/app/browser.module';
 
 import { PostEntity } from '../post.entity';
 
@@ -23,6 +24,7 @@ export class PostSyncService {
   create(value: PostEntity): Promise<PostEntity>;
   create(value: PostEntity[]): Promise<PostEntity[]>;
 
+  @Invalidates(PostEntity)
   async create(
     value: PostEntity | PostEntity[],
   ): Promise<PostEntity | PostEntity[]> {

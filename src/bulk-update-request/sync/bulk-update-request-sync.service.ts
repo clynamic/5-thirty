@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { constructCountUpdated, constructFirstFromId } from 'src/common';
 import { Repository } from 'typeorm';
+import { withInvalidation } from 'src/app/browser.module';
 
 import { BulkUpdateRequestEntity } from '../bulk-update-request.entity';
 
@@ -15,7 +16,10 @@ export class BulkUpdateRequestSyncService {
   firstFromId = constructFirstFromId(this.bulkUpdateRequestRepository);
   countUpdated = constructCountUpdated(this.bulkUpdateRequestRepository);
 
-  save = this.bulkUpdateRequestRepository.save.bind(
-    this.bulkUpdateRequestRepository,
+  save = withInvalidation(
+    this.bulkUpdateRequestRepository.save.bind(
+      this.bulkUpdateRequestRepository,
+    ),
+    BulkUpdateRequestEntity,
   );
 }
