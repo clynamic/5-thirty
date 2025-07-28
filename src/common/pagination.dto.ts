@@ -10,7 +10,7 @@ export class PaginationParams {
     Object.assign(this, value);
   }
 
-  static DEFAULT_PAGE_SIZE = 80;
+  static DEFAULT_PAGE_SIZE = 20;
   static DEFAULT_PAGE = 1;
 
   static calculateOffset(pages?: PaginationParams): number {
