@@ -8,6 +8,7 @@ import {
   Duration,
   endOfMonth,
   formatISO,
+  FormatISOOptions,
   parseISO,
   startOfMonth,
   subDays,
@@ -221,19 +222,14 @@ export class PartialDateRange {
   toE621RangeString(): string {
     let start = '';
     let end = '';
+    const asDate: FormatISOOptions = { representation: 'date' };
 
     if (this.startDate) {
-      start = formatISO(subDays(this.startDate, 1, this.in()), {
-        ...this.in(),
-        representation: 'date',
-      });
+      start = formatISO(subDays(this.startDate, 1, this.in()), asDate);
     }
 
     if (this.endDate) {
-      end = formatISO(addDays(this.endDate, 1, this.in()), {
-        ...this.in(),
-        representation: 'date',
-      });
+      end = formatISO(addDays(this.endDate, 1, this.in()), asDate);
     }
 
     if (start && !end) {
