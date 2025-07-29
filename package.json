@@ -13,7 +13,8 @@
     "format": "prettier --write src",
     "typeorm": "typeorm-ts-node-commonjs",
     "migrate": "typeorm-ts-node-commonjs migration:generate -d src/data-source.ts",
-    "generate": "orval"
+    "generate": "orval",
+    "db:reset": "npm run typeorm schema:drop -- -d src/data-source.ts && npm run typeorm schema:sync -- -d src/data-source.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.2.0",
