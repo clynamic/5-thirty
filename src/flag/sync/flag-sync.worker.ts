@@ -98,7 +98,7 @@ export class FlagSyncWorker {
               });
 
               if (results.length) {
-                this.cacheManager.delDep(FlagEntity);
+                this.cacheManager.inv(FlagEntity);
               }
 
               if (exhausted) {

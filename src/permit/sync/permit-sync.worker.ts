@@ -124,7 +124,7 @@ export class PermitSyncWorker {
             }),
           );
 
-          this.cacheManager.delDep(PermitEntity);
+          this.cacheManager.inv(PermitEntity);
         },
       }),
     );

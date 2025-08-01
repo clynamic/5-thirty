@@ -111,7 +111,7 @@ export class UploadSyncWorker {
               });
 
               if (result.length) {
-                this.cacheManager.delDep(PostVersionEntity);
+                this.cacheManager.inv(PostVersionEntity);
               }
 
               if (exhausted) {

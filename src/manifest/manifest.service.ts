@@ -409,16 +409,16 @@ export class ManifestService {
       lower.extendWith(upper, 'end');
 
       if (upper.id) {
-        await this.manifestRepository.remove(upper);
+        await this.remove(upper);
       }
-      return this.manifestRepository.save(lower);
+      return this.save(lower);
     } else {
       upper.extendWith(lower, 'start');
 
       if (lower.id) {
-        await this.manifestRepository.remove(lower);
+        await this.remove(lower);
       }
-      return this.manifestRepository.save(upper);
+      return this.save(upper);
     }
   }
 }

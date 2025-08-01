@@ -98,7 +98,7 @@ export class ApprovalSyncWorker {
               });
 
               if (results.length) {
-                this.cacheManager.delDep(ApprovalEntity);
+                this.cacheManager.inv(ApprovalEntity);
               }
 
               if (exhausted) {

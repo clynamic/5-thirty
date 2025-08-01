@@ -40,6 +40,11 @@ export class PermitSyncService {
     PermitEntity,
   );
 
+  delete = withInvalidation(
+    this.permitRepository.delete.bind(this.permitRepository),
+    PermitEntity,
+  );
+
   savePosts = withInvalidation(
     this.postRepository.save.bind(this.postRepository),
     PostEntity,
@@ -138,7 +143,7 @@ export class PermitSyncService {
   async removeFor(postId: number[]): Promise<void>;
 
   async removeFor(postIds: number | number[]): Promise<void> {
-    await this.permitRepository.delete({
+    await this.delete({
       postId: In(Array.isArray(postIds) ? postIds : [postIds]),
     });
   }

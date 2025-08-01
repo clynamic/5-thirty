@@ -24,6 +24,10 @@ export class CacheManager<S extends Store = Store> implements Cache<S> {
     return CacheManager.instance;
   }
 
+  /**
+   * Link a cache key to a resource key.
+   * This allows the cache to be invalidated when the resource changes.
+   */
   dep(resourceKey: ResourceKey, cacheKey: string): void {
     const key = getResourceKey(resourceKey);
     if (!this.deps.has(key)) {
@@ -32,6 +36,9 @@ export class CacheManager<S extends Store = Store> implements Cache<S> {
     this.deps.get(key)!.add(cacheKey);
   }
 
+  /**
+   * Remove the link between a cache key and a resource key.
+   */
   undep(resourceKey: ResourceKey, cacheKey: string): void {
     const key = getResourceKey(resourceKey);
     if (this.deps.has(key)) {
@@ -42,24 +49,48 @@ export class CacheManager<S extends Store = Store> implements Cache<S> {
     }
   }
 
-  async delDep(resourceKey: ResourceKey): Promise<void> {
+  /**
+   * Invalidate all cache keys linked to a resource key.
+   */
+  async inv(resourceKey: ResourceKey): Promise<void> {
     const key = getResourceKey(resourceKey);
     if (this.deps.has(key)) {
       const cacheKeys = this.deps.get(key)!;
       for (const cacheKey of cacheKeys) {
-        await this.cacheManager.del(cacheKey);
+        await this.del(cacheKey);
       }
       this.deps.delete(key);
     }
   }
 
   store = this.cacheManager.store;
+  /**
+   * Set a value in the cache.
+   */
   set = this.cacheManager.set;
+  /**
+   * Get a value from the cache.
+   */
   get = this.cacheManager.get;
+  /**
+   * Delete a value from the cache.
+   */
   del = this.cacheManager.del;
+  /**
+   * Reset the cache.
+   */
   reset = this.cacheManager.reset;
+  /**
+   * Listen for cache events.
+   */
   on = this.cacheManager.on;
+  /**
+   * Remove a listener for cache events.
+   */
   removeListener = this.cacheManager.removeListener;
+  /**
+   * Wrap a function with caching.
+   */
   wrap = this.cacheManager.wrap;
 }
 
@@ -120,7 +151,7 @@ export function Invalidates(
           : [resourceKeys];
 
         for (const resourceKey of keys) {
-          await cacheManager.delDep(resourceKey);
+          await cacheManager.inv(resourceKey);
         }
 
         return result;
@@ -145,7 +176,7 @@ export function withInvalidation<T extends (...args: any[]) => any>(
       const keys = Array.isArray(resourceKeys) ? resourceKeys : [resourceKeys];
 
       for (const entityType of keys) {
-        await cacheManager.delDep(entityType);
+        await cacheManager.inv(entityType);
       }
 
       return result;

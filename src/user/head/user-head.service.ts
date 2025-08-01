@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { subMilliseconds } from 'date-fns';
 import { postsMany, usersMany } from 'src/api';
-import { Cacheable } from 'src/app/browser.module';
+import { Cacheable, CacheManager } from 'src/app/browser.module';
 import { AuthService } from 'src/auth/auth.service';
 import { convertKeysToCamelCase, toRawQuery } from 'src/common';
 import { PostEntity } from 'src/post/post.entity';
@@ -24,6 +24,7 @@ export class UserHeadService {
     @InjectRepository(PostEntity)
     private readonly postRepository: Repository<PostEntity>,
     private readonly authService: AuthService,
+    private readonly cacheManager: CacheManager,
   ) {}
 
   static getUserHeadKey(
@@ -81,6 +82,8 @@ export class UserHeadService {
           ),
         );
 
+        this.cacheManager.inv(UserEntity);
+
         users.push(...rest);
       }
     }
@@ -113,6 +116,8 @@ export class UserHeadService {
         const rest = await this.postRepository.save(
           fetched.map((post) => PostEntity.fromPost(post)),
         );
+
+        this.cacheManager.inv(PostEntity);
 
         avatars.push(
           ...rest.filter((post) => !post.deleted && post.preview !== null),
