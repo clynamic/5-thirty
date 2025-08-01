@@ -321,7 +321,7 @@ export class DateRange extends PartialDateRange {
    * Returns a date range for the last `months` months.
    */
   static recentMonths(
-    months: number = 3,
+    months: number = 12,
     value?: Omit<Raw<PartialDateRange>, 'startDate' | 'endDate'>,
   ): DateRange {
     const timezone = value?.timezone || 'UTC';
