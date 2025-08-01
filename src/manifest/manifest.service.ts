@@ -65,6 +65,8 @@ export class ManifestService {
     range?: DateRange,
     options?: FindOptionsWhere<ManifestEntity>,
   ): FindOptionsWhere<ManifestEntity>[] {
+    range = range?.expand(TimeScale.Day);
+
     return [
       ...(range
         ? [
@@ -118,11 +120,7 @@ export class ManifestService {
     dependencies: [ManifestEntity],
   })
   async listOrdersByRange(type: ItemType, range: DateRange): Promise<Order[]> {
-    range = new DateRange({
-      ...range,
-      startDate: sub(range.startDate, { days: 1 }),
-      endDate: add(range.endDate, { days: 1 }),
-    });
+    range = range.expand(TimeScale.Day);
     const manifests = await this.list(range, { type: [type] });
     return ManifestService.computeOrders(manifests, range);
   }
@@ -149,7 +147,7 @@ export class ManifestService {
 
     for (const itemType of type) {
       const filtered = manifests.filter((m) => m.type === itemType);
-      if (filtered.length === 0) return false;
+      if (filtered.length === 0) continue;
 
       const orders = ManifestService.computeOrders(filtered, range);
       if (orders.length === 0) continue;
@@ -167,7 +165,7 @@ export class ManifestService {
       if (unavailability > maxMissingFraction) return false;
     }
 
-    return true;
+    return manifests.length > 0;
   }
 
   static areBoundariesContiguous(

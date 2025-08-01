@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsDate, IsEnum, IsOptional, IsTimeZone } from 'class-validator';
 import {
+  add,
   addDays,
   ContextOptions,
   Duration,
@@ -11,6 +12,7 @@ import {
   FormatISOOptions,
   parseISO,
   startOfMonth,
+  sub,
   subDays,
   subMonths,
 } from 'date-fns';
@@ -360,5 +362,14 @@ export class DateRange extends PartialDateRange {
 
   override where(): FindOptionsWhere<WithCreationDate> {
     return super.where()!;
+  }
+
+  expand(scale: TimeScale, amount: number = 1): DateRange {
+    const duration = getDurationKeyForScale(scale);
+    return new DateRange({
+      ...this,
+      startDate: sub(this.startDate, { [duration]: amount }, this.in()),
+      endDate: add(this.endDate, { [duration]: amount }, this.in()),
+    });
   }
 }
