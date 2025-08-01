@@ -1,16 +1,5 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  add,
-  sub,
-  addMilliseconds,
-  endOfMonth,
-  getMonth,
-  isEqual,
-  isSameMonth,
-  min,
-  startOfDay,
-  startOfMonth,
-} from 'date-fns';
+import { add, addMilliseconds, isEqual, min, startOfDay, sub } from 'date-fns';
 import {
   DateRange,
   endOf,
@@ -38,7 +27,6 @@ import {
   ManifestEntity,
   Order,
   OrderBoundary,
-  OrderResult,
   OrderResults,
   OrderSide,
 } from './manifest.entity';
@@ -314,123 +302,72 @@ export class ManifestService {
     return splitOrders;
   }
 
-  /**
-   * Saves the results of an order fetch to the database.
-   * Assumes that data is paginated newest to oldest.
-   */
   async saveResults({
     type,
     order,
     items,
     exhausted,
   }: OrderResults): Promise<void> {
-    if (items.length === 0) {
-      return;
-    }
+    const currentDate = startOf(TimeScale.Day, new Date());
 
-    // Split items into month-bounded manifests
-    const manifests = this.splitIntoMonthlyManifests(type, order, items);
-    const lastIndex = manifests.length - 1;
-
-    // Process manifests and update the order
-    for (let i = 0; i < manifests.length; i++) {
-      const isLastManifest = i === lastIndex && exhausted;
-      await this.updateOrderWithManifest(order, manifests[i]!, isLastManifest);
-    }
-  }
-
-  private splitIntoMonthlyManifests(
-    type: ItemType,
-    order: Order,
-    items: OrderResult[],
-  ): ManifestEntity[] {
-    if (items.length === 0) return [];
-
-    const manifests: ManifestEntity[] = [];
-    let currentMonth = getMonth(resolveWithDate(items[0]!));
-    const currentDate = startOfDay(new Date());
-    let batch: OrderResult[] = [];
-
-    // extend from upper boundary or current date
-    let rollingUpperDate = min([order.upperDate, currentDate]);
-
-    for (const item of items) {
-      const itemDate = resolveWithDate(item);
-
-      const itemMonth = getMonth(itemDate);
-
-      if (itemMonth !== currentMonth) {
-        // finalize manifest at month boundary
-        manifests.push(
-          new ManifestEntity({
-            type,
-            upperId: findHighestId(batch)!.id,
-            lowerId: findLowestId(batch)!.id,
-            startDate: startOfMonth(rollingUpperDate),
-            endDate: rollingUpperDate,
-          }),
+    if (!exhausted) {
+      // we assume that data is paginated newest to oldest,
+      // therefore we create an upper boundary.
+      // if this is not the case, we need to expand our logic,
+      // to allow starting at a lower boundary instead.
+      if (order.upper instanceof ManifestEntity) {
+        // extend upper downwards
+        this.save(
+          order.upper.extend(
+            'start',
+            resolveWithDate(findLowestDate(items)),
+            findLowestId(items)?.id,
+          ),
         );
-
-        currentMonth = itemMonth;
-        batch = [];
-        rollingUpperDate = endOfMonth(itemDate);
-      }
-
-      batch.push(item);
-    }
-
-    if (batch.length > 0) {
-      manifests.push(
-        new ManifestEntity({
-          type,
-          upperId: findHighestId(batch)!.id,
-          lowerId: findLowestId(batch)!.id,
-          startDate: resolveWithDate(findLowestDate(batch)),
-          endDate: rollingUpperDate,
-        }),
-      );
-    }
-
-    return manifests;
-  }
-
-  private async updateOrderWithManifest(
-    order: Order,
-    manifest: ManifestEntity,
-    exhausted: boolean,
-  ): Promise<void> {
-    if (order.upper instanceof ManifestEntity) {
-      if (isSameMonth(order.upperDate, manifest.endDate)) {
-        // directly connecting new manifest to upper boundary
-        order.upper = await this.merge(manifest, order.upper);
       } else {
-        // crossing a month boundary
-        order.upper = manifest;
-      }
-      await this.save(order.upper);
+        // create new manifest
+        order.upper = new ManifestEntity({
+          type: type,
+          lowerId: findLowestId(items)!.id,
+          upperId: findHighestId(items)!.id,
+          startDate: resolveWithDate(findLowestDate(items)!),
+          endDate: min([order.upper, currentDate]),
+        });
 
-      if (exhausted) {
-        if (
-          order.lower instanceof ManifestEntity &&
-          isSameMonth(order.lowerDate, order.upperDate)
-        ) {
-          // close the gap in the order
-          await this.merge(order.lower, order.upper);
-        }
+        this.save(order.upper);
       }
     } else {
-      // create upper boundary
-      order.upper = manifest;
-      await this.save(order.upper);
-
-      if (exhausted) {
-        if (
-          order.lower instanceof ManifestEntity &&
-          isSameMonth(order.lowerDate, order.upperDate)
-        ) {
-          // close the gap in the order
-          await this.merge(order.lower, order.upper);
+      if (order.upper instanceof ManifestEntity) {
+        if (order.lower instanceof ManifestEntity) {
+          this.merge(order.lower, order.upper);
+        } else {
+          // extend upper downwards
+          this.save(
+            order.upper.extend('start', order.lower, findLowestId(items)?.id),
+          );
         }
+      } else if (order.lower instanceof ManifestEntity) {
+        // extend lower upwards
+        this.save(
+          order.lower.extend(
+            'end',
+            min([order.upper, currentDate]),
+            findHighestId(items)?.id,
+          ),
+        );
+      } else if (items.length > 0) {
+        // create new manifest
+        order.upper = new ManifestEntity({
+          type: type,
+          lowerId: findLowestId(items)!.id,
+          upperId: findHighestId(items)!.id,
+          startDate: order.lower,
+          endDate: min([order.upper, currentDate]),
+        });
+
+        this.save(order.upper);
+      } else {
+        // abort without data
       }
     }
   }
@@ -445,10 +382,6 @@ export class ManifestService {
 
       while (i + 1 < manifests.length) {
         const manifestB = manifests[i + 1]!;
-
-        if (!isSameMonth(manifestA.endDate, manifestB.startDate)) {
-          break;
-        }
 
         if (manifestB.endDate < manifestA.endDate) {
           await this.remove(manifestB);
