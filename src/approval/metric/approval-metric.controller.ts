@@ -15,6 +15,7 @@ import {
   RequestCtx,
   WithRequestContext,
 } from 'src/common';
+import { UserHeadService } from 'src/user/head/user-head.service';
 
 import {
   ApprovalCountSeriesQuery,
@@ -29,7 +30,10 @@ import { ApprovalMetricService } from './approval-metric.service';
 @ApiBearerAuth()
 @Controller('metrics/approvals')
 export class ApprovalMetricController {
-  constructor(private readonly approvalMetricService: ApprovalMetricService) {}
+  constructor(
+    private readonly approvalMetricService: ApprovalMetricService,
+    private readonly userHeadService: UserHeadService,
+  ) {}
 
   @Get('count/summary')
   @ApiOperation({
@@ -101,6 +105,20 @@ export class ApprovalMetricController {
     @Query() pages?: PaginationParams,
     @RequestCtx() context?: RequestContext,
   ): Promise<ApproverSummary[]> {
-    return this.approvalMetricService.approverSummary(range, pages, context);
+    const summaries = await this.approvalMetricService.approverSummary(
+      range,
+      pages,
+    );
+
+    const userIds = summaries.map((summary) => summary.userId);
+    const heads =
+      userIds.length > 0
+        ? await this.userHeadService.get(userIds, context)
+        : [];
+
+    return summaries.map((summary) => ({
+      ...summary,
+      head: heads.find((head) => head.id === summary.userId),
+    }));
   }
 }

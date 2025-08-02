@@ -13,6 +13,7 @@ import {
   RequestCtx,
   WithRequestContext,
 } from 'src/common';
+import { UserHeadService } from 'src/user/head/user-head.service';
 
 import {
   ActivitySeriesPoint,
@@ -30,6 +31,7 @@ import { PerformanceMetricService } from './performance-metric.service';
 export class PerformanceMetricController {
   constructor(
     private readonly performanceMetricService: PerformanceMetricService,
+    private readonly userHeadService: UserHeadService,
   ) {}
 
   @Get('performance')
@@ -48,7 +50,25 @@ export class PerformanceMetricController {
     @Query() query?: PerformanceSummaryQuery,
     @RequestCtx() context?: RequestContext,
   ): Promise<PerformanceSummary[]> {
-    return this.performanceMetricService.performance(range, query, context);
+    const summaries = await this.performanceMetricService.performance(
+      range,
+      query,
+    );
+
+    if (query?.head) {
+      const userIds = summaries.map((summary) => summary.userId);
+      const heads =
+        userIds.length > 0
+          ? await this.userHeadService.get(userIds, context)
+          : [];
+
+      return summaries.map((summary) => ({
+        ...summary,
+        userHead: heads.find((head) => head.id === summary.userId),
+      }));
+    }
+
+    return summaries;
   }
 
   @Get('activity')

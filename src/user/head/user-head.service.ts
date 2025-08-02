@@ -5,16 +5,17 @@ import { postsMany, usersMany } from 'src/api';
 import { PostRating } from 'src/api/e621';
 import { Cacheable, CacheManager } from 'src/app/browser.module';
 import { AuthService } from 'src/auth/auth.service';
-import { convertKeysToCamelCase, toRawQuery, RequestContext } from 'src/common';
+import { convertKeysToCamelCase, toRawQuery } from 'src/common';
 import { PostEntity } from 'src/post/post.entity';
 import { In, IsNull, MoreThan, Not, Repository } from 'typeorm';
 
 import { UserEntity, UserLabelEntity } from '../user.entity';
 import { UserHead } from './user-head.dto';
 
-export interface UserHeadParams extends RequestContext {
+export interface UserHeadParams {
   fetchMissing?: boolean;
   staleness?: number;
+  safeMode?: boolean;
 }
 
 @Injectable()

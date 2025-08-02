@@ -11,14 +11,12 @@ import {
   getClosestTimeScale,
   getDurationKeyForScale,
   PartialDateRange,
-  RequestContext,
   toRawQuery,
 } from 'src/common';
 import { FlagEntity } from 'src/flag/flag.entity';
 import { PostReplacementEntity } from 'src/post-replacement/post-replacement.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { TicketEntity } from 'src/ticket/ticket.entity';
-import { UserHeadService } from 'src/user/head/user-head.service';
 import { UserEntity } from 'src/user/user.entity';
 import { IsNull, Not, Repository } from 'typeorm';
 import { Cacheable } from 'src/app/browser.module';
@@ -53,7 +51,6 @@ export class PerformanceMetricService {
     private readonly approvalRepository: Repository<ApprovalEntity>,
     @InjectRepository(FlagEntity)
     private readonly flagRepository: Repository<FlagEntity>,
-    private readonly userHeadService: UserHeadService,
   ) {}
 
   private async findActivities(
@@ -242,9 +239,8 @@ export class PerformanceMetricService {
   static getPerformanceKey(
     range?: PartialDateRange,
     query?: PerformanceSummaryQuery,
-    context?: RequestContext,
   ): string {
-    return `performance?${toRawQuery({ ...range, ...query, ...context })}`;
+    return `performance?${toRawQuery({ ...range, ...query })}`;
   }
 
   @Cacheable(PerformanceMetricService.getPerformanceKey, {
@@ -261,7 +257,6 @@ export class PerformanceMetricService {
   async performance(
     range?: PartialDateRange,
     query?: PerformanceSummaryQuery,
-    context?: RequestContext,
   ): Promise<PerformanceSummary[]> {
     range = DateRange.fill(range);
 
@@ -433,19 +428,11 @@ export class PerformanceMetricService {
       }))
       .sort((a, b) => b.score - a.score);
 
-    const heads = query?.head
-      ? await this.userHeadService.get(
-          result.map((e) => e.userId),
-          context,
-        )
-      : [];
-
     return result
       .map(
         (e, i) =>
           new PerformanceSummary({
             userId: e.userId,
-            userHead: heads.find((head) => head.id === e.userId),
             position: result.length > 1 ? i + 1 : 0,
             score: e.score,
             scoreGrade: getPerformanceScoreGrade(e.score),

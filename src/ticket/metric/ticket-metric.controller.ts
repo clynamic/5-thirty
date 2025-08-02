@@ -15,6 +15,7 @@ import {
   RequestCtx,
   WithRequestContext,
 } from 'src/common';
+import { UserHeadService } from 'src/user/head/user-head.service';
 
 import {
   TicketAgeSeriesPoint,
@@ -35,7 +36,10 @@ import { TicketMetricService } from './ticket-metric.service';
 @AuthLevel(UserLevel.Janitor)
 @ApiBearerAuth()
 export class TicketMetricController {
-  constructor(private readonly ticketMetricService: TicketMetricService) {}
+  constructor(
+    private readonly ticketMetricService: TicketMetricService,
+    private readonly userHeadService: UserHeadService,
+  ) {}
 
   @Get('status')
   @ApiOperation({
@@ -230,7 +234,21 @@ export class TicketMetricController {
     @Query() pages?: PaginationParams,
     @RequestCtx() context?: RequestContext,
   ): Promise<TicketHandlerSummary[]> {
-    return this.ticketMetricService.handlerSummary(range, pages, context);
+    const summaries = await this.ticketMetricService.handlerSummary(
+      range,
+      pages,
+    );
+
+    const userIds = summaries.map((summary) => summary.userId);
+    const heads =
+      userIds.length > 0
+        ? await this.userHeadService.get(userIds, context)
+        : [];
+
+    return summaries.map((summary) => ({
+      ...summary,
+      head: heads.find((head) => head.id === summary.userId),
+    }));
   }
 
   @Get('reporter/summary')
@@ -250,6 +268,20 @@ export class TicketMetricController {
     @Query() pages?: PaginationParams,
     @RequestCtx() context?: RequestContext,
   ): Promise<TicketReporterSummary[]> {
-    return this.ticketMetricService.reporterSummary(range, pages, context);
+    const summaries = await this.ticketMetricService.reporterSummary(
+      range,
+      pages,
+    );
+
+    const userIds = summaries.map((summary) => summary.userId);
+    const heads =
+      userIds.length > 0
+        ? await this.userHeadService.get(userIds, context)
+        : [];
+
+    return summaries.map((summary) => ({
+      ...summary,
+      head: heads.find((head) => head.id === summary.userId),
+    }));
   }
 }

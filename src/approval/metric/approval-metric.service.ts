@@ -8,9 +8,7 @@ import {
   PartialDateRange,
   SeriesCountPoint,
   toRawQuery,
-  RequestContext,
 } from 'src/common';
-import { UserHeadService } from 'src/user/head/user-head.service';
 import { Repository } from 'typeorm';
 import { Cacheable } from 'src/app/browser.module';
 
@@ -26,7 +24,6 @@ export class ApprovalMetricService {
   constructor(
     @InjectRepository(ApprovalEntity)
     private readonly approvalRepository: Repository<ApprovalEntity>,
-    private readonly userHeadService: UserHeadService,
   ) {}
 
   static getCountSummaryKey(range?: PartialDateRange): string {
@@ -78,19 +75,17 @@ export class ApprovalMetricService {
   static getApproverSummaryKey(
     range?: PartialDateRange,
     pages?: PaginationParams,
-    context?: RequestContext,
   ): string {
-    return `approval-approver-summary?${toRawQuery({ ...range, ...pages, ...context })}`;
+    return `approval-approver-summary?${toRawQuery({ ...range, ...pages })}`;
   }
 
   @Cacheable(ApprovalMetricService.getApproverSummaryKey, {
     ttl: 15 * 60 * 1000,
-    dependencies: [ApprovalEntity, UserHeadService],
+    dependencies: [ApprovalEntity],
   })
   async approverSummary(
     range?: PartialDateRange,
     pages?: PaginationParams,
-    context?: RequestContext,
   ): Promise<ApproverSummary[]> {
     const results = await this.approvalRepository
       .createQueryBuilder('approval')
@@ -110,15 +105,10 @@ export class ApprovalMetricService {
         position: number;
       }>();
 
-    const ids = results.map((summary) => summary.user_id);
-
-    const heads = await this.userHeadService.get(ids, context);
-
     return results.map(
       (summary) =>
         new ApproverSummary({
           ...convertKeysToCamelCase(summary),
-          head: heads.find((head) => head.id === summary.user_id),
         }),
     );
   }

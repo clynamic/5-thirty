@@ -6,12 +6,10 @@ import {
   generateSeriesCountPoints,
   PaginationParams,
   PartialDateRange,
-  RequestContext,
   SeriesCountPoint,
   toRawQuery,
 } from 'src/common';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
-import { UserHeadService } from 'src/user/head/user-head.service';
 import { Repository } from 'typeorm';
 import { Cacheable } from 'src/app/browser.module';
 
@@ -25,7 +23,6 @@ export class UploadMetricService {
   constructor(
     @InjectRepository(PostVersionEntity)
     private readonly postVersionRepository: Repository<PostVersionEntity>,
-    private readonly userHeadService: UserHeadService,
   ) {}
 
   static getCountKey(
@@ -69,12 +66,11 @@ export class UploadMetricService {
 
   @Cacheable(UploadMetricService.getUploadersKey, {
     ttl: 15 * 60 * 1000,
-    dependencies: [PostVersionEntity, 'UserHeadService'],
+    dependencies: [PostVersionEntity],
   })
   async uploaders(
     range?: PartialDateRange,
     pages?: PaginationParams,
-    options?: RequestContext,
   ): Promise<PostUploaderSummary[]> {
     const results = await this.postVersionRepository
       .createQueryBuilder('post_version')
@@ -100,17 +96,10 @@ export class UploadMetricService {
         position: number;
       }>();
 
-    const ids = results.map((row) => row.user_id);
-
-    const heads = await this.userHeadService.get(ids, {
-      safeMode: options?.safeMode,
-    });
-
     return results.map(
       (row) =>
         new PostUploaderSummary({
           ...convertKeysToCamelCase(row),
-          head: heads.find((head) => head.id === row.user_id),
         }),
     );
   }

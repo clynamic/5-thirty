@@ -11,11 +11,9 @@ import {
   PaginationParams,
   PartialDateRange,
   Raw,
-  RequestContext,
   SeriesCountPoint,
   toRawQuery,
 } from 'src/common';
-import { UserHeadService } from 'src/user/head/user-head.service';
 import { FindOptionsWhere, LessThan, MoreThan, Not, Repository } from 'typeorm';
 import { Cacheable } from 'src/app/browser.module';
 
@@ -39,7 +37,6 @@ export class TicketMetricService {
   constructor(
     @InjectRepository(TicketEntity)
     private readonly ticketRepository: Repository<TicketEntity>,
-    private readonly userHeadService: UserHeadService,
   ) {}
 
   private whereCreatedOrUpdated(
@@ -379,9 +376,8 @@ export class TicketMetricService {
   static getHandlerSummaryKey(
     range?: PartialDateRange,
     pages?: PaginationParams,
-    context?: RequestContext,
   ): string {
-    return `ticket-handler-summary?${toRawQuery({ ...range, ...pages, ...context })}`;
+    return `ticket-handler-summary?${toRawQuery({ ...range, ...pages })}`;
   }
 
   @Cacheable(TicketMetricService.getHandlerSummaryKey, {
@@ -391,7 +387,6 @@ export class TicketMetricService {
   async handlerSummary(
     range?: PartialDateRange,
     pages?: PaginationParams,
-    context?: RequestContext,
   ): Promise<TicketHandlerSummary[]> {
     const results = await this.ticketRepository
       .createQueryBuilder('ticket')
@@ -414,15 +409,10 @@ export class TicketMetricService {
         position: number;
       }>();
 
-    const ids = results.map((row) => row.user_id);
-
-    const heads = await this.userHeadService.get(ids, context);
-
     return results.map(
       (row) =>
         new TicketHandlerSummary({
           ...convertKeysToCamelCase(row),
-          head: heads.find((head) => head.id === row.user_id),
         }),
     );
   }
@@ -430,9 +420,8 @@ export class TicketMetricService {
   static getReporterSummaryKey(
     range?: PartialDateRange,
     pages?: PaginationParams,
-    context?: RequestContext,
   ): string {
-    return `ticket-reporter-summary?${toRawQuery({ ...range, ...pages, ...context })}`;
+    return `ticket-reporter-summary?${toRawQuery({ ...range, ...pages })}`;
   }
 
   @Cacheable(TicketMetricService.getReporterSummaryKey, {
@@ -442,7 +431,6 @@ export class TicketMetricService {
   async reporterSummary(
     range?: PartialDateRange,
     pages?: PaginationParams,
-    context?: RequestContext,
   ): Promise<TicketReporterSummary[]> {
     const results = await this.ticketRepository
       .createQueryBuilder('ticket')
@@ -460,18 +448,8 @@ export class TicketMetricService {
         days: number;
       }>();
 
-    const counts = results.map(
+    return results.map(
       (row) => new TicketReporterSummary(convertKeysToCamelCase(row)),
     );
-
-    const heads = await this.userHeadService.get(
-      counts.map((c) => c.userId),
-      context,
-    );
-
-    return counts.map((count) => ({
-      ...count,
-      head: heads.find((head) => head.id === count.userId),
-    }));
   }
 }

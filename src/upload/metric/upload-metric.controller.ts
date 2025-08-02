@@ -15,6 +15,7 @@ import {
   RequestCtx,
   RequestContext,
 } from 'src/common';
+import { UserHeadService } from 'src/user/head/user-head.service';
 
 import {
   PostUploaderSummary,
@@ -28,7 +29,10 @@ import { UploadMetricService } from './upload-metric.service';
 @AuthLevel(UserLevel.Janitor)
 @ApiBearerAuth()
 export class UploadMetricController {
-  constructor(private readonly uploadMetricService: UploadMetricService) {}
+  constructor(
+    private readonly uploadMetricService: UploadMetricService,
+    private readonly userHeadService: UserHeadService,
+  ) {}
 
   @Get('count')
   @ApiOperation({
@@ -65,6 +69,17 @@ export class UploadMetricController {
     @Query() pages?: PaginationParams,
     @RequestCtx() context?: RequestContext,
   ): Promise<PostUploaderSummary[]> {
-    return this.uploadMetricService.uploaders(range, pages, context);
+    const summaries = await this.uploadMetricService.uploaders(range, pages);
+
+    const userIds = summaries.map((summary) => summary.userId);
+    const heads =
+      userIds.length > 0
+        ? await this.userHeadService.get(userIds, context)
+        : [];
+
+    return summaries.map((summary) => ({
+      ...summary,
+      head: heads.find((head) => head.id === summary.userId),
+    }));
   }
 }
