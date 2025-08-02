@@ -57,9 +57,13 @@ export class PerformanceMetricController {
 
     if (query?.head) {
       const userIds = summaries.map((summary) => summary.userId);
+      const fetchMissing = query?.userId !== undefined;
       const heads =
         userIds.length > 0
-          ? await this.userHeadService.get(userIds, context)
+          ? await this.userHeadService.get(userIds, {
+              fetchMissing,
+              ...context,
+            })
           : [];
 
       return summaries.map((summary) => ({
