@@ -8,6 +8,7 @@ import {
   PartialDateRange,
   SeriesCountPoint,
   toRawQuery,
+  RequestContext,
 } from 'src/common';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import { Repository } from 'typeorm';
@@ -77,8 +78,9 @@ export class ApprovalMetricService {
   static getApproverSummaryKey(
     range?: PartialDateRange,
     pages?: PaginationParams,
+    context?: RequestContext,
   ): string {
-    return `approval-approver-summary?${toRawQuery({ ...range, ...pages })}`;
+    return `approval-approver-summary?${toRawQuery({ ...range, ...pages, ...context })}`;
   }
 
   @Cacheable(ApprovalMetricService.getApproverSummaryKey, {
@@ -88,6 +90,7 @@ export class ApprovalMetricService {
   async approverSummary(
     range?: PartialDateRange,
     pages?: PaginationParams,
+    context?: RequestContext,
   ): Promise<ApproverSummary[]> {
     const results = await this.approvalRepository
       .createQueryBuilder('approval')
@@ -109,7 +112,7 @@ export class ApprovalMetricService {
 
     const ids = results.map((summary) => summary.user_id);
 
-    const heads = await this.userHeadService.get(ids);
+    const heads = await this.userHeadService.get(ids, context);
 
     return results.map(
       (summary) =>

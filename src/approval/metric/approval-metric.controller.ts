@@ -11,6 +11,9 @@ import {
   PaginationParams,
   PartialDateRange,
   SeriesCountPoint,
+  RequestContext,
+  RequestCtx,
+  WithRequestContext,
 } from 'src/common';
 
 import {
@@ -88,6 +91,7 @@ export class ApprovalMetricController {
       'Get a summary of approvals by approver for a given date range',
     operationId: 'getApproverSummary',
   })
+  @WithRequestContext()
   @ApiResponse({
     status: 200,
     type: [ApproverSummary],
@@ -95,7 +99,8 @@ export class ApprovalMetricController {
   async approverSummary(
     @Query() range?: PartialDateRange,
     @Query() pages?: PaginationParams,
+    @RequestCtx() context?: RequestContext,
   ): Promise<ApproverSummary[]> {
-    return this.approvalMetricService.approverSummary(range, pages);
+    return this.approvalMetricService.approverSummary(range, pages, context);
   }
 }

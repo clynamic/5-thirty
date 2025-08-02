@@ -11,6 +11,9 @@ import {
   PaginationParams,
   PartialDateRange,
   SeriesCountPoint,
+  WithRequestContext,
+  RequestCtx,
+  RequestContext,
 } from 'src/common';
 
 import {
@@ -52,6 +55,7 @@ export class UploadMetricController {
       'Get a summary of post uploading counts for a given date range',
     operationId: 'getPostUploaderSummary',
   })
+  @WithRequestContext()
   @ApiResponse({
     status: 200,
     type: [PostUploaderSummary],
@@ -59,7 +63,8 @@ export class UploadMetricController {
   async uploaderSummary(
     @Query() range?: PartialDateRange,
     @Query() pages?: PaginationParams,
+    @RequestCtx() context?: RequestContext,
   ): Promise<PostUploaderSummary[]> {
-    return this.uploadMetricService.uploaders(range, pages);
+    return this.uploadMetricService.uploaders(range, pages, context);
   }
 }

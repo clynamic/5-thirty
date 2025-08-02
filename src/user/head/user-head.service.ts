@@ -2,16 +2,17 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { subMilliseconds } from 'date-fns';
 import { postsMany, usersMany } from 'src/api';
+import { PostRating } from 'src/api/e621';
 import { Cacheable, CacheManager } from 'src/app/browser.module';
 import { AuthService } from 'src/auth/auth.service';
-import { convertKeysToCamelCase, toRawQuery } from 'src/common';
+import { convertKeysToCamelCase, toRawQuery, RequestContext } from 'src/common';
 import { PostEntity } from 'src/post/post.entity';
 import { In, IsNull, MoreThan, Not, Repository } from 'typeorm';
 
 import { UserEntity, UserLabelEntity } from '../user.entity';
 import { UserHead } from './user-head.dto';
 
-export interface UserHeadParams {
+export interface UserHeadParams extends RequestContext {
   fetchMissing?: boolean;
   staleness?: number;
 }
@@ -97,6 +98,7 @@ export class UserHeadService {
         id: In(avatarIds),
         preview: Not(IsNull()),
         deleted: false,
+        ...(params?.safeMode ? { rating: PostRating.s } : {}),
       },
       select: ['id', 'preview'],
     });
@@ -120,7 +122,11 @@ export class UserHeadService {
         this.cacheManager.inv(PostEntity);
 
         avatars.push(
-          ...rest.filter((post) => !post.deleted && post.preview !== null),
+          ...rest.filter((post) => {
+            if (post.deleted || post.preview === null) return false;
+            if (params?.safeMode && post.rating !== PostRating.s) return false;
+            return true;
+          }),
         );
       }
     }

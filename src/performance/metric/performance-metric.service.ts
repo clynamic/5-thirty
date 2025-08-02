@@ -11,7 +11,7 @@ import {
   getClosestTimeScale,
   getDurationKeyForScale,
   PartialDateRange,
-  WithDate,
+  RequestContext,
   toRawQuery,
 } from 'src/common';
 import { FlagEntity } from 'src/flag/flag.entity';
@@ -20,7 +20,7 @@ import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { TicketEntity } from 'src/ticket/ticket.entity';
 import { UserHeadService } from 'src/user/head/user-head.service';
 import { UserEntity } from 'src/user/user.entity';
-import { FindOptionsWhere, IsNull, Not, Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { Cacheable } from 'src/app/browser.module';
 
 import {
@@ -242,8 +242,9 @@ export class PerformanceMetricService {
   static getPerformanceKey(
     range?: PartialDateRange,
     query?: PerformanceSummaryQuery,
+    context?: RequestContext,
   ): string {
-    return `performance?${toRawQuery({ ...range, ...query })}`;
+    return `performance?${toRawQuery({ ...range, ...query, ...context })}`;
   }
 
   @Cacheable(PerformanceMetricService.getPerformanceKey, {
@@ -260,6 +261,7 @@ export class PerformanceMetricService {
   async performance(
     range?: PartialDateRange,
     query?: PerformanceSummaryQuery,
+    context?: RequestContext,
   ): Promise<PerformanceSummary[]> {
     range = DateRange.fill(range);
 
@@ -432,7 +434,10 @@ export class PerformanceMetricService {
       .sort((a, b) => b.score - a.score);
 
     const heads = query?.head
-      ? await this.userHeadService.get(result.map((e) => e.userId))
+      ? await this.userHeadService.get(
+          result.map((e) => e.userId),
+          context,
+        )
       : [];
 
     return result
@@ -470,7 +475,7 @@ export class PerformanceMetricService {
   }
 
   @Cacheable(PerformanceMetricService.getActivityKey, {
-    ttl: 15 * 60 * 1000, // 15 minutes
+    ttl: 15 * 60 * 1000,
     dependencies: [
       UserEntity,
       PostVersionEntity,

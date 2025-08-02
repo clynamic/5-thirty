@@ -6,6 +6,7 @@ import {
   generateSeriesCountPoints,
   PaginationParams,
   PartialDateRange,
+  RequestContext,
   SeriesCountPoint,
   toRawQuery,
 } from 'src/common';
@@ -73,6 +74,7 @@ export class UploadMetricService {
   async uploaders(
     range?: PartialDateRange,
     pages?: PaginationParams,
+    options?: RequestContext,
   ): Promise<PostUploaderSummary[]> {
     const results = await this.postVersionRepository
       .createQueryBuilder('post_version')
@@ -100,7 +102,9 @@ export class UploadMetricService {
 
     const ids = results.map((row) => row.user_id);
 
-    const heads = await this.userHeadService.get(ids);
+    const heads = await this.userHeadService.get(ids, {
+      safeMode: options?.safeMode,
+    });
 
     return results.map(
       (row) =>

@@ -7,7 +7,12 @@ import {
 } from '@nestjs/swagger';
 import { AuthLevel, RolesGuard } from 'src/auth/auth.guard';
 import { UserLevel } from 'src/auth/auth.level';
-import { PartialDateRange } from 'src/common';
+import {
+  PartialDateRange,
+  RequestContext,
+  RequestCtx,
+  WithRequestContext,
+} from 'src/common';
 
 import {
   ActivitySeriesPoint,
@@ -33,6 +38,7 @@ export class PerformanceMetricController {
     description: 'Get performance data for an area.',
     operationId: 'getPerformance',
   })
+  @WithRequestContext()
   @ApiResponse({
     status: 200,
     type: [PerformanceSummary],
@@ -40,8 +46,9 @@ export class PerformanceMetricController {
   async performance(
     @Query() range?: PartialDateRange,
     @Query() query?: PerformanceSummaryQuery,
+    @RequestCtx() context?: RequestContext,
   ): Promise<PerformanceSummary[]> {
-    return this.performanceMetricService.performance(range, query);
+    return this.performanceMetricService.performance(range, query, context);
   }
 
   @Get('activity')

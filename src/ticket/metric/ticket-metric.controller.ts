@@ -11,6 +11,9 @@ import {
   PaginationParams,
   PartialDateRange,
   SeriesCountPoint,
+  RequestContext,
+  RequestCtx,
+  WithRequestContext,
 } from 'src/common';
 
 import {
@@ -217,6 +220,7 @@ export class TicketMetricController {
       'Get a summary of ticket handling counts for a given date range',
     operationId: 'getTicketHandlerSummary',
   })
+  @WithRequestContext()
   @ApiResponse({
     status: 200,
     type: [TicketHandlerSummary],
@@ -224,8 +228,9 @@ export class TicketMetricController {
   async handlerSummary(
     @Query() range?: PartialDateRange,
     @Query() pages?: PaginationParams,
+    @RequestCtx() context?: RequestContext,
   ): Promise<TicketHandlerSummary[]> {
-    return this.ticketMetricService.handlerSummary(range, pages);
+    return this.ticketMetricService.handlerSummary(range, pages, context);
   }
 
   @Get('reporter/summary')
@@ -235,6 +240,7 @@ export class TicketMetricController {
       'Get a summary of ticket reporting counts for a given date range',
     operationId: 'getTicketReporterSummary',
   })
+  @WithRequestContext()
   @ApiResponse({
     status: 200,
     type: [TicketReporterSummary],
@@ -242,7 +248,8 @@ export class TicketMetricController {
   async reporterSummary(
     @Query() range?: PartialDateRange,
     @Query() pages?: PaginationParams,
+    @RequestCtx() context?: RequestContext,
   ): Promise<TicketReporterSummary[]> {
-    return this.ticketMetricService.reporterSummary(range, pages);
+    return this.ticketMetricService.reporterSummary(range, pages, context);
   }
 }

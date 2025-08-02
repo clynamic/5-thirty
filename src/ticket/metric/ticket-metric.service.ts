@@ -11,6 +11,7 @@ import {
   PaginationParams,
   PartialDateRange,
   Raw,
+  RequestContext,
   SeriesCountPoint,
   toRawQuery,
 } from 'src/common';
@@ -176,6 +177,17 @@ export class TicketMetricService {
     return generateSeriesCountPoints(dates, range);
   }
 
+  static getCreatedSeriesKey(
+    range?: PartialDateRange,
+    query?: TicketCreatedSeriesQuery,
+  ): string {
+    return `ticket-created-series?${toRawQuery({ ...range, ...query })}`;
+  }
+
+  @Cacheable(TicketMetricService.getCreatedSeriesKey, {
+    ttl: 10 * 60 * 1000,
+    dependencies: [TicketEntity],
+  })
   async createdSeries(
     range?: PartialDateRange,
     query?: TicketCreatedSeriesQuery,
@@ -194,6 +206,17 @@ export class TicketMetricService {
     );
   }
 
+  static getClosedSeriesKey(
+    range?: PartialDateRange,
+    query?: TicketClosedSeriesQuery,
+  ): string {
+    return `ticket-closed-series?${toRawQuery({ ...range, ...query })}`;
+  }
+
+  @Cacheable(TicketMetricService.getClosedSeriesKey, {
+    ttl: 10 * 60 * 1000,
+    dependencies: [TicketEntity],
+  })
   async closedSeries(
     range?: PartialDateRange,
     query?: TicketClosedSeriesQuery,
@@ -212,6 +235,15 @@ export class TicketMetricService {
     );
   }
 
+  static getAgeSeriesKey(range?: PartialDateRange): string {
+    const filledRange = DateRange.fill(range);
+    return `ticket-age-series?${toRawQuery(filledRange)}`;
+  }
+
+  @Cacheable(TicketMetricService.getAgeSeriesKey, {
+    ttl: 10 * 60 * 1000,
+    dependencies: [TicketEntity],
+  })
   async ageSeries(range?: PartialDateRange): Promise<TicketAgeSeriesPoint[]> {
     range = DateRange.fill(range);
     const tickets = await this.ticketRepository.find({
@@ -285,6 +317,17 @@ export class TicketMetricService {
     );
   }
 
+  static getAgeSummaryKey(
+    range?: PartialDateRange,
+    query?: TicketAgeSummaryQuery,
+  ): string {
+    return `ticket-age-summary?${toRawQuery({ ...range, ...query })}`;
+  }
+
+  @Cacheable(TicketMetricService.getAgeSummaryKey, {
+    ttl: 15 * 60 * 1000,
+    dependencies: [TicketEntity],
+  })
   async ageSummary(
     range?: PartialDateRange,
     query?: TicketAgeSummaryQuery,
@@ -332,9 +375,22 @@ export class TicketMetricService {
     return new TicketAgeSummary(ageGroups);
   }
 
+  static getHandlerSummaryKey(
+    range?: PartialDateRange,
+    pages?: PaginationParams,
+    context?: RequestContext,
+  ): string {
+    return `ticket-handler-summary?${toRawQuery({ ...range, ...pages, ...context })}`;
+  }
+
+  @Cacheable(TicketMetricService.getHandlerSummaryKey, {
+    ttl: 15 * 60 * 1000,
+    dependencies: [TicketEntity],
+  })
   async handlerSummary(
     range?: PartialDateRange,
     pages?: PaginationParams,
+    context?: RequestContext,
   ): Promise<TicketHandlerSummary[]> {
     const results = await this.ticketRepository
       .createQueryBuilder('ticket')
@@ -359,7 +415,7 @@ export class TicketMetricService {
 
     const ids = results.map((row) => row.user_id);
 
-    const heads = await this.userHeadService.get(ids);
+    const heads = await this.userHeadService.get(ids, context);
 
     return results.map(
       (row) =>
@@ -370,9 +426,22 @@ export class TicketMetricService {
     );
   }
 
+  static getReporterSummaryKey(
+    range?: PartialDateRange,
+    pages?: PaginationParams,
+    context?: RequestContext,
+  ): string {
+    return `ticket-reporter-summary?${toRawQuery({ ...range, ...pages, ...context })}`;
+  }
+
+  @Cacheable(TicketMetricService.getReporterSummaryKey, {
+    ttl: 15 * 60 * 1000,
+    dependencies: [TicketEntity],
+  })
   async reporterSummary(
     range?: PartialDateRange,
     pages?: PaginationParams,
+    context?: RequestContext,
   ): Promise<TicketReporterSummary[]> {
     const results = await this.ticketRepository
       .createQueryBuilder('ticket')
@@ -394,7 +463,10 @@ export class TicketMetricService {
       (row) => new TicketReporterSummary(convertKeysToCamelCase(row)),
     );
 
-    const heads = await this.userHeadService.get(counts.map((c) => c.userId));
+    const heads = await this.userHeadService.get(
+      counts.map((c) => c.userId),
+      context,
+    );
 
     return counts.map((count) => ({
       ...count,
