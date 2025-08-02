@@ -22,7 +22,7 @@ import {
 } from 'typeorm';
 import { Cacheable, withInvalidation } from 'src/app/browser.module';
 
-import { ManifestQuery } from './manifest.dto';
+import { ManifestQuery, ManifestAvailability } from './manifest.dto';
 import {
   ManifestEntity,
   Order,
@@ -133,7 +133,10 @@ export class ManifestService {
     ttl: 10 * 60 * 1000,
     dependencies: [ManifestEntity],
   })
-  async available(range: DateRange, type: ItemType[]): Promise<boolean> {
+  async available(
+    range: DateRange,
+    type: ItemType[],
+  ): Promise<ManifestAvailability> {
     const manifests = await this.list(range, { type: type });
     const rangeStart = range.startDate.getTime();
     const rangeEnd = range.endDate.getTime();
@@ -143,29 +146,43 @@ export class ManifestService {
     const pastDuration = Math.max(0, Math.min(nowTime, rangeEnd) - rangeStart);
     const futureDuration = totalDuration - pastDuration;
 
-    const maxMissingFraction = 0.25;
+    const availability: Partial<Record<ItemType, number>> = {};
 
     for (const itemType of type) {
       const filtered = manifests.filter((m) => m.type === itemType);
-      if (filtered.length === 0) continue;
+
+      if (filtered.length === 0) {
+        availability[itemType] = 0;
+        continue;
+      }
 
       const orders = ManifestService.computeOrders(filtered, range);
-      if (orders.length === 0) continue;
 
-      let total = 0;
+      if (orders.length === 0) {
+        availability[itemType] = 1;
+        continue;
+      }
+
+      let totalGaps = 0;
 
       for (const order of orders) {
         const orderStart = Math.max(order.lowerDate.getTime(), rangeStart);
         const orderEnd = Math.min(order.upperDate.getTime(), rangeEnd);
         const orderDuration = Math.max(0, orderEnd - orderStart);
-        total += orderDuration;
+        totalGaps += orderDuration;
       }
 
-      const unavailability = (total - futureDuration) / pastDuration;
-      if (unavailability > maxMissingFraction) return false;
+      if (pastDuration === 0) {
+        availability[itemType] = 1;
+      } else {
+        const pastGaps = Math.max(0, totalGaps - futureDuration);
+        availability[itemType] = Math.max(0, 1 - pastGaps / pastDuration);
+      }
     }
 
-    return manifests.length > 0;
+    return new ManifestAvailability({
+      ...availability,
+    });
   }
 
   static areBoundariesContiguous(

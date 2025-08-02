@@ -18,6 +18,7 @@ import { DateRange, PartialDateRange } from 'src/common';
 
 import {
   Manifest,
+  ManifestAvailability,
   ManifestAvailableQuery,
   ManifestQuery,
 } from './manifest.dto';
@@ -40,7 +41,7 @@ export class ManifestController {
   @ApiResponse({
     status: 200,
     description: 'Manifest availability',
-    type: Boolean,
+    type: ManifestAvailability,
   })
   async available(
     @Query() range: PartialDateRange,
