@@ -32,6 +32,7 @@ import {
   TicketTypeSummary,
   TicketTypeSummaryQuery,
 } from './ticket-metric.dto';
+import { UserEntity } from 'src/user/user.entity';
 
 @Injectable()
 export class TicketMetricService {
@@ -385,7 +386,7 @@ export class TicketMetricService {
 
   @Cacheable(TicketMetricService.getHandlerSummaryKey, {
     ttl: 15 * 60 * 1000,
-    dependencies: [TicketEntity],
+    dependencies: [TicketEntity, UserEntity],
   })
   async handlerSummary(
     range?: PartialDateRange,
@@ -436,7 +437,7 @@ export class TicketMetricService {
 
   @Cacheable(TicketMetricService.getReporterSummaryKey, {
     ttl: 15 * 60 * 1000,
-    dependencies: [TicketEntity],
+    dependencies: [TicketEntity, UserEntity],
   })
   async reporterSummary(
     range?: PartialDateRange,
