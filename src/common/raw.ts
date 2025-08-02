@@ -31,3 +31,29 @@ export const toRawQuery = <T extends object>(obj?: T): string => {
     .filter(Boolean)
     .join('&');
 };
+
+export const toRawUrl = (...args: any[]): string => {
+  const pathSegments: string[] = [];
+  const queryParams: Record<string, unknown> = {};
+
+  args.forEach((arg) => {
+    if (arg === undefined || arg === null) {
+      return;
+    }
+
+    if (typeof arg !== 'object' || Array.isArray(arg)) {
+      pathSegments.push(encodeURIComponent(String(arg)));
+    } else {
+      Object.assign(queryParams, arg);
+    }
+  });
+
+  const path = pathSegments.join('/');
+  const query = toRawQuery(queryParams);
+
+  if (pathSegments.length > 0) {
+    return query ? `/${path}?${query}` : `/${path}`;
+  } else {
+    return query ? `?${query}` : '';
+  }
+};
