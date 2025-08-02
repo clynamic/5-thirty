@@ -56,23 +56,6 @@ export class PerformanceMetricService {
     private readonly userHeadService: UserHeadService,
   ) {}
 
-  private whereCreatedOrUpdated<T extends WithDate>(
-    range?: PartialDateRange,
-    options?: FindOptionsWhere<T>,
-  ): FindOptionsWhere<T>[] {
-    range = DateRange.fill(range);
-    return [
-      {
-        createdAt: range.find(),
-        ...options,
-      } as FindOptionsWhere<T>,
-      {
-        updatedAt: range.find(),
-        ...options,
-      } as FindOptionsWhere<T>,
-    ];
-  }
-
   private async findActivities(
     keys: Activity[],
     range: PartialDateRange,
@@ -230,10 +213,11 @@ export class PerformanceMetricService {
           tasks.push(
             this.ticketRepository
               .find({
-                where: this.whereCreatedOrUpdated<TicketEntity>(range, {
+                where: {
+                  updatedAt: range.find(),
                   status: TicketStatus.approved,
                   handlerId: userId ? userId : Not(IsNull()),
-                }),
+                },
                 select: ['handlerId', 'updatedAt'],
               })
               .then((tickets) =>
