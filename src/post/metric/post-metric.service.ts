@@ -34,12 +34,8 @@ export class PostMetricService {
     private readonly permitRepository: Repository<PermitEntity>,
   ) {}
 
-  static getStatusSummaryKey(range?: PartialDateRange): string {
-    range = DateRange.fill(range);
-    return `post-status-summary?${toRawQuery(range)}`;
-  }
-
-  @Cacheable(PostMetricService.getStatusSummaryKey, {
+  @Cacheable({
+    prefix: 'post',
     ttl: 5 * 60 * 1000,
     dependencies: [PostVersionEntity, ApprovalEntity, FlagEntity, PermitEntity],
   })
@@ -107,12 +103,8 @@ export class PostMetricService {
     });
   }
 
-  static getPendingSeriesKey(range?: PartialDateRange): string {
-    range = DateRange.fill(range);
-    return `post-pending-series?${toRawQuery(range)}`;
-  }
-
-  @Cacheable(PostMetricService.getPendingSeriesKey, {
+  @Cacheable({
+    prefix: 'post',
     ttl: 10 * 60 * 1000,
     dependencies: [PostVersionEntity, PermitEntity, ApprovalEntity, FlagEntity],
   })

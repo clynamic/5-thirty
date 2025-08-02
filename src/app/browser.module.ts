@@ -1,6 +1,8 @@
 import { CACHE_MANAGER, CacheModule } from '@nestjs/cache-manager';
 import { Global, Inject, Injectable, Module } from '@nestjs/common';
 import { Cache, Store } from 'cache-manager';
+import { kebabCase } from 'lodash';
+import { toRawQuery } from 'src/common';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export type ResourceKey = string | Function;
@@ -95,26 +97,43 @@ export class CacheManager<S extends Store = Store> implements Cache<S> {
 }
 
 export interface CacheableOptions {
+  prefix?: string;
   ttl?: number;
   dependencies?: ResourceKey[];
   disable?: boolean;
+  keyEncoder?: (...args: any[]) => Record<string, unknown>;
 }
 
 export function Cacheable<TArgs extends any[], TReturn>(
-  keyFn: (...args: TArgs) => string,
   options?: CacheableOptions,
 ): MethodDecorator {
-  return function (_, __, descriptor: PropertyDescriptor) {
+  return function (_, propertyKey, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value as (
       ...args: TArgs
     ) => Promise<TReturn>;
 
+    const methodName = String(propertyKey);
+
     descriptor.value = async function (...args: TArgs) {
       const cacheManager = CacheManager.getInstance();
-      const cacheKey = keyFn(...args);
+
+      const parts: string[] = [];
+      if (options?.prefix) {
+        parts.push(kebabCase(options.prefix));
+      }
+      parts.push(kebabCase(methodName));
+
+      const keyPrefix = parts.join('-');
+
+      const paramsForKey = options?.keyEncoder
+        ? options.keyEncoder(...args)
+        : Object.assign({}, ...args);
+
+      const queryString = toRawQuery(paramsForKey);
+      const cacheKey = queryString ? `${keyPrefix}?${queryString}` : keyPrefix;
 
       if (options?.dependencies) {
-        options?.dependencies.forEach((dep) => {
+        options.dependencies.forEach((dep) => {
           const resourceKey = typeof dep === 'string' ? dep : dep.name;
           cacheManager.dep(resourceKey, cacheKey);
         });

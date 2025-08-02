@@ -8,7 +8,6 @@ import {
   generateSeriesRecordPoints,
   PartialDateRange,
   SeriesCountPoint,
-  toRawQuery,
 } from 'src/common';
 import { FindOptionsWhere, Not, Repository } from 'typeorm';
 import { Cacheable } from 'src/app/browser.module';
@@ -40,12 +39,8 @@ export class PostReplacementMetricService {
     ];
   }
 
-  static getCreatedKey(range?: PartialDateRange): string {
-    range = DateRange.fill(range);
-    return `post-replacement-created?${toRawQuery(range)}`;
-  }
-
-  @Cacheable(PostReplacementMetricService.getCreatedKey, {
+  @Cacheable({
+    prefix: 'post-replacement',
     ttl: 10 * 60 * 1000,
     dependencies: [PostReplacementEntity],
   })
@@ -64,12 +59,8 @@ export class PostReplacementMetricService {
     return generateSeriesCountPoints(dates, range);
   }
 
-  static getStatusKey(range?: PartialDateRange): string {
-    range = DateRange.fill(range);
-    return `post-replacement-status?${toRawQuery(range)}`;
-  }
-
-  @Cacheable(PostReplacementMetricService.getStatusKey, {
+  @Cacheable({
+    prefix: 'post-replacement',
     ttl: 10 * 60 * 1000,
     dependencies: [PostReplacementEntity],
   })

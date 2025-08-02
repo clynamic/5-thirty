@@ -24,12 +24,8 @@ export class PermitMetricService {
     private readonly postVersionRepository: Repository<PostVersionEntity>,
   ) {}
 
-  static getCountKey(range?: PartialDateRange): string {
-    range = DateRange.fill(range);
-    return `permit-count?${toRawQuery(range)}`;
-  }
-
-  @Cacheable(PermitMetricService.getCountKey, {
+  @Cacheable({
+    prefix: 'permit',
     ttl: 10 * 60 * 1000,
     dependencies: [PermitEntity, PostVersionEntity],
   })

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ApprovalEntity } from 'src/approval/approval.entity';
 import { BulkUpdateRequestEntity } from 'src/bulk-update-request/bulk-update-request.entity';
-import { WithId, PaginationParams, toRawQuery } from 'src/common';
+import { WithId, PaginationParams } from 'src/common';
 import { FeedbackEntity } from 'src/feedback/feedback.entity';
 import { FlagEntity } from 'src/flag/flag.entity';
 import { ItemType } from 'src/label/label.entity';
@@ -59,11 +59,8 @@ export class HealthService {
     [ItemType.tagImplications]: this.tagImplicationRepository,
   };
 
-  static getManifestHealthKey(pages?: PaginationParams): string {
-    return `manifest-health?${toRawQuery(pages)}`;
-  }
-
-  @Cacheable(HealthService.getManifestHealthKey, {
+  @Cacheable({
+    prefix: 'health',
     ttl: 15 * 60 * 1000,
     dependencies: [
       ManifestEntity,
@@ -79,7 +76,7 @@ export class HealthService {
       TagImplicationEntity,
     ],
   })
-  async getManifestHealth(pages?: PaginationParams): Promise<ManifestHealth[]> {
+  async manifest(pages?: PaginationParams): Promise<ManifestHealth[]> {
     const health: ManifestHealth[] = [];
     pages = new PaginationParams({
       limit: 5, // Ignore global default page size, as these items are very expensive to fetch

@@ -1,5 +1,5 @@
 import { InjectRepository } from '@nestjs/typeorm';
-import { add, addMilliseconds, isEqual, min, startOfDay, sub } from 'date-fns';
+import { add, addMilliseconds, isEqual, min, startOfDay } from 'date-fns';
 import {
   DateRange,
   endOf,
@@ -9,7 +9,6 @@ import {
   resolveWithDate,
   startOf,
   TimeScale,
-  toRawQuery,
 } from 'src/common';
 import { ItemType } from 'src/label/label.entity';
 import {
@@ -47,11 +46,8 @@ export class ManifestService {
     ManifestEntity,
   );
 
-  static getManifestKey(id: number): string {
-    return `manifest?${toRawQuery({ id })}`;
-  }
-
-  @Cacheable(ManifestService.getManifestKey, {
+  @Cacheable({
+    prefix: 'manifest',
     ttl: 60 * 60 * 1000,
     dependencies: [ManifestEntity],
   })
@@ -92,11 +88,8 @@ export class ManifestService {
     ];
   }
 
-  static getListKey(range?: DateRange, query?: ManifestQuery): string {
-    return `manifest-list?${toRawQuery({ ...range, ...query })}`;
-  }
-
-  @Cacheable(ManifestService.getListKey, {
+  @Cacheable({
+    prefix: 'manifest',
     ttl: 30 * 60 * 1000,
     dependencies: [ManifestEntity],
   })
@@ -111,11 +104,8 @@ export class ManifestService {
     });
   }
 
-  static getOrdersByRangeKey(type: ItemType, range: DateRange): string {
-    return `orders-list?${toRawQuery({ type, ...range })}`;
-  }
-
-  @Cacheable(ManifestService.getOrdersByRangeKey, {
+  @Cacheable({
+    prefix: 'manifest',
     ttl: 15 * 60 * 1000,
     dependencies: [ManifestEntity],
   })
@@ -125,11 +115,8 @@ export class ManifestService {
     return ManifestService.computeOrders(manifests, range);
   }
 
-  static getAvailableKey(range: DateRange, type: ItemType[]): string {
-    return `manifest-available?${toRawQuery({ ...range, type })}`;
-  }
-
-  @Cacheable(ManifestService.getAvailableKey, {
+  @Cacheable({
+    prefix: 'manifest',
     ttl: 10 * 60 * 1000,
     dependencies: [ManifestEntity],
   })

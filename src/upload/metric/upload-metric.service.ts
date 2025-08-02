@@ -25,14 +25,8 @@ export class UploadMetricService {
     private readonly postVersionRepository: Repository<PostVersionEntity>,
   ) {}
 
-  static getCountKey(
-    range?: PartialDateRange,
-    query?: PostUploadSeriesQuery,
-  ): string {
-    return `upload-count?${toRawQuery({ ...range, ...query })}`;
-  }
-
-  @Cacheable(UploadMetricService.getCountKey, {
+  @Cacheable({
+    prefix: 'upload',
     ttl: 10 * 60 * 1000,
     dependencies: [PostVersionEntity],
   })
@@ -57,14 +51,8 @@ export class UploadMetricService {
     );
   }
 
-  static getUploadersKey(
-    range?: PartialDateRange,
-    pages?: PaginationParams,
-  ): string {
-    return `upload-uploaders?${toRawQuery({ ...range, ...pages })}`;
-  }
-
-  @Cacheable(UploadMetricService.getUploadersKey, {
+  @Cacheable({
+    prefix: 'upload',
     ttl: 15 * 60 * 1000,
     dependencies: [PostVersionEntity],
   })

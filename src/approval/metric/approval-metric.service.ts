@@ -7,7 +7,6 @@ import {
   PaginationParams,
   PartialDateRange,
   SeriesCountPoint,
-  toRawQuery,
 } from 'src/common';
 import { Repository } from 'typeorm';
 import { Cacheable } from 'src/app/browser.module';
@@ -26,12 +25,8 @@ export class ApprovalMetricService {
     private readonly approvalRepository: Repository<ApprovalEntity>,
   ) {}
 
-  static getCountSummaryKey(range?: PartialDateRange): string {
-    range = DateRange.fill(range);
-    return `approval-count-summary?${toRawQuery(range)}`;
-  }
-
-  @Cacheable(ApprovalMetricService.getCountSummaryKey, {
+  @Cacheable({
+    prefix: 'approval',
     ttl: 10 * 60 * 1000,
     dependencies: [ApprovalEntity],
   })
@@ -43,14 +38,8 @@ export class ApprovalMetricService {
     });
   }
 
-  static getCountSeriesKey(
-    range?: PartialDateRange,
-    query?: ApprovalCountSeriesQuery,
-  ): string {
-    return `approval-count-series?${toRawQuery({ ...range, ...query })}`;
-  }
-
-  @Cacheable(ApprovalMetricService.getCountSeriesKey, {
+  @Cacheable({
+    prefix: 'approval',
     ttl: 10 * 60 * 1000,
     dependencies: [ApprovalEntity],
   })
@@ -72,14 +61,8 @@ export class ApprovalMetricService {
     );
   }
 
-  static getApproverSummaryKey(
-    range?: PartialDateRange,
-    pages?: PaginationParams,
-  ): string {
-    return `approval-approver-summary?${toRawQuery({ ...range, ...pages })}`;
-  }
-
-  @Cacheable(ApprovalMetricService.getApproverSummaryKey, {
+  @Cacheable({
+    prefix: 'approval',
     ttl: 15 * 60 * 1000,
     dependencies: [ApprovalEntity],
   })

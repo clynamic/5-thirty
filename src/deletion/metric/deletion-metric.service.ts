@@ -8,7 +8,6 @@ import {
   PartialDateRange,
   SeriesCountPoint,
   TimeScale,
-  toRawQuery,
 } from 'src/common';
 import { FlagEntity } from 'src/flag/flag.entity';
 import { Repository } from 'typeorm';
@@ -26,14 +25,8 @@ export class DeletionMetricService {
     private readonly flagRepository: Repository<FlagEntity>,
   ) {}
 
-  static getCountSeriesKey(
-    range?: PartialDateRange,
-    query?: DeletionCountSeriesQuery,
-  ): string {
-    return `deletion-count-series?${toRawQuery({ ...range, ...query })}`;
-  }
-
-  @Cacheable(DeletionMetricService.getCountSeriesKey, {
+  @Cacheable({
+    prefix: 'deletion',
     ttl: 10 * 60 * 1000,
     dependencies: [FlagEntity],
   })
@@ -56,14 +49,8 @@ export class DeletionMetricService {
     );
   }
 
-  static getActivitySummaryKey(
-    range?: PartialDateRange,
-    query?: DeletionActivitySummaryQuery,
-  ): string {
-    return `deletion-activity-summary?${toRawQuery({ ...range, ...query })}`;
-  }
-
-  @Cacheable(DeletionMetricService.getActivitySummaryKey, {
+  @Cacheable({
+    prefix: 'deletion',
     ttl: 15 * 60 * 1000,
     dependencies: [FlagEntity],
   })

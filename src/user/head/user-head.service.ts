@@ -5,7 +5,7 @@ import { postsMany, usersMany } from 'src/api';
 import { PostRating } from 'src/api/e621';
 import { Cacheable, CacheManager } from 'src/app/browser.module';
 import { AuthService } from 'src/auth/auth.service';
-import { convertKeysToCamelCase, toRawQuery } from 'src/common';
+import { convertKeysToCamelCase } from 'src/common';
 import { PostEntity } from 'src/post/post.entity';
 import { In, IsNull, MoreThan, Not, Repository } from 'typeorm';
 
@@ -29,17 +29,11 @@ export class UserHeadService {
     private readonly cacheManager: CacheManager,
   ) {}
 
-  static getUserHeadKey(
-    id: number | number[],
-    params?: UserHeadParams,
-  ): string {
-    return `user-head?${toRawQuery({ id, ...params })}`;
-  }
-
   get(id: number, params?: UserHeadParams): Promise<UserHead>;
   get(id: number[], params?: UserHeadParams): Promise<UserHead[]>;
 
-  @Cacheable(UserHeadService.getUserHeadKey, {
+  @Cacheable({
+    prefix: 'user-head',
     ttl: 5 * 60 * 1000,
     dependencies: [UserEntity, PostEntity],
   })

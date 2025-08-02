@@ -236,14 +236,8 @@ export class PerformanceMetricService {
     return items;
   }
 
-  static getPerformanceKey(
-    range?: PartialDateRange,
-    query?: PerformanceSummaryQuery,
-  ): string {
-    return `performance?${toRawQuery({ ...range, ...query })}`;
-  }
-
-  @Cacheable(PerformanceMetricService.getPerformanceKey, {
+  @Cacheable({
+    prefix: 'performance',
     ttl: 30 * 60 * 1000,
     dependencies: [
       UserEntity,
@@ -454,14 +448,7 @@ export class PerformanceMetricService {
       );
   }
 
-  static getActivityKey(
-    range?: PartialDateRange,
-    query?: ActivitySummaryQuery,
-  ): string {
-    return `activity?${toRawQuery({ ...range, ...query })}`;
-  }
-
-  @Cacheable(PerformanceMetricService.getActivityKey, {
+  @Cacheable({
     ttl: 15 * 60 * 1000,
     dependencies: [
       UserEntity,

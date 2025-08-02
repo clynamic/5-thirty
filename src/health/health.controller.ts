@@ -46,6 +46,6 @@ export class HealthController {
   async getManifestHealth(
     @Query() pages?: PaginationParams,
   ): Promise<ManifestHealth[]> {
-    return this.healthService.getManifestHealth(pages);
+    return this.healthService.manifest(pages);
   }
 }

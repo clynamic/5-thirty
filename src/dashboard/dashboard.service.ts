@@ -5,7 +5,6 @@ import { Cacheable, Invalidates } from 'src/app/browser.module';
 
 import { DashboardUpdate } from './dashboard.dto';
 import { DashboardEntity, DashboardType } from './dashboard.entity';
-import { toRawQuery } from 'src/common';
 
 @Injectable()
 export class DashboardService {
@@ -14,11 +13,8 @@ export class DashboardService {
     private readonly dashboardRepository: Repository<DashboardEntity>,
   ) {}
 
-  static getDashboardKey(userId: number, type: DashboardType): string {
-    return `dashboard?${toRawQuery({ userId, type })}`;
-  }
-
-  @Cacheable(DashboardService.getDashboardKey, {
+  @Cacheable({
+    prefix: 'dashboard',
     ttl: 30 * 60 * 1000,
     dependencies: [DashboardEntity],
   })

@@ -12,7 +12,6 @@ import {
   PartialDateRange,
   Raw,
   SeriesCountPoint,
-  toRawQuery,
 } from 'src/common';
 import { FindOptionsWhere, LessThan, MoreThan, Not, Repository } from 'typeorm';
 import { Cacheable } from 'src/app/browser.module';
@@ -56,12 +55,8 @@ export class TicketMetricService {
     ];
   }
 
-  static getStatusKey(range?: PartialDateRange): string {
-    range = DateRange.fill(range);
-    return `ticket-status?${toRawQuery(range)}`;
-  }
-
-  @Cacheable(TicketMetricService.getStatusKey, {
+  @Cacheable({
+    prefix: 'ticket',
     ttl: 10 * 60 * 1000,
     dependencies: [TicketEntity],
   })
@@ -92,14 +87,8 @@ export class TicketMetricService {
     );
   }
 
-  static getTypeSummaryKey(
-    range?: PartialDateRange,
-    query?: TicketTypeSummaryQuery,
-  ): string {
-    return `ticket-type-summary?${toRawQuery({ ...range, ...query })}`;
-  }
-
-  @Cacheable(TicketMetricService.getTypeSummaryKey, {
+  @Cacheable({
+    prefix: 'ticket',
     ttl: 15 * 60 * 1000,
     dependencies: [TicketEntity],
   })
@@ -125,12 +114,8 @@ export class TicketMetricService {
     });
   }
 
-  static getOpenSeriesKey(partialRange?: PartialDateRange): string {
-    const range = DateRange.fill(partialRange);
-    return `ticket-open-series?${toRawQuery(range)}`;
-  }
-
-  @Cacheable(TicketMetricService.getOpenSeriesKey, {
+  @Cacheable({
+    prefix: 'ticket',
     ttl: 10 * 60 * 1000,
     dependencies: [TicketEntity],
   })
@@ -175,14 +160,8 @@ export class TicketMetricService {
     return generateSeriesCountPoints(dates, range);
   }
 
-  static getCreatedSeriesKey(
-    range?: PartialDateRange,
-    query?: TicketCreatedSeriesQuery,
-  ): string {
-    return `ticket-created-series?${toRawQuery({ ...range, ...query })}`;
-  }
-
-  @Cacheable(TicketMetricService.getCreatedSeriesKey, {
+  @Cacheable({
+    prefix: 'ticket',
     ttl: 10 * 60 * 1000,
     dependencies: [TicketEntity],
   })
@@ -204,14 +183,8 @@ export class TicketMetricService {
     );
   }
 
-  static getClosedSeriesKey(
-    range?: PartialDateRange,
-    query?: TicketClosedSeriesQuery,
-  ): string {
-    return `ticket-closed-series?${toRawQuery({ ...range, ...query })}`;
-  }
-
-  @Cacheable(TicketMetricService.getClosedSeriesKey, {
+  @Cacheable({
+    prefix: 'ticket',
     ttl: 10 * 60 * 1000,
     dependencies: [TicketEntity],
   })
@@ -233,12 +206,8 @@ export class TicketMetricService {
     );
   }
 
-  static getAgeSeriesKey(range?: PartialDateRange): string {
-    const filledRange = DateRange.fill(range);
-    return `ticket-age-series?${toRawQuery(filledRange)}`;
-  }
-
-  @Cacheable(TicketMetricService.getAgeSeriesKey, {
+  @Cacheable({
+    prefix: 'ticket',
     ttl: 10 * 60 * 1000,
     dependencies: [TicketEntity],
   })
@@ -315,14 +284,8 @@ export class TicketMetricService {
     );
   }
 
-  static getAgeSummaryKey(
-    range?: PartialDateRange,
-    query?: TicketAgeSummaryQuery,
-  ): string {
-    return `ticket-age-summary?${toRawQuery({ ...range, ...query })}`;
-  }
-
-  @Cacheable(TicketMetricService.getAgeSummaryKey, {
+  @Cacheable({
+    prefix: 'ticket',
     ttl: 15 * 60 * 1000,
     dependencies: [TicketEntity],
   })
@@ -373,14 +336,8 @@ export class TicketMetricService {
     return new TicketAgeSummary(ageGroups);
   }
 
-  static getHandlerSummaryKey(
-    range?: PartialDateRange,
-    pages?: PaginationParams,
-  ): string {
-    return `ticket-handler-summary?${toRawQuery({ ...range, ...pages })}`;
-  }
-
-  @Cacheable(TicketMetricService.getHandlerSummaryKey, {
+  @Cacheable({
+    prefix: 'ticket',
     ttl: 15 * 60 * 1000,
     dependencies: [TicketEntity, UserEntity],
   })
@@ -417,14 +374,8 @@ export class TicketMetricService {
     );
   }
 
-  static getReporterSummaryKey(
-    range?: PartialDateRange,
-    pages?: PaginationParams,
-  ): string {
-    return `ticket-reporter-summary?${toRawQuery({ ...range, ...pages })}`;
-  }
-
-  @Cacheable(TicketMetricService.getReporterSummaryKey, {
+  @Cacheable({
+    prefix: 'ticket',
     ttl: 15 * 60 * 1000,
     dependencies: [TicketEntity, UserEntity],
   })
