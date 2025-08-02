@@ -66,9 +66,9 @@ export class PerformanceMetricController {
             })
           : [];
 
-      return summaries.map((summary) => ({
+      return summaries.map<PerformanceSummary>((summary) => ({
         ...summary,
-        userHead: heads.find((head) => head.id === summary.userId),
+        head: heads.find((head) => head.id === summary.userId),
       }));
     }
 

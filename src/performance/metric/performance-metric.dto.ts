@@ -149,7 +149,7 @@ export class PerformanceSummary {
   }
 
   userId: number;
-  userHead?: UserHead;
+  head?: UserHead;
 
   position: number;
   score: number;
