@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { startOfDay, sub } from 'date-fns';
-import { PostFlagType, PostReplacementStatus, TicketStatus } from 'src/api';
-import { ApprovalEntity } from 'src/approval/approval.entity';
+import { PostEventAction, PostReplacementStatus, TicketStatus } from 'src/api';
 import { getUserLevelFromString } from 'src/auth/auth.level';
 import {
   convertKeysToCamelCase,
@@ -13,7 +12,7 @@ import {
   PartialDateRange,
   toRawQuery,
 } from 'src/common';
-import { FlagEntity } from 'src/flag/flag.entity';
+import { PostEventEntity } from 'src/post-event/post-event.entity';
 import { PostReplacementEntity } from 'src/post-replacement/post-replacement.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { TicketEntity } from 'src/ticket/ticket.entity';
@@ -47,10 +46,8 @@ export class PerformanceMetricService {
     private readonly postReplacementRepository: Repository<PostReplacementEntity>,
     @InjectRepository(TicketEntity)
     private readonly ticketRepository: Repository<TicketEntity>,
-    @InjectRepository(ApprovalEntity)
-    private readonly approvalRepository: Repository<ApprovalEntity>,
-    @InjectRepository(FlagEntity)
-    private readonly flagRepository: Repository<FlagEntity>,
+    @InjectRepository(PostEventEntity)
+    private readonly postEventRepository: Repository<PostEventEntity>,
   ) {}
 
   private async findActivities(
@@ -100,20 +97,21 @@ export class PerformanceMetricService {
           break;
         case Activity.PostApprove:
           tasks.push(
-            this.approvalRepository
+            this.postEventRepository
               .find({
                 where: {
                   ...range.where(),
-                  userId: userId,
+                  action: PostEventAction.approved,
+                  creatorId: userId,
                 },
-                select: ['userId', 'createdAt'],
+                select: ['creatorId', 'createdAt'],
               })
-              .then((approvals) =>
-                approvals.forEach((approval) =>
+              .then((events) =>
+                events.forEach((event) =>
                   storeItem(
                     Activity.PostApprove,
-                    approval.userId,
-                    approval.createdAt,
+                    event.creatorId,
+                    event.createdAt,
                   ),
                 ),
               ),
@@ -121,22 +119,21 @@ export class PerformanceMetricService {
           break;
         case Activity.PostDelete:
           tasks.push(
-            this.flagRepository
+            this.postEventRepository
               .find({
                 where: {
                   ...range.where(),
-                  type: PostFlagType.deletion,
+                  action: PostEventAction.deleted,
                   creatorId: userId,
-                  isResolved: false,
                 },
                 select: ['creatorId', 'createdAt'],
               })
-              .then((flags) =>
-                flags.forEach((flag) =>
+              .then((events) =>
+                events.forEach((event) =>
                   storeItem(
                     Activity.PostDelete,
-                    flag.creatorId,
-                    flag.createdAt,
+                    event.creatorId,
+                    event.createdAt,
                   ),
                 ),
               ),
@@ -244,8 +241,7 @@ export class PerformanceMetricService {
       PostVersionEntity,
       PostReplacementEntity,
       TicketEntity,
-      ApprovalEntity,
-      FlagEntity,
+      PostEventEntity,
     ],
   })
   async performance(
@@ -455,8 +451,7 @@ export class PerformanceMetricService {
       PostVersionEntity,
       PostReplacementEntity,
       TicketEntity,
-      ApprovalEntity,
-      FlagEntity,
+      PostEventEntity,
     ],
   })
   async activity(

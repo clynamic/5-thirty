@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ApprovalEntity } from 'src/approval/approval.entity';
-import { FlagEntity } from 'src/flag/flag.entity';
+import { PostEventEntity } from 'src/post-event/post-event.entity';
 import { PostReplacementEntity } from 'src/post-replacement/post-replacement.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { TicketEntity } from 'src/ticket/ticket.entity';
@@ -18,8 +17,7 @@ import { PerformanceMetricService } from './performance-metric.service';
       PostVersionEntity,
       PostReplacementEntity,
       TicketEntity,
-      ApprovalEntity,
-      FlagEntity,
+      PostEventEntity,
     ]),
     UserHeadModule,
   ],
