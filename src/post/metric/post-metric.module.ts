@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ApprovalEntity } from 'src/approval/approval.entity';
-import { FlagEntity } from 'src/flag/flag.entity';
+import { PostEventEntity } from '../../post-event/post-event.entity';
 import { PermitEntity } from 'src/permit/permit.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
 
@@ -14,8 +13,7 @@ import { PostMetricService } from './post-metric.service';
     TypeOrmModule.forFeature([
       PostEntity,
       PostVersionEntity,
-      ApprovalEntity,
-      FlagEntity,
+      PostEventEntity,
       PermitEntity,
     ]),
   ],

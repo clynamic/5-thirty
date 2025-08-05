@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { max, min, sub } from 'date-fns';
-import { PostFlagType } from 'src/api';
 import { Cacheable } from 'src/app/browser.module';
-import { ApprovalEntity } from 'src/approval/approval.entity';
+import { PostEventEntity } from '../../post-event/post-event.entity';
 import {
   collapseTimeScaleDuration,
   convertKeysToCamelCase,
@@ -12,9 +11,7 @@ import {
   generateSeriesCountPoints,
   PartialDateRange,
   SeriesCountPoint,
-  toRawQuery,
 } from 'src/common';
-import { FlagEntity } from 'src/flag/flag.entity';
 import { PermitEntity } from 'src/permit/permit.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { Brackets, Repository } from 'typeorm';
@@ -26,18 +23,12 @@ export class PostMetricService {
   constructor(
     @InjectRepository(PostVersionEntity)
     private readonly postVersionRepository: Repository<PostVersionEntity>,
-    @InjectRepository(ApprovalEntity)
-    private readonly approvalRepository: Repository<ApprovalEntity>,
-    @InjectRepository(FlagEntity)
-    private readonly flagRepository: Repository<FlagEntity>,
-    @InjectRepository(PermitEntity)
-    private readonly permitRepository: Repository<PermitEntity>,
   ) {}
 
   @Cacheable({
     prefix: 'post',
     ttl: 5 * 60 * 1000,
-    dependencies: [PostVersionEntity, ApprovalEntity, FlagEntity, PermitEntity],
+    dependencies: [PostVersionEntity, PostEventEntity, PermitEntity],
   })
   async statusSummary(
     partialRange?: PartialDateRange,
@@ -47,35 +38,37 @@ export class PostMetricService {
     const posts = await this.postVersionRepository
       .createQueryBuilder('post_version')
       .select('post_version.post_id', 'post_id')
-      .addSelect('MAX(approval.created_at)', 'approval_date')
-      .addSelect('MAX(flag.created_at)', 'deletion_date')
+      .addSelect('MAX(approval_event.created_at)', 'approval_date')
+      .addSelect('MAX(deletion_event.created_at)', 'deletion_date')
       .addSelect('MAX(permit.created_at)', 'permit_date')
       .leftJoin(
-        this.approvalRepository.metadata.tableName,
-        'approval',
-        'post_version.post_id = approval.post_id',
+        PostEventEntity,
+        'approval_event',
+        "post_version.post_id = approval_event.post_id AND approval_event.action = 'approved'",
       )
       .leftJoin(
-        this.flagRepository.metadata.tableName,
-        'flag',
-        'post_version.post_id = flag.post_id AND flag.type = :type',
-        { type: PostFlagType.deletion },
+        PostEventEntity,
+        'deletion_event',
+        "post_version.post_id = deletion_event.post_id AND deletion_event.action = 'deleted'",
       )
-      .leftJoin(
-        this.permitRepository.metadata.tableName,
-        'permit',
-        'post_version.post_id = permit.post_id',
-      )
-      .where('post_version.updated_at BETWEEN :start AND :end', {
-        start: range.startDate,
-        end: range.endDate,
-      })
-      .orWhere(
+      .leftJoin(PermitEntity, 'permit', 'post_version.post_id = permit.post_id')
+      .where('post_version.version = 1')
+      .andWhere(
         new Brackets((qb) => {
-          qb.where('approval.post_id IS NULL')
-            .andWhere('flag.id IS NULL')
-            .andWhere('permit.post_id IS NULL')
-            .andWhere('post_version.updated_at <= :end');
+          qb.where('post_version.updated_at BETWEEN :start AND :end', {
+            start: range.startDate,
+            end: range.endDate,
+          }).orWhere(
+            new Brackets((subQb) => {
+              subQb
+                .where('approval_event.created_at IS NULL')
+                .andWhere('deletion_event.created_at IS NULL')
+                .andWhere('permit.post_id IS NULL')
+                .andWhere('post_version.updated_at <= :end', {
+                  end: range.endDate,
+                });
+            }),
+          );
         }),
       )
       .groupBy('post_version.post_id')
@@ -93,20 +86,20 @@ export class PostMetricService {
     const pending = posts.filter(
       (result) =>
         !result.approvalDate && !result.deletionDate && !result.permitDate,
-    );
+    ).length;
 
     return new PostStatusSummary({
       approved,
       deleted,
       permitted,
-      pending: pending.length,
+      pending,
     });
   }
 
   @Cacheable({
     prefix: 'post',
     ttl: 10 * 60 * 1000,
-    dependencies: [PostVersionEntity, PermitEntity, ApprovalEntity, FlagEntity],
+    dependencies: [PostVersionEntity, PermitEntity, PostEventEntity],
   })
   async pendingSeries(
     partialRange?: PartialDateRange,
@@ -117,40 +110,34 @@ export class PostMetricService {
       .createQueryBuilder('post_version')
       .select('post_version.post_id', 'post_id')
       .addSelect('MAX(post_version.updated_at)', 'updated_at')
-      .addSelect('MIN(approval.created_at)', 'approval_date')
-      .addSelect('MIN(flag.created_at)', 'deletion_date')
+      .addSelect('MIN(approval_event.created_at)', 'approval_date')
+      .addSelect('MIN(deletion_event.created_at)', 'deletion_date')
       .leftJoin(
-        this.approvalRepository.metadata.tableName,
-        'approval',
-        'post_version.post_id = approval.post_id',
+        PostEventEntity,
+        'approval_event',
+        "post_version.post_id = approval_event.post_id AND approval_event.action = 'approved'",
       )
       .leftJoin(
-        this.flagRepository.metadata.tableName,
-        'flag',
-        'post_version.post_id = flag.post_id AND flag.type = :type',
-        { type: PostFlagType.deletion },
+        PostEventEntity,
+        'deletion_event',
+        "post_version.post_id = deletion_event.post_id AND deletion_event.action = 'deleted'",
       )
-      .leftJoin(
-        this.permitRepository.metadata.tableName,
-        'permit',
-        'post_version.post_id = permit.post_id',
-      )
-      .where('post_version.updated_at <= :end', {
-        end: range.endDate,
-      })
+      .leftJoin(PermitEntity, 'permit', 'post_version.post_id = permit.post_id')
+      .where('post_version.version = 1')
+      .andWhere('post_version.updated_at <= :end', { end: range.endDate })
       .andWhere('permit.post_id IS NULL')
       .andWhere(
         new Brackets((qb) => {
-          qb.where('approval.created_at IS NULL').orWhere(
-            'approval.created_at > :start',
+          qb.where('approval_event.created_at IS NULL').orWhere(
+            'approval_event.created_at > :start',
             { start: range.startDate },
           );
         }),
       )
       .andWhere(
         new Brackets((qb) => {
-          qb.where('flag.created_at IS NULL').orWhere(
-            'flag.created_at > :start',
+          qb.where('deletion_event.created_at IS NULL').orWhere(
+            'deletion_event.created_at > :start',
             { start: range.startDate },
           );
         }),
