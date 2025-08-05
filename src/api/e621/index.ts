@@ -11,4 +11,5 @@ export * from './mod-actions';
 export * from './bulk-update-requests';
 export * from './tag-aliases';
 export * from './tag-implications';
+export * from './post-events';
 export * from './model';

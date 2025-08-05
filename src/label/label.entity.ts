@@ -11,6 +11,7 @@ export enum ItemType {
   feedbacks = 'feedbacks',
   postVersions = 'post_versions',
   postReplacements = 'post_replacements',
+  postEvents = 'post_events',
   modActions = 'mod_actions',
   bulkUpdateRequests = 'bulk_update_requests',
   tagAliases = 'tag_aliases',

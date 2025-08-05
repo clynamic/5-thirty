@@ -18,12 +18,15 @@ import { Cacheable } from 'src/app/browser.module';
 
 import { ManifestHealth } from './health.dto';
 import { generateManifestSlices } from './health.utils';
+import { PostEventEntity } from 'src/post-event/post-event.entity';
 
 @Injectable()
 export class HealthService {
   constructor(
     @InjectRepository(ManifestEntity)
     private readonly manifestRepository: Repository<ManifestEntity>,
+    @InjectRepository(PostEventEntity)
+    private readonly postEventRepository: Repository<PostEventEntity>,
     @InjectRepository(ApprovalEntity)
     private readonly approvalRepository: Repository<ApprovalEntity>,
     @InjectRepository(TicketEntity)
@@ -47,6 +50,7 @@ export class HealthService {
   ) {}
 
   private itemRepositories: Partial<Record<ItemType, Repository<WithId>>> = {
+    [ItemType.postEvents]: this.postEventRepository,
     [ItemType.tickets]: this.ticketRepository,
     [ItemType.approvals]: this.approvalRepository,
     [ItemType.flags]: this.flagRepository,
@@ -64,6 +68,7 @@ export class HealthService {
     ttl: 15 * 60 * 1000,
     dependencies: [
       ManifestEntity,
+      PostEventEntity,
       ApprovalEntity,
       TicketEntity,
       FlagEntity,

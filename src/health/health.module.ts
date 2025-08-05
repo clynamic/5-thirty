@@ -14,11 +14,13 @@ import { TicketEntity } from 'src/ticket/ticket.entity';
 
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
+import { PostEventEntity } from 'src/post-event/post-event.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       ManifestEntity,
+      PostEventEntity,
       TicketEntity,
       ApprovalEntity,
       FlagEntity,
