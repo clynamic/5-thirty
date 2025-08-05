@@ -1,5 +1,5 @@
 import { Raw, toRaws } from 'src/common';
-import { FlagEntity } from 'src/flag/flag.entity';
+import { PostEventEntity } from 'src/post-event/post-event.entity';
 import { FindOptionsWhere } from 'typeorm';
 
 export class DeletionCountSeriesQuery {
@@ -9,7 +9,7 @@ export class DeletionCountSeriesQuery {
 
   creatorId?: number;
 
-  where(): FindOptionsWhere<FlagEntity> {
+  where(): FindOptionsWhere<PostEventEntity> {
     return toRaws({
       creatorId: this.creatorId,
     });
@@ -23,7 +23,7 @@ export class DeletionActivitySummaryQuery {
 
   creatorId: number;
 
-  where(): FindOptionsWhere<FlagEntity> {
+  where(): FindOptionsWhere<PostEventEntity> {
     return toRaws({
       creatorId: this.creatorId,
     });
