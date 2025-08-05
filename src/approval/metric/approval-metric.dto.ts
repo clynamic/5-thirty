@@ -1,8 +1,7 @@
 import { Raw } from 'src/common';
+import { PostEventEntity } from 'src/post-event/post-event.entity';
 import { UserHead } from 'src/user/head/user-head.dto';
 import { FindOptionsWhere } from 'typeorm';
-
-import { ApprovalEntity } from '../approval.entity';
 
 export class ApprovalCountSummary {
   constructor(value: ApprovalCountSummary) {
@@ -19,8 +18,8 @@ export class ApprovalCountSeriesQuery {
 
   userId: number;
 
-  where(): FindOptionsWhere<ApprovalEntity> {
-    return { userId: this.userId };
+  where(): FindOptionsWhere<PostEventEntity> {
+    return { creatorId: this.userId };
   }
 }
 

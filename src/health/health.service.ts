@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ApprovalEntity } from 'src/approval/approval.entity';
 import { BulkUpdateRequestEntity } from 'src/bulk-update-request/bulk-update-request.entity';
 import { WithId, PaginationParams } from 'src/common';
 import { FeedbackEntity } from 'src/feedback/feedback.entity';
@@ -27,8 +26,6 @@ export class HealthService {
     private readonly manifestRepository: Repository<ManifestEntity>,
     @InjectRepository(PostEventEntity)
     private readonly postEventRepository: Repository<PostEventEntity>,
-    @InjectRepository(ApprovalEntity)
-    private readonly approvalRepository: Repository<ApprovalEntity>,
     @InjectRepository(TicketEntity)
     private readonly ticketRepository: Repository<TicketEntity>,
     @InjectRepository(FlagEntity)
@@ -52,7 +49,6 @@ export class HealthService {
   private itemRepositories: Partial<Record<ItemType, Repository<WithId>>> = {
     [ItemType.postEvents]: this.postEventRepository,
     [ItemType.tickets]: this.ticketRepository,
-    [ItemType.approvals]: this.approvalRepository,
     [ItemType.flags]: this.flagRepository,
     [ItemType.feedbacks]: this.feedbackRepository,
     [ItemType.postVersions]: this.postVersionRepository,
@@ -69,7 +65,6 @@ export class HealthService {
     dependencies: [
       ManifestEntity,
       PostEventEntity,
-      ApprovalEntity,
       TicketEntity,
       FlagEntity,
       FeedbackEntity,

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { PostEventAction } from 'src/api';
 import {
   convertKeysToCamelCase,
   DateRange,
@@ -8,10 +9,10 @@ import {
   PartialDateRange,
   SeriesCountPoint,
 } from 'src/common';
+import { PostEventEntity } from 'src/post-event/post-event.entity';
 import { Repository } from 'typeorm';
 import { Cacheable } from 'src/app/browser.module';
 
-import { ApprovalEntity } from '../approval.entity';
 import {
   ApprovalCountSeriesQuery,
   ApprovalCountSummary,
@@ -21,63 +22,135 @@ import {
 @Injectable()
 export class ApprovalMetricService {
   constructor(
-    @InjectRepository(ApprovalEntity)
-    private readonly approvalRepository: Repository<ApprovalEntity>,
+    @InjectRepository(PostEventEntity)
+    private readonly postEventRepository: Repository<PostEventEntity>,
   ) {}
 
   @Cacheable({
     prefix: 'approval',
     ttl: 10 * 60 * 1000,
-    dependencies: [ApprovalEntity],
+    dependencies: [PostEventEntity],
   })
   async countSummary(range?: PartialDateRange): Promise<ApprovalCountSummary> {
+    const filledRange = DateRange.fill(range);
+
+    const result = await this.postEventRepository
+      .createQueryBuilder('latest_event')
+      .select('COUNT(*)', 'total')
+      .innerJoin(
+        (subQuery) =>
+          subQuery
+            .select('post_event.post_id', 'post_id')
+            .addSelect('MAX(post_event.created_at)', 'max_created_at')
+            .from(PostEventEntity, 'post_event')
+            .where('post_event.action IN (:...actions)', {
+              actions: [PostEventAction.approved, PostEventAction.unapproved],
+            })
+            .andWhere('post_event.created_at BETWEEN :startDate AND :endDate', {
+              startDate: filledRange.startDate,
+              endDate: filledRange.endDate,
+            })
+            .groupBy('post_event.post_id'),
+        'latest',
+        'latest_event.post_id = latest.post_id AND latest_event.created_at = latest.max_created_at',
+      )
+      .where('latest_event.action = :approvedAction', {
+        approvedAction: PostEventAction.approved,
+      })
+      .getRawOne<{ total: number }>();
+
     return new ApprovalCountSummary({
-      total: await this.approvalRepository.count({
-        where: DateRange.fill(range).where(),
-      }),
+      total: parseInt(result?.total.toString() || '0'),
     });
   }
 
   @Cacheable({
     prefix: 'approval',
     ttl: 10 * 60 * 1000,
-    dependencies: [ApprovalEntity],
+    dependencies: [PostEventEntity],
   })
   async countSeries(
     range?: PartialDateRange,
     query?: ApprovalCountSeriesQuery,
   ): Promise<SeriesCountPoint[]> {
-    range = DateRange.fill(range);
-    const approvals = await this.approvalRepository.find({
-      where: {
-        ...range.where(),
-        ...query?.where(),
-      },
-    });
+    const filledRange = DateRange.fill(range);
+
+    const queryBuilder = this.postEventRepository
+      .createQueryBuilder('latest_event')
+      .select('latest_event.created_at', 'created_at')
+      .innerJoin(
+        (subQuery) =>
+          subQuery
+            .select('post_event.post_id', 'post_id')
+            .addSelect('MAX(post_event.created_at)', 'max_created_at')
+            .from(PostEventEntity, 'post_event')
+            .where('post_event.action IN (:...actions)', {
+              actions: [PostEventAction.approved, PostEventAction.unapproved],
+            })
+            .andWhere('post_event.created_at BETWEEN :startDate AND :endDate', {
+              startDate: filledRange.startDate,
+              endDate: filledRange.endDate,
+            })
+            .groupBy('post_event.post_id'),
+        'latest',
+        'latest_event.post_id = latest.post_id AND latest_event.created_at = latest.max_created_at',
+      )
+      .where('latest_event.action = :approvedAction', {
+        approvedAction: PostEventAction.approved,
+      });
+
+    if (query?.userId) {
+      queryBuilder.andWhere('latest_event.creator_id = :userId', {
+        userId: query.userId,
+      });
+    }
+
+    const results = await queryBuilder.getRawMany<{ created_at: Date }>();
 
     return generateSeriesCountPoints(
-      approvals.map((approval) => approval.createdAt),
-      range,
+      results.map((row) => row.created_at),
+      filledRange,
     );
   }
 
   @Cacheable({
     prefix: 'approval',
     ttl: 15 * 60 * 1000,
-    dependencies: [ApprovalEntity],
+    dependencies: [PostEventEntity],
   })
   async approverSummary(
     range?: PartialDateRange,
     pages?: PaginationParams,
   ): Promise<ApproverSummary[]> {
-    const results = await this.approvalRepository
-      .createQueryBuilder('approval')
-      .select('approval.user_id')
-      .addSelect('COUNT(*) as total')
-      .addSelect('COUNT(DISTINCT DATE(approval.created_at))', 'days')
+    const filledRange = DateRange.fill(range);
+
+    const results = await this.postEventRepository
+      .createQueryBuilder('latest_event')
+      .select('latest_event.creator_id', 'user_id')
+      .addSelect('COUNT(*)', 'total')
+      .addSelect('COUNT(DISTINCT DATE(latest_event.created_at))', 'days')
       .addSelect('RANK() OVER (ORDER BY COUNT(*) DESC)', 'position')
-      .where(DateRange.fill(range).where()!)
-      .groupBy('approval.user_id')
+      .innerJoin(
+        (subQuery) =>
+          subQuery
+            .select('post_event.post_id', 'post_id')
+            .addSelect('MAX(post_event.created_at)', 'max_created_at')
+            .from(PostEventEntity, 'post_event')
+            .where('post_event.action IN (:...actions)', {
+              actions: [PostEventAction.approved, PostEventAction.unapproved],
+            })
+            .andWhere('post_event.created_at BETWEEN :startDate AND :endDate', {
+              startDate: filledRange.startDate,
+              endDate: filledRange.endDate,
+            })
+            .groupBy('post_event.post_id'),
+        'latest',
+        'latest_event.post_id = latest.post_id AND latest_event.created_at = latest.max_created_at',
+      )
+      .where('latest_event.action = :approvedAction', {
+        approvedAction: PostEventAction.approved,
+      })
+      .groupBy('latest_event.creator_id')
       .orderBy('total', 'DESC')
       .take(pages?.limit || PaginationParams.DEFAULT_PAGE_SIZE)
       .skip(PaginationParams.calculateOffset(pages))

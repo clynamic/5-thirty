@@ -2,7 +2,6 @@ import { UpdateDateTimeColumn } from 'src/common';
 import { Entity, JoinColumn, OneToOne, PrimaryColumn } from 'typeorm';
 
 export enum ItemType {
-  approvals = 'approvals',
   tickets = 'tickets',
   posts = 'posts',
   users = 'users',
