@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ApprovalEntity } from 'src/approval/approval.entity';
-import { FlagEntity } from 'src/flag/flag.entity';
 import { PostEntity } from 'src/post/post.entity';
+import { PostEventEntity } from 'src/post-event/post-event.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
 
 import { PermitEntity } from '../permit.entity';
@@ -15,8 +14,7 @@ import { PermitSyncWorker } from './permit-sync.worker';
       PermitEntity,
       PostEntity,
       PostVersionEntity,
-      ApprovalEntity,
-      FlagEntity,
+      PostEventEntity,
     ]),
   ],
   providers: [PermitSyncService, PermitSyncWorker],
