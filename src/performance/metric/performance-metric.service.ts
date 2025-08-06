@@ -161,23 +161,29 @@ export class PerformanceMetricService {
           );
           break;
         case Activity.PostReplacementApprove:
+        case Activity.PostReplacementPromote:
+        case Activity.PostReplacementReject:
+          const actionMap = {
+            [Activity.PostReplacementApprove]:
+              PostEventAction.replacement_accepted,
+            [Activity.PostReplacementPromote]:
+              PostEventAction.replacement_promoted,
+            [Activity.PostReplacementReject]:
+              PostEventAction.replacement_rejected,
+          };
           tasks.push(
-            this.postReplacementRepository
+            this.postEventRepository
               .find({
                 where: {
                   ...range.where(),
-                  approverId: userId ? userId : Not(IsNull()),
-                  status: Not(PostReplacementStatus.original),
+                  action: actionMap[key],
+                  creatorId: userId ? userId : Not(IsNull()),
                 },
-                select: ['approverId', 'updatedAt'],
+                select: ['creatorId', 'createdAt'],
               })
-              .then((replacements) =>
-                replacements.forEach((replacement) =>
-                  storeItem(
-                    Activity.PostReplacementApprove,
-                    replacement.approverId!,
-                    replacement.updatedAt,
-                  ),
+              .then((events) =>
+                events.forEach((event) =>
+                  storeItem(key, event.creatorId, event.createdAt),
                 ),
               ),
           );
@@ -277,6 +283,8 @@ export class PerformanceMetricService {
           allKeys = [
             Activity.PostApprove,
             Activity.PostReplacementApprove,
+            Activity.PostReplacementReject,
+            Activity.PostReplacementPromote,
             Activity.PostDelete,
           ];
           break;
@@ -488,20 +496,16 @@ export class PerformanceMetricService {
             : [Activity.TicketHandle];
           break;
         case UserArea.Janitor:
-          allKeys = query?.userId
-            ? [
-                Activity.PostCreate,
-                Activity.PostDelete,
-                Activity.PostApprove,
-                Activity.PostReplacementCreate,
-                Activity.PostReplacementApprove,
-                Activity.TicketCreate,
-              ]
-            : [
-                Activity.PostApprove,
-                Activity.PostDelete,
-                Activity.PostReplacementApprove,
-              ];
+          allKeys = [
+            ...(query?.userId
+              ? [Activity.TicketCreate, Activity.PostCreate]
+              : []),
+            Activity.PostApprove,
+            Activity.PostDelete,
+            Activity.PostReplacementApprove,
+            Activity.PostReplacementReject,
+            Activity.PostReplacementPromote,
+          ];
           break;
         case UserArea.Member:
           allKeys = [

@@ -10,8 +10,7 @@ export enum Activity {
   PostApprove = 'post_approve',
   PostReplacementCreate = 'post_replacement_create',
   PostReplacementApprove = 'post_replacement_approve',
-  // TODO: When a replacement is rejected, the ID of the user that rejected it is not stored.
-  // Why is that the case? >:(
+  PostReplacementPromote = 'post_replacement_promote',
   PostReplacementReject = 'post_replacement_reject',
   TicketCreate = 'ticket_create',
   TicketHandle = 'ticket_handle',
@@ -37,6 +36,7 @@ export class ActivitySummary
   postReplacementCreate: number;
   postReplacementApprove: number;
   postReplacementReject: number;
+  postReplacementPromote: number;
   ticketCreate: number;
   ticketHandle: number;
 }
@@ -77,6 +77,8 @@ export const getActivityScore = (activity: Activity): number => {
     case Activity.PostDelete:
       return 1.25;
     case Activity.PostReplacementApprove:
+    case Activity.PostReplacementReject:
+    case Activity.PostReplacementPromote:
       return 1.1;
     default:
       return 0;
