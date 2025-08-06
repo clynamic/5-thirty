@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { withInvalidation } from 'src/app/browser.module';
 import {
+  DateRange,
   constructCountUpdated,
   constructFirstFromId,
-  DateRange,
 } from 'src/common';
 import { Repository } from 'typeorm';
-import { withInvalidation } from 'src/app/browser.module';
 
 import { TicketEntity } from '../ticket.entity';
 

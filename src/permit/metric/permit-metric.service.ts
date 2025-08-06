@@ -1,17 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Cacheable } from 'src/app/browser.module';
 import {
-  convertKeysToCamelCase,
-  convertKeysToDate,
   DateRange,
-  generateSeriesCountPoints,
   PartialDateRange,
   SeriesCountPoint,
-  toRawQuery,
+  convertKeysToCamelCase,
+  convertKeysToDate,
+  generateSeriesCountPoints,
 } from 'src/common';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { Repository } from 'typeorm';
-import { Cacheable } from 'src/app/browser.module';
 
 import { PermitEntity } from '../permit.entity';
 

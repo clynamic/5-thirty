@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { startOfDay, sub } from 'date-fns';
-import { PostEventAction, PostReplacementStatus, TicketStatus } from 'src/api';
+import { PostEventAction, TicketStatus } from 'src/api';
+import { Cacheable } from 'src/app/browser.module';
 import { getUserLevelFromString } from 'src/auth/auth.level';
 import {
-  convertKeysToCamelCase,
   DateRange,
+  PartialDateRange,
+  convertKeysToCamelCase,
   generateSeriesRecordPoints,
   getClosestTimeScale,
   getDurationKeyForScale,
-  PartialDateRange,
-  toRawQuery,
 } from 'src/common';
 import { PostEventEntity } from 'src/post-event/post-event.entity';
 import { PostReplacementEntity } from 'src/post-replacement/post-replacement.entity';
@@ -18,21 +18,20 @@ import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { TicketEntity } from 'src/ticket/ticket.entity';
 import { UserEntity } from 'src/user/user.entity';
 import { IsNull, Not, Repository } from 'typeorm';
-import { Cacheable } from 'src/app/browser.module';
 
 import {
   Activity,
   ActivitySeriesPoint,
   ActivitySummary,
   ActivitySummaryQuery,
-  getActivityScore,
-  getPerformanceScoreGrade,
-  getPerformanceTrendGrade,
-  getUserAreaFromLevel,
   PerformanceRecord,
   PerformanceSummary,
   PerformanceSummaryQuery,
   UserArea,
+  getActivityScore,
+  getPerformanceScoreGrade,
+  getPerformanceTrendGrade,
+  getUserAreaFromLevel,
 } from './performance-metric.dto';
 
 @Injectable()

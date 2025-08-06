@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import axios, { AxiosRequestConfig } from 'axios';
 import * as crypto from 'crypto';
-import { isEqual } from 'lodash';
 import { User, user } from 'src/api/e621';
 import { AppConfigKeys } from 'src/app/config.module';
 

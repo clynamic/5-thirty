@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { set } from 'date-fns';
-import { In } from 'typeorm';
 import { PostEventAction } from 'src/api';
+import { Cacheable } from 'src/app/browser.module';
 import {
   DateRange,
-  generateSeriesCountPoints,
   PartialDateRange,
   SeriesCountPoint,
   TimeScale,
+  generateSeriesCountPoints,
 } from 'src/common';
 import { PostEventEntity } from 'src/post-event/post-event.entity';
+import { In } from 'typeorm';
 import { Repository } from 'typeorm';
-import { Cacheable } from 'src/app/browser.module';
 
 import {
   DeletionActivitySummaryQuery,

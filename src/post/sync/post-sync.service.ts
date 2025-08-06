@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
 import { Invalidates } from 'src/app/browser.module';
+import { In, Repository } from 'typeorm';
 
 import { PostEntity } from '../post.entity';
 

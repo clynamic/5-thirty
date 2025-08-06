@@ -1,7 +1,6 @@
-import 'reflect-metadata';
-
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import 'reflect-metadata';
 
 import { AppModule } from './app/app.module';
 import { CorsConfigModule } from './app/cors.module';

@@ -2,26 +2,26 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   BulkUpdateRequest,
-  bulkUpdateRequests,
   GetBulkUpdateRequestsSearchOrder,
+  bulkUpdateRequests,
 } from 'src/api';
 import { MAX_API_LIMIT } from 'src/api/http/params';
 import { AuthService } from 'src/auth/auth.service';
 import {
-  convertKeysToCamelCase,
   DateRange,
+  LoopGuard,
+  PartialDateRange,
+  convertKeysToCamelCase,
   findHighestDate,
   logContiguityGaps,
   logOrderFetch,
   logOrderResult,
-  LoopGuard,
-  PartialDateRange,
   rateLimit,
   resolveWithDate,
 } from 'src/common';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
-import { getItemName, ItemType } from 'src/label/label.entity';
+import { ItemType, getItemName } from 'src/label/label.entity';
 import { ManifestService } from 'src/manifest/manifest.service';
 
 import {

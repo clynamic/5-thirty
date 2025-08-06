@@ -1,6 +1,6 @@
 import { tz } from '@date-fns/tz';
 import { BadRequestException } from '@nestjs/common';
-import { add, addYears, endOfDay, getDayOfYear, min, set } from 'date-fns';
+import { add, addYears, getDayOfYear, min, set } from 'date-fns';
 
 import { SeriesCountPoint, SeriesPoint } from './chart.dto';
 import { scaleToDuration } from './date-fns';

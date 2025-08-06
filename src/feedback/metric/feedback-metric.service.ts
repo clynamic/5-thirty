@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Cacheable } from 'src/app/browser.module';
 import {
   DateRange,
-  generateSeriesRecordPoints,
   PartialDateRange,
   Raw,
+  generateSeriesRecordPoints,
 } from 'src/common';
 import { Repository } from 'typeorm';
-import { Cacheable } from 'src/app/browser.module';
 
 import { FeedbackEntity } from '../feedback.entity';
 import {

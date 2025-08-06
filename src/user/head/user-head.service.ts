@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { subMilliseconds } from 'date-fns';
 import { postsMany, usersMany } from 'src/api';
 import { PostRating } from 'src/api/e621';
-import { Cacheable, CacheManager } from 'src/app/browser.module';
+import { CacheManager, Cacheable } from 'src/app/browser.module';
 import { AuthService } from 'src/auth/auth.service';
 import { convertKeysToCamelCase } from 'src/common';
 import { PostEntity } from 'src/post/post.entity';

@@ -2,19 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { differenceInHours, max, min, sub } from 'date-fns';
 import { TicketQtype, TicketStatus } from 'src/api/e621';
+import { Cacheable } from 'src/app/browser.module';
 import {
-  collapseTimeScaleDuration,
-  convertKeysToCamelCase,
   DateRange,
-  generateSeriesCountPoints,
-  generateSeriesRecordPoints,
   PaginationParams,
   PartialDateRange,
   Raw,
   SeriesCountPoint,
+  collapseTimeScaleDuration,
+  convertKeysToCamelCase,
+  generateSeriesCountPoints,
+  generateSeriesRecordPoints,
 } from 'src/common';
+import { UserEntity } from 'src/user/user.entity';
 import { FindOptionsWhere, LessThan, MoreThan, Not, Repository } from 'typeorm';
-import { Cacheable } from 'src/app/browser.module';
 
 import { TicketEntity } from '../ticket.entity';
 import {
@@ -29,7 +30,6 @@ import {
   TicketTypeSummary,
   TicketTypeSummaryQuery,
 } from './ticket-metric.dto';
-import { UserEntity } from 'src/user/user.entity';
 
 @Injectable()
 export class TicketMetricService {

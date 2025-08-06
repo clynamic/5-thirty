@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { withInvalidation } from 'src/app/browser.module';
 import { DateRange } from 'src/common';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { Repository } from 'typeorm';
-import { withInvalidation } from 'src/app/browser.module';
 
 @Injectable()
 export class UploadSyncService {

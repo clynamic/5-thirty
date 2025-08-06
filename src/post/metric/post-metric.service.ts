@@ -2,20 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { max, min, sub } from 'date-fns';
 import { Cacheable } from 'src/app/browser.module';
-import { PostEventEntity } from '../../post-event/post-event.entity';
 import {
+  DateRange,
+  PartialDateRange,
+  SeriesCountPoint,
   collapseTimeScaleDuration,
   convertKeysToCamelCase,
   convertKeysToDate,
-  DateRange,
   generateSeriesCountPoints,
-  PartialDateRange,
-  SeriesCountPoint,
 } from 'src/common';
 import { PermitEntity } from 'src/permit/permit.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
 import { Brackets, Repository } from 'typeorm';
 
+import { PostEventEntity } from '../../post-event/post-event.entity';
 import { PostStatusSummary } from './post-metric.dto';
 
 @Injectable()

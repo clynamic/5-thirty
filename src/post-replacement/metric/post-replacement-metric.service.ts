@@ -2,15 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { max, min } from 'date-fns';
 import { PostReplacementStatus } from 'src/api';
+import { Cacheable } from 'src/app/browser.module';
 import {
   DateRange,
-  generateSeriesCountPoints,
-  generateSeriesRecordPoints,
   PartialDateRange,
   SeriesCountPoint,
+  generateSeriesCountPoints,
+  generateSeriesRecordPoints,
 } from 'src/common';
 import { FindOptionsWhere, Not, Repository } from 'typeorm';
-import { Cacheable } from 'src/app/browser.module';
 
 import { PostReplacementEntity } from '../post-replacement.entity';
 import { PostReplacementStatusPoint } from './post-replacement-metric.dto';

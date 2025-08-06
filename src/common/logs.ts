@@ -2,8 +2,8 @@ import { Logger } from '@nestjs/common';
 import { ItemType } from 'src/label/label.entity';
 import { Order } from 'src/manifest/manifest.entity';
 
-import { findDateBounds, WithDate } from './date-objects';
-import { findContiguityGaps, findIdBounds, WithId } from './id-range.dto';
+import { WithDate, findDateBounds } from './date-objects';
+import { WithId, findContiguityGaps, findIdBounds } from './id-range.dto';
 
 /**
  * Log the order fetch for a given item type and order.

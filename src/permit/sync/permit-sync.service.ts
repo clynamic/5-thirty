@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PostEventAction } from 'src/api';
-import { PostEntity } from 'src/post/post.entity';
-import { PostVersionEntity } from 'src/post-version/post-version.entity';
-import { In, Repository } from 'typeorm';
 import { withInvalidation } from 'src/app/browser.module';
+import { PostVersionEntity } from 'src/post-version/post-version.entity';
+import { PostEntity } from 'src/post/post.entity';
+import { In, Repository } from 'typeorm';
 
 import { PermitEntity } from '../permit.entity';
 

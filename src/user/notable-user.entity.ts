@@ -1,5 +1,6 @@
 import { UpdateDateTimeColumn } from 'src/common';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
+
 export enum NotabilityType {
   staff = 'staff',
   reporter = 'reporter',

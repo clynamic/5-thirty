@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PostEntity } from 'src/post/post.entity';
 import { PostEventEntity } from 'src/post-event/post-event.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
+import { PostEntity } from 'src/post/post.entity';
 
 import { PermitEntity } from '../permit.entity';
 import { PermitSyncService } from './permit-sync.service';

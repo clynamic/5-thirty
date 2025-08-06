@@ -7,7 +7,7 @@ import { SetMetadata } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 
-import { getUserLevelFromString, UserLevel } from './auth.level';
+import { UserLevel, getUserLevelFromString } from './auth.level';
 import { AuthService, DecodedJwt } from './auth.service';
 
 export const AuthLevel = (level: UserLevel) => SetMetadata('level', level);

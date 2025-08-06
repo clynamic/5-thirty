@@ -2,15 +2,14 @@ import {
   CallHandler,
   ConsoleLogger,
   ExecutionContext,
-  HttpException,
   Injectable,
+  LogLevel,
   Logger,
   LoggerService,
-  LogLevel,
   NestInterceptor,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { catchError, Observable, tap } from 'rxjs';
+import { Observable, catchError, tap } from 'rxjs';
 import { DecodedJwt } from 'src/auth/auth.service';
 
 @Injectable()

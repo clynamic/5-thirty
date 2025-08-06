@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { withInvalidation } from 'src/app/browser.module';
 import { constructCountUpdated, constructFirstFromId } from 'src/common';
 import { Repository } from 'typeorm';
-import { withInvalidation } from 'src/app/browser.module';
 
 import { FlagEntity } from '../flag.entity';
 

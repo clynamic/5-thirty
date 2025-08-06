@@ -5,7 +5,7 @@ import { usersMany } from 'src/api';
 import { users } from 'src/api/e621';
 import { UserLevel } from 'src/auth/auth.level';
 import { AuthService } from 'src/auth/auth.service';
-import { convertKeysToCamelCase, LoopGuard, rateLimit } from 'src/common';
+import { LoopGuard, convertKeysToCamelCase, rateLimit } from 'src/common';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
 import { ItemType } from 'src/label/label.entity';
