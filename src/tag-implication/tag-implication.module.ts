@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { TagImplicationSyncModule } from './sync/tag-implicaton-sync.module';
+import { TagImplicationSyncModule } from './sync/tag-implication-sync.module';
 
 @Module({
   imports: [TagImplicationSyncModule],
