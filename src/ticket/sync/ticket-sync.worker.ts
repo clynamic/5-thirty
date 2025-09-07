@@ -8,7 +8,6 @@ import {
   LoopGuard,
   PartialDateRange,
   convertKeysToCamelCase,
-  findHighestDate,
   logContiguityGaps,
   logOrderFetch,
   logOrderResult,
@@ -145,6 +144,7 @@ export class TicketSyncWorker {
 
             if (!refreshDate) continue;
 
+            const now = new Date();
             const loopGuard = new LoopGuard();
             let page = 1;
 
@@ -177,7 +177,7 @@ export class TicketSyncWorker {
                 result.map(convertKeysToCamelCase),
               );
 
-              const stored = await this.ticketSyncService.save(
+              await this.ticketSyncService.save(
                 result.map(
                   (ticket) =>
                     new TicketEntity({
@@ -187,12 +187,6 @@ export class TicketSyncWorker {
                 ),
               );
 
-              await this.manifestService.save({
-                id: manifest.id,
-                refreshedAt:
-                  resolveWithDate(findHighestDate(stored)) ?? refreshDate,
-              });
-
               this.logger.log(`Found ${updated} updated tickets`);
 
               const exhausted = result.length < MAX_API_LIMIT;
@@ -201,6 +195,11 @@ export class TicketSyncWorker {
 
               page++;
             }
+
+            await this.manifestService.save({
+              id: manifest.id,
+              refreshedAt: now,
+            });
           }
         },
       }),

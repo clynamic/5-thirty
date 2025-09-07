@@ -8,12 +8,10 @@ import {
   LoopGuard,
   PartialDateRange,
   convertKeysToCamelCase,
-  findHighestDate,
   logContiguityGaps,
   logOrderFetch,
   logOrderResult,
   rateLimit,
-  resolveWithDate,
 } from 'src/common';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
@@ -128,6 +126,7 @@ export class TagAliasSyncWorker {
             }
             if (!refreshDate) continue;
 
+            const now = new Date();
             const loopGuard = new LoopGuard();
             let page = 1;
 
@@ -159,7 +158,7 @@ export class TagAliasSyncWorker {
                 result.map(convertKeysToCamelCase),
               );
 
-              const stored = await this.tagAliasSyncService.save(
+              await this.tagAliasSyncService.save(
                 result.map(
                   (alias) =>
                     new TagAliasEntity({
@@ -169,17 +168,16 @@ export class TagAliasSyncWorker {
                 ),
               );
 
-              await this.manifestService.save({
-                id: manifest.id,
-                refreshedAt:
-                  resolveWithDate(findHighestDate(stored)) ?? refreshDate,
-              });
-
               this.logger.log(`Found ${updated} updated tag aliases`);
               const exhausted = result.length < MAX_API_LIMIT;
               if (exhausted) break;
               page++;
             }
+
+            await this.manifestService.save({
+              id: manifest.id,
+              refreshedAt: now,
+            });
           }
         },
       }),

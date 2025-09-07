@@ -12,12 +12,10 @@ import {
   LoopGuard,
   PartialDateRange,
   convertKeysToCamelCase,
-  findHighestDate,
   logContiguityGaps,
   logOrderFetch,
   logOrderResult,
   rateLimit,
-  resolveWithDate,
 } from 'src/common';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
@@ -145,6 +143,7 @@ export class BulkUpdateRequestSyncWorker {
 
             if (!refreshDate) continue;
 
+            const now = new Date();
             const loopGuard = new LoopGuard();
             let page = 1;
 
@@ -178,7 +177,7 @@ export class BulkUpdateRequestSyncWorker {
                   result.map(convertKeysToCamelCase),
                 );
 
-              const stored = await this.bulkUpdateRequestSyncService.save(
+              await this.bulkUpdateRequestSyncService.save(
                 result.map(
                   (request) =>
                     new BulkUpdateRequestEntity({
@@ -188,12 +187,6 @@ export class BulkUpdateRequestSyncWorker {
                 ),
               );
 
-              await this.manifestService.save({
-                id: manifest.id,
-                refreshedAt:
-                  resolveWithDate(findHighestDate(stored)) ?? refreshDate,
-              });
-
               this.logger.log(`Found ${updated} updated bulk update requests`);
 
               const exhausted = result.length < MAX_API_LIMIT;
@@ -202,6 +195,11 @@ export class BulkUpdateRequestSyncWorker {
 
               page++;
             }
+
+            await this.manifestService.save({
+              id: manifest.id,
+              refreshedAt: now,
+            });
           }
         },
       }),

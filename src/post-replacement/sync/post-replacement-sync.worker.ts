@@ -8,12 +8,10 @@ import {
   LoopGuard,
   PartialDateRange,
   convertKeysToCamelCase,
-  findHighestDate,
   logContiguityGaps,
   logOrderFetch,
   logOrderResult,
   rateLimit,
-  resolveWithDate,
 } from 'src/common';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
@@ -147,6 +145,7 @@ export class PostReplacementSyncWorker {
 
             if (!refreshDate) continue;
 
+            const now = new Date();
             const loopGuard = new LoopGuard();
             let page = 1;
 
@@ -180,7 +179,7 @@ export class PostReplacementSyncWorker {
                   result.map(convertKeysToCamelCase),
                 );
 
-              const stored = await this.postReplacementSyncService.save(
+              await this.postReplacementSyncService.save(
                 result.map(
                   (replacement) =>
                     new PostReplacementEntity({
@@ -190,12 +189,6 @@ export class PostReplacementSyncWorker {
                 ),
               );
 
-              await this.manifestService.save({
-                id: manifest.id,
-                refreshedAt:
-                  resolveWithDate(findHighestDate(stored)) ?? refreshDate,
-              });
-
               this.logger.log(`Found ${updated} updated post replacements`);
 
               const exhausted = result.length < MAX_API_LIMIT;
@@ -204,6 +197,11 @@ export class PostReplacementSyncWorker {
 
               page++;
             }
+
+            await this.manifestService.save({
+              id: manifest.id,
+              refreshedAt: now,
+            });
           }
         },
       }),

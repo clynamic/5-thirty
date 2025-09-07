@@ -12,12 +12,10 @@ import {
   LoopGuard,
   PartialDateRange,
   convertKeysToCamelCase,
-  findHighestDate,
   logContiguityGaps,
   logOrderFetch,
   logOrderResult,
   rateLimit,
-  resolveWithDate,
 } from 'src/common';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
@@ -137,6 +135,7 @@ export class TagImplicationSyncWorker {
             }
             if (!refreshDate) continue;
 
+            const now = new Date();
             const loopGuard = new LoopGuard();
             let page = 1;
 
@@ -168,7 +167,7 @@ export class TagImplicationSyncWorker {
                 result.map(convertKeysToCamelCase),
               );
 
-              const stored = await this.tagImplicationSyncService.save(
+              await this.tagImplicationSyncService.save(
                 result.map(
                   (implication) =>
                     new TagImplicationEntity({
@@ -178,17 +177,16 @@ export class TagImplicationSyncWorker {
                 ),
               );
 
-              await this.manifestService.save({
-                id: manifest.id,
-                refreshedAt:
-                  resolveWithDate(findHighestDate(stored)) ?? refreshDate,
-              });
-
               this.logger.log(`Found ${updated} updated tag implications`);
               const exhausted = result.length < MAX_API_LIMIT;
               if (exhausted) break;
               page++;
             }
+
+            await this.manifestService.save({
+              id: manifest.id,
+              refreshedAt: now,
+            });
           }
         },
       }),
