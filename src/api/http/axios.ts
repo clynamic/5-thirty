@@ -5,6 +5,7 @@ import {
   dateDeserializeInterceptor,
   timezoneInjectorInterceptor,
 } from './date';
+import { emptyResultsErrorInterceptor } from './empty';
 import {
   logErrorInterceptor,
   logRequestInterceptor,
@@ -27,6 +28,7 @@ AXIOS_INSTANCE.interceptors.request.use(timezoneInjectorInterceptor);
 AXIOS_INSTANCE.interceptors.response.use(dateDeserializeInterceptor);
 AXIOS_INSTANCE.interceptors.response.use(objectUnpackInterceptor);
 AXIOS_INSTANCE.interceptors.response.use(miscFixInterceptors);
+AXIOS_INSTANCE.interceptors.response.use(null, emptyResultsErrorInterceptor);
 
 AXIOS_INSTANCE.interceptors.response.use(
   logResponseInterceptor,
