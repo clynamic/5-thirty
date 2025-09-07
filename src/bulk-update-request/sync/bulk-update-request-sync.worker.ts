@@ -145,7 +145,6 @@ export class BulkUpdateRequestSyncWorker {
 
             if (!refreshDate) continue;
 
-            const results: BulkUpdateRequest[] = [];
             const loopGuard = new LoopGuard();
             let page = 1;
 
@@ -173,8 +172,6 @@ export class BulkUpdateRequestSyncWorker {
                   axiosConfig,
                 ),
               );
-
-              results.push(...result);
 
               const updated =
                 await this.bulkUpdateRequestSyncService.countUpdated(

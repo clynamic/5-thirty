@@ -137,7 +137,6 @@ export class TagImplicationSyncWorker {
             }
             if (!refreshDate) continue;
 
-            const results: TagImplication[] = [];
             const loopGuard = new LoopGuard();
             let page = 1;
 
@@ -164,8 +163,6 @@ export class TagImplicationSyncWorker {
                   axiosConfig,
                 ),
               );
-
-              results.push(...result);
 
               const updated = await this.tagImplicationSyncService.countUpdated(
                 result.map(convertKeysToCamelCase),

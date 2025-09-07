@@ -9,10 +9,12 @@ import {
   LoopGuard,
   PartialDateRange,
   convertKeysToCamelCase,
+  findHighestDate,
   logContiguityGaps,
   logOrderFetch,
   logOrderResult,
   rateLimit,
+  resolveWithDate,
 } from 'src/common';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
@@ -136,8 +138,6 @@ export class FlagSyncWorker {
 
             if (!refreshDate) continue;
 
-            const now = new Date();
-            const results: PostFlag[] = [];
             const loopGuard = new LoopGuard();
             let page = 1;
 
@@ -165,13 +165,11 @@ export class FlagSyncWorker {
                 ),
               );
 
-              results.push(...result);
-
               const updated = await this.flagSyncService.countUpdated(
                 result.map(convertKeysToCamelCase),
               );
 
-              this.flagSyncService.save(
+              const stored = await this.flagSyncService.save(
                 result.map(
                   (flag) =>
                     new FlagEntity({
@@ -181,6 +179,12 @@ export class FlagSyncWorker {
                 ),
               );
 
+              await this.manifestService.save({
+                id: manifest.id,
+                refreshedAt:
+                  resolveWithDate(findHighestDate(stored)) ?? refreshDate,
+              });
+
               this.logger.log(`Found ${updated} updated flags`);
 
               const exhausted = result.length < MAX_API_LIMIT;
@@ -189,11 +193,6 @@ export class FlagSyncWorker {
 
               page++;
             }
-
-            await this.manifestService.save({
-              id: manifest.id,
-              refreshedAt: now,
-            });
           }
         },
       }),
