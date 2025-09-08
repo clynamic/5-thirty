@@ -13,7 +13,7 @@ import {
 } from 'src/common';
 import { PermitEntity } from 'src/permit/permit.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, LessThan, Repository } from 'typeorm';
 
 import { PostEventEntity } from '../../post-event/post-event.entity';
 import { PostStatusSummary } from './post-metric.dto';
@@ -55,16 +55,13 @@ export class PostMetricService {
       .where('post_version.version = 1')
       .andWhere(
         new Brackets((qb) => {
-          qb.where('post_version.updated_at BETWEEN :start AND :end', {
-            start: range.startDate,
-            end: range.endDate,
-          }).orWhere(
+          qb.where({ updatedAt: range.find() }).orWhere(
             new Brackets((subQb) => {
               subQb
                 .where('approval_event.created_at IS NULL')
                 .andWhere('deletion_event.created_at IS NULL')
                 .andWhere('permit.post_id IS NULL')
-                .andWhere('post_version.updated_at <= :end', {
+                .andWhere('post_version.updated_at < :end', {
                   end: range.endDate,
                 });
             }),
@@ -124,7 +121,7 @@ export class PostMetricService {
       )
       .leftJoin(PermitEntity, 'permit', 'post_version.post_id = permit.post_id')
       .where('post_version.version = 1')
-      .andWhere('post_version.updated_at <= :end', { end: range.endDate })
+      .andWhere({ updatedAt: LessThan(range.endDate) })
       .andWhere('permit.post_id IS NULL')
       .andWhere(
         new Brackets((qb) => {

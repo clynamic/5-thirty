@@ -69,7 +69,7 @@ export class UploadSyncWorker {
             while (true) {
               cancelToken.ensureRunning();
 
-              const { idRange, dateRange } = order;
+              const { idRange, dateRange } = order.ranges;
 
               logOrderFetch(this.logger, ItemType.postVersions, order);
 

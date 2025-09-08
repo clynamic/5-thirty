@@ -59,7 +59,7 @@ export class PostReplacementSyncWorker {
             while (true) {
               cancelToken.ensureRunning();
 
-              const { idRange, dateRange } = order;
+              const { idRange, dateRange } = order.ranges;
 
               logOrderFetch(this.logger, ItemType.postReplacements, order);
 

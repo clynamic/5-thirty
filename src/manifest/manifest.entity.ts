@@ -1,6 +1,7 @@
 import {
   DateRange,
   IdRange,
+  PartialDateRange,
   PartialIdRange,
   WithDate,
   WithId,
@@ -153,5 +154,20 @@ export class Order {
       startId: this.lowerId,
       endId: this.upperId,
     });
+  }
+
+  get ranges(): { idRange: PartialIdRange; dateRange: PartialDateRange } {
+    const idRange = this.idRange;
+    const dateRange = this.dateRange;
+    // It is necessary not to return both a full id and date range.
+    // Otherwise, e6 will run into a root key collision.
+    // We prefer ID ranges, which are exact, if they exist.
+    if (idRange.startId && idRange.endId) {
+      return { idRange, dateRange: new PartialDateRange() };
+    } else if (dateRange.startDate && dateRange.endDate) {
+      return { idRange: new PartialIdRange(), dateRange };
+    } else {
+      return { idRange, dateRange };
+    }
   }
 }

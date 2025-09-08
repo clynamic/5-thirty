@@ -153,22 +153,19 @@ const resolveRangeCycle = (range: DateRange): DateRange => {
       case TimeScale.All:
         return [range.startDate, range.endDate];
       case TimeScale.Decade:
-        return [new Date(1970, 0, 1), new Date(1979, 11, 31, 23, 59, 59, 999)];
+        return [new Date(1970, 0, 1), new Date(1980, 0, 1)];
       case TimeScale.Year:
-        return [new Date(1970, 0, 1), new Date(1970, 11, 31, 23, 59, 59, 999)];
+        return [new Date(1970, 0, 1), new Date(1971, 0, 1)];
       case TimeScale.Month:
-        return [new Date(1970, 0, 1), new Date(1970, 0, 31, 23, 59, 59, 999)];
+        return [new Date(1970, 0, 1), new Date(1970, 1, 1)];
       case TimeScale.Week:
-        return [new Date(1970, 0, 1), new Date(1970, 0, 7, 23, 59, 59, 999)];
+        return [new Date(1970, 0, 1), new Date(1970, 0, 8)];
       case TimeScale.Day:
-        return [new Date(1970, 0, 1), new Date(1970, 0, 1, 23, 59, 59, 999)];
+        return [new Date(1970, 0, 1), new Date(1970, 0, 2)];
       case TimeScale.Hour:
-        return [new Date(1970, 0, 1, 0), new Date(1970, 0, 1, 0, 59, 59, 999)];
+        return [new Date(1970, 0, 1, 0), new Date(1970, 0, 1, 1)];
       case TimeScale.Minute:
-        return [
-          new Date(1970, 0, 1, 0, 0),
-          new Date(1970, 0, 1, 0, 0, 59, 999),
-        ];
+        return [new Date(1970, 0, 1, 0, 0), new Date(1970, 0, 1, 0, 1)];
     }
   })();
 

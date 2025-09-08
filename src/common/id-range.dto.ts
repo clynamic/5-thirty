@@ -5,7 +5,7 @@ export interface WithId {
 }
 
 export class PartialIdRange {
-  constructor(partial: Partial<PartialIdRange>) {
+  constructor(partial?: Partial<PartialIdRange>) {
     Object.assign(this, partial);
   }
 

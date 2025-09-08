@@ -11,7 +11,7 @@ import {
   generateSeriesCountPoints,
 } from 'src/common';
 import { PostEventEntity } from 'src/post-event/post-event.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
 import {
   ApprovalCountSeriesQuery,
@@ -46,10 +46,13 @@ export class ApprovalMetricService {
             .where('post_event.action IN (:...actions)', {
               actions: [PostEventAction.approved, PostEventAction.unapproved],
             })
-            .andWhere('post_event.created_at BETWEEN :startDate AND :endDate', {
-              startDate: filledRange.startDate,
-              endDate: filledRange.endDate,
-            })
+            .andWhere(
+              'post_event.created_at >= :startDate AND post_event.created_at < :endDate',
+              {
+                startDate: filledRange.startDate,
+                endDate: filledRange.endDate,
+              },
+            )
             .groupBy('post_event.post_id'),
         'latest',
         'latest_event.post_id = latest.post_id AND latest_event.created_at = latest.max_created_at',
@@ -84,13 +87,13 @@ export class ApprovalMetricService {
             .select('post_event.post_id', 'post_id')
             .addSelect('MAX(post_event.created_at)', 'max_created_at')
             .from(PostEventEntity, 'post_event')
-            .where('post_event.action IN (:...actions)', {
-              actions: [PostEventAction.approved, PostEventAction.unapproved],
+            .where({
+              action: In([
+                PostEventAction.approved,
+                PostEventAction.unapproved,
+              ]),
             })
-            .andWhere('post_event.created_at BETWEEN :startDate AND :endDate', {
-              startDate: filledRange.startDate,
-              endDate: filledRange.endDate,
-            })
+            .andWhere({ createdAt: filledRange.find() })
             .groupBy('post_event.post_id'),
         'latest',
         'latest_event.post_id = latest.post_id AND latest_event.created_at = latest.max_created_at',
@@ -136,13 +139,13 @@ export class ApprovalMetricService {
             .select('post_event.post_id', 'post_id')
             .addSelect('MAX(post_event.created_at)', 'max_created_at')
             .from(PostEventEntity, 'post_event')
-            .where('post_event.action IN (:...actions)', {
-              actions: [PostEventAction.approved, PostEventAction.unapproved],
+            .where({
+              action: In([
+                PostEventAction.approved,
+                PostEventAction.unapproved,
+              ]),
             })
-            .andWhere('post_event.created_at BETWEEN :startDate AND :endDate', {
-              startDate: filledRange.startDate,
-              endDate: filledRange.endDate,
-            })
+            .andWhere({ createdAt: filledRange.find() })
             .groupBy('post_event.post_id'),
         'latest',
         'latest_event.post_id = latest.post_id AND latest_event.created_at = latest.max_created_at',

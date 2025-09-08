@@ -8,7 +8,6 @@ import {
   FormatISOOptions,
   add,
   addDays,
-  endOfMonth,
   formatISO,
   parseISO,
   startOfMonth,
@@ -17,10 +16,10 @@ import {
   subMonths,
 } from 'date-fns';
 import {
-  Between,
+  And,
   FindOperator,
   FindOptionsWhere,
-  LessThanOrEqual,
+  LessThan,
   MoreThanOrEqual,
 } from 'typeorm';
 
@@ -146,7 +145,7 @@ export const inferDefaultScale = (
 };
 
 /**
- * A range of dates, inclusive on both ends.
+ * A range of dates, start inclusive and end exclusive.
  * May be missing one or both ends.
  */
 export class PartialDateRange {
@@ -165,7 +164,7 @@ export class PartialDateRange {
   startDate?: Date;
 
   /**
-   * End date for the range, inclusive
+   * End date for the range, exclusive.
    */
   @IsOptional()
   @IsDate()
@@ -200,10 +199,10 @@ export class PartialDateRange {
   find(): FindOperator<Date> | undefined {
     return this.startDate
       ? this.endDate
-        ? Between(this.startDate, this.endDate)
+        ? And(MoreThanOrEqual(this.startDate), LessThan(this.endDate))
         : MoreThanOrEqual(this.startDate)
       : this.endDate
-        ? LessThanOrEqual(this.endDate)
+        ? LessThan(this.endDate)
         : undefined;
   }
 
@@ -219,7 +218,7 @@ export class PartialDateRange {
 
   /**
    * Turns a date range into a string fit for an e621 search query.
-   * Inclusive on both ends.
+   * Start inclusive, end exclusive.
    */
   toE621RangeString(): string {
     let start = '';
@@ -247,7 +246,7 @@ export class PartialDateRange {
 }
 
 /**
- * A range of dates, inclusive on both ends.
+ * A range of dates, start inclusive and end exclusive.
  */
 export class DateRange extends PartialDateRange {
   constructor(
@@ -290,6 +289,7 @@ export class DateRange extends PartialDateRange {
    * If only one date is missing, defaults to the start or end of the month.
    */
   static fill(range?: Raw<PartialDateRange>): DateRange {
+    const timezone = range?.timezone || 'UTC';
     if (range?.startDate && range?.endDate) {
       return new DateRange({
         startDate: range.startDate,
@@ -299,15 +299,24 @@ export class DateRange extends PartialDateRange {
     } else if (range?.startDate) {
       return new DateRange({
         startDate: range.startDate,
-        endDate: endOfMonth(range.startDate, {
-          in: tz(range.timezone || 'UTC'),
-        }),
+        endDate: startOfMonth(
+          add(
+            range.startDate,
+            { months: 1 },
+            {
+              in: tz(timezone),
+            },
+          ),
+          {
+            in: tz(timezone),
+          },
+        ),
         ...range,
       });
     } else if (range?.endDate) {
       return new DateRange({
         startDate: startOfMonth(range.endDate, {
-          in: tz(range.timezone || 'UTC'),
+          in: tz(timezone),
         }),
         endDate: range.endDate,
         ...range,
@@ -330,7 +339,9 @@ export class DateRange extends PartialDateRange {
       startDate: startOfMonth(subMonths(now, months, { in: tz(timezone) }), {
         in: tz(timezone),
       }),
-      endDate: endOfMonth(now, { in: tz(timezone) }),
+      endDate: startOfMonth(add(now, { months: 1 }, { in: tz(timezone) }), {
+        in: tz(timezone),
+      }),
       ...value,
     });
   }
@@ -350,7 +361,7 @@ export class DateRange extends PartialDateRange {
   static hoursOnly(timezone?: string): DateRange {
     return new DateRange({
       startDate: new Date(1970, 1, 1),
-      endDate: new Date(1970, 1, 1, 23, 59, 59, 999),
+      endDate: new Date(1970, 1, 2),
       scale: TimeScale.Hour,
       timezone: timezone,
     });
