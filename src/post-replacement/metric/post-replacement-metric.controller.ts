@@ -32,7 +32,7 @@ export class PostReplacementMetricController {
     status: 200,
     type: [SeriesCountPoint],
   })
-  async createdSummary(
+  async created(
     @Query() range?: PartialDateRange,
   ): Promise<SeriesCountPoint[]> {
     return this.postReplacementMetricService.created(range);
@@ -49,7 +49,7 @@ export class PostReplacementMetricController {
     status: 200,
     type: [PostReplacementStatusPoint],
   })
-  async statusSummary(
+  async status(
     @Query() range?: PartialDateRange,
   ): Promise<PostReplacementStatusPoint[]> {
     return this.postReplacementMetricService.status(range);
