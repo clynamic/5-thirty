@@ -392,6 +392,8 @@ export class ManifestService {
           this.merge(manifestA, manifestB);
           i++;
         } else if (
+          isEqual(manifestB.startDate, manifestA.endDate) ||
+          // We might not need this anymore.
           isEqual(manifestB.startDate, addMilliseconds(manifestA.endDate, 1))
         ) {
           this.merge(manifestA, manifestB);
