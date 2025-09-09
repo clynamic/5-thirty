@@ -9,7 +9,11 @@ import { AuthLevel, RolesGuard } from 'src/auth/auth.guard';
 import { UserLevel } from 'src/auth/auth.level';
 import { PartialDateRange, SeriesCountPoint } from 'src/common';
 
-import { PostReplacementStatusPoint } from './post-replacement-metric.dto';
+import {
+  PostReplacementHandledPoint,
+  PostReplacementHandledQuery,
+  PostReplacementStatusPoint,
+} from './post-replacement-metric.dto';
 import { PostReplacementMetricService } from './post-replacement-metric.service';
 
 @ApiTags('Replacements')
@@ -41,8 +45,7 @@ export class PostReplacementMetricController {
   @Get('status')
   @ApiOperation({
     summary: 'Post replacement status',
-    description:
-      'Get post replacement status (pending, approved, partial) counts for a given date range',
+    description: 'Get post replacement status counts for a given date range',
     operationId: 'getPostReplacementStatus',
   })
   @ApiResponse({
@@ -53,5 +56,22 @@ export class PostReplacementMetricController {
     @Query() range?: PartialDateRange,
   ): Promise<PostReplacementStatusPoint[]> {
     return this.postReplacementMetricService.status(range);
+  }
+
+  @Get('handled')
+  @ApiOperation({
+    summary: 'Post replacements handled',
+    description: 'Get post replacements handled counts for a given date range',
+    operationId: 'getPostReplacementHandled',
+  })
+  @ApiResponse({
+    status: 200,
+    type: [PostReplacementHandledPoint],
+  })
+  async handled(
+    @Query() range?: PartialDateRange,
+    @Query() query?: PostReplacementHandledQuery,
+  ): Promise<PostReplacementHandledPoint[]> {
+    return this.postReplacementMetricService.handled(range, query);
   }
 }

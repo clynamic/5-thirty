@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { max, min } from 'date-fns';
-import { PostReplacementStatus } from 'src/api';
+import { PostEventAction, PostReplacementStatus } from 'src/api';
 import { Cacheable } from 'src/app/browser.module';
 import {
   DateRange,
@@ -10,16 +10,23 @@ import {
   generateSeriesCountPoints,
   generateSeriesRecordPoints,
 } from 'src/common';
-import { FindOptionsWhere, Not, Repository } from 'typeorm';
+import { PostEventEntity } from 'src/post-event/post-event.entity';
+import { FindOptionsWhere, In, Not, Repository } from 'typeorm';
 
 import { PostReplacementEntity } from '../post-replacement.entity';
-import { PostReplacementStatusPoint } from './post-replacement-metric.dto';
+import {
+  PostReplacementHandledPoint,
+  PostReplacementHandledQuery,
+  PostReplacementStatusPoint,
+} from './post-replacement-metric.dto';
 
 @Injectable()
 export class PostReplacementMetricService {
   constructor(
     @InjectRepository(PostReplacementEntity)
     private readonly postReplacementRepository: Repository<PostReplacementEntity>,
+    @InjectRepository(PostEventEntity)
+    private readonly postEventRepository: Repository<PostEventEntity>,
   ) {}
 
   private whereCreatedOrUpdated(
@@ -96,6 +103,50 @@ export class PostReplacementMetricService {
     >(dates, keys, allKeys, range).map(
       (point) =>
         new PostReplacementStatusPoint({
+          ...point.value,
+          date: point.date,
+        }),
+    );
+  }
+
+  @Cacheable({
+    prefix: 'post-replacement',
+    ttl: 10 * 60 * 1000,
+    dependencies: [PostEventEntity],
+  })
+  async handled(
+    range?: PartialDateRange,
+    query?: PostReplacementHandledQuery,
+  ): Promise<PostReplacementHandledPoint[]> {
+    const filledRange = DateRange.fill(range);
+
+    const actionMap = {
+      [PostEventAction.replacement_accepted]: 'approved' as const,
+      [PostEventAction.replacement_rejected]: 'rejected' as const,
+      [PostEventAction.replacement_promoted]: 'promoted' as const,
+    };
+
+    const events = await this.postEventRepository.find({
+      where: {
+        action: In(Object.keys(actionMap) as PostEventAction[]),
+        createdAt: filledRange.find(),
+        ...(query?.where() || {}),
+      },
+      select: ['createdAt', 'action'],
+    });
+
+    const dates = events.map((event) => event.createdAt);
+    const keys = events.map(
+      (event) => actionMap[event.action as keyof typeof actionMap],
+    );
+
+    const allKeys = Object.values(actionMap);
+
+    return generateSeriesRecordPoints<
+      Record<'rejected' | 'approved' | 'promoted', number>
+    >(dates, keys, allKeys, filledRange).map(
+      (point) =>
+        new PostReplacementHandledPoint({
           ...point.value,
           date: point.date,
         }),
