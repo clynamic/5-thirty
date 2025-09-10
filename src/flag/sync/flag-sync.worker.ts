@@ -51,7 +51,7 @@ export class FlagSyncWorker {
             recentlyRange,
           );
 
-          for (const order of orders) {
+          for (let order of orders) {
             const results: PostFlag[] = [];
             const loopGuard = new LoopGuard();
 
@@ -90,7 +90,7 @@ export class FlagSyncWorker {
 
               const exhausted = result.length < MAX_API_LIMIT;
 
-              await this.manifestService.saveResults({
+              order = await this.manifestService.saveResults({
                 type: ItemType.flags,
                 order,
                 items: stored,

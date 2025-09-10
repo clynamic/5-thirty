@@ -52,7 +52,7 @@ export class FeedbackSyncWorker {
             recentlyRange,
           );
 
-          for (const order of orders) {
+          for (let order of orders) {
             const results: UserFeedback[] = [];
 
             const loopGuard = new LoopGuard();
@@ -93,7 +93,7 @@ export class FeedbackSyncWorker {
 
               const exhausted = result.length < MAX_API_LIMIT;
 
-              await this.manifestService.saveResults({
+              order = await this.manifestService.saveResults({
                 type: ItemType.feedbacks,
                 order: order,
                 items: stored,

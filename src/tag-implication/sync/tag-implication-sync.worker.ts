@@ -56,7 +56,7 @@ export class TagImplicationSyncWorker {
             recentlyRange,
           );
 
-          for (const order of orders) {
+          for (let order of orders) {
             const results: TagImplication[] = [];
             const loopGuard = new LoopGuard();
 
@@ -93,7 +93,7 @@ export class TagImplicationSyncWorker {
               logOrderResult(this.logger, this.type, stored);
               const exhausted = result.length < MAX_API_LIMIT;
 
-              await this.manifestService.saveResults({
+              order = await this.manifestService.saveResults({
                 type: this.type,
                 order,
                 items: stored,

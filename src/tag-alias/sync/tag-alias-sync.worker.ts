@@ -49,7 +49,7 @@ export class TagAliasSyncWorker {
             recentlyRange,
           );
 
-          for (const order of orders) {
+          for (let order of orders) {
             const results: TagAlias[] = [];
             const loopGuard = new LoopGuard();
 
@@ -86,7 +86,7 @@ export class TagAliasSyncWorker {
               logOrderResult(this.logger, this.type, stored);
               const exhausted = result.length < MAX_API_LIMIT;
 
-              await this.manifestService.saveResults({
+              order = await this.manifestService.saveResults({
                 type: this.type,
                 order,
                 items: stored,

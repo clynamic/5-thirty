@@ -62,7 +62,7 @@ export class UploadSyncWorker {
             recentlyRange,
           );
 
-          for (const order of orders) {
+          for (let order of orders) {
             const results: PostVersion[] = [];
             const loopGuard = new LoopGuard();
 
@@ -103,7 +103,7 @@ export class UploadSyncWorker {
 
               const exhausted = result.length < MAX_API_LIMIT;
 
-              await this.manifestService.saveResults({
+              order = await this.manifestService.saveResults({
                 type: ItemType.postVersions,
                 order,
                 items: stored,

@@ -56,7 +56,7 @@ export class TicketSyncWorker {
             recentlyRange,
           );
 
-          for (const order of orders) {
+          for (let order of orders) {
             const results: Ticket[] = [];
             const loopGuard = new LoopGuard();
 
@@ -96,7 +96,7 @@ export class TicketSyncWorker {
 
               const exhausted = result.length < MAX_API_LIMIT;
 
-              await this.manifestService.saveResults({
+              order = await this.manifestService.saveResults({
                 type: ItemType.tickets,
                 order,
                 items: stored,

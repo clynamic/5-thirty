@@ -57,7 +57,7 @@ export class BulkUpdateRequestSyncWorker {
             recentlyRange,
           );
 
-          for (const order of orders) {
+          for (let order of orders) {
             const results: BulkUpdateRequest[] = [];
             const loopGuard = new LoopGuard();
 
@@ -97,7 +97,7 @@ export class BulkUpdateRequestSyncWorker {
 
               const exhausted = result.length < MAX_API_LIMIT;
 
-              await this.manifestService.saveResults({
+              order = await this.manifestService.saveResults({
                 type: this.type,
                 order,
                 items: stored,

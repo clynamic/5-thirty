@@ -52,7 +52,7 @@ export class PostReplacementSyncWorker {
             recentlyRange,
           );
 
-          for (const order of orders) {
+          for (let order of orders) {
             const results: PostReplacement[] = [];
             const loopGuard = new LoopGuard();
 
@@ -92,7 +92,7 @@ export class PostReplacementSyncWorker {
 
               const exhausted = result.length < MAX_API_LIMIT;
 
-              await this.manifestService.saveResults({
+              order = await this.manifestService.saveResults({
                 type: ItemType.postReplacements,
                 order,
                 items: stored,

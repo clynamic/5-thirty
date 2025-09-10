@@ -390,6 +390,8 @@ describe('ManifestUtils', () => {
 
       expect(instruction.results).toHaveLength(1);
       expect(instruction.results[0]!.startDate).toEqual(new Date('2023-01-01'));
+      expect(instruction.order.upper).toBe(instruction.results[0]);
+      expect(instruction.order.lower).toBe(order.lower);
     });
 
     it('should create new manifest when upper is Date and not exhausted', () => {
@@ -410,6 +412,8 @@ describe('ManifestUtils', () => {
       expect(instruction.results[0]!.lowerId).toBe(100);
       expect(instruction.results[0]!.upperId).toBe(300);
       expect(instruction.discard).toEqual([]);
+      expect(instruction.order.upper).toBe(instruction.results[0]);
+      expect(instruction.order.lower).toBe(order.lower);
     });
 
     it('should merge manifests when exhausted and both boundaries are manifests', () => {
@@ -441,6 +445,8 @@ describe('ManifestUtils', () => {
 
       expect(instruction.results).toHaveLength(1);
       expect(instruction.discard).toHaveLength(1);
+      expect(instruction.order.lower).toBe(instruction.results[0]);
+      expect(instruction.order.upper).toBe(instruction.results[0]);
     });
 
     it('should return no-op when exhausted with no items', () => {
@@ -458,6 +464,7 @@ describe('ManifestUtils', () => {
 
       expect(instruction.results).toEqual([]);
       expect(instruction.discard).toEqual([]);
+      expect(instruction.order).toBe(order);
     });
   });
 

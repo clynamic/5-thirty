@@ -130,7 +130,7 @@ export class ManifestService {
     order,
     items,
     exhausted,
-  }: OrderResults): Promise<void> {
+  }: OrderResults): Promise<Order> {
     const instruction = ManifestUtils.computeSaveResults(
       type,
       order,
@@ -138,6 +138,7 @@ export class ManifestService {
       exhausted,
     );
     await this.rewrite(instruction);
+    return instruction.order;
   }
 
   async mergeInRange(type: ItemType, range: DateRange): Promise<void> {

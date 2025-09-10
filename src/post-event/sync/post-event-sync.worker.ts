@@ -48,7 +48,7 @@ export class PostEventSyncWorker {
             recentlyRange,
           );
 
-          for (const order of orders) {
+          for (let order of orders) {
             const results: PostEvent[] = [];
             const loopGuard = new LoopGuard();
 
@@ -87,7 +87,7 @@ export class PostEventSyncWorker {
 
               const exhausted = result.length < MAX_API_LIMIT;
 
-              await this.manifestService.saveResults({
+              order = await this.manifestService.saveResults({
                 type: ItemType.postEvents,
                 order,
                 items: stored,
