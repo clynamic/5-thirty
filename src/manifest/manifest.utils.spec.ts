@@ -390,7 +390,6 @@ describe('ManifestUtils', () => {
 
       expect(instruction.results).toHaveLength(1);
       expect(instruction.results[0]!.startDate).toEqual(new Date('2023-01-01'));
-      expect(instruction.discard).toEqual([upperManifest]);
     });
 
     it('should create new manifest when upper is Date and not exhausted', () => {

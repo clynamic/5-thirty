@@ -199,18 +199,18 @@ export class ManifestUtils {
       // to allow starting at a lower boundary instead.
       if (order.upper instanceof ManifestEntity) {
         // extend upper downwards
-        const extended = order.upper.extend(
+        order.upper.extend(
           'start',
           resolveWithDate(findLowestDate(items)),
           findLowestId(items)?.id,
         );
         return {
-          discard: [order.upper],
-          results: [extended],
+          discard: [],
+          results: [order.upper],
         };
       } else {
         // create new manifest
-        const newManifest = new ManifestEntity({
+        order.upper = new ManifestEntity({
           type: type,
           lowerId: findLowestId(items)!.id,
           upperId: findHighestId(items)!.id,
@@ -219,7 +219,7 @@ export class ManifestUtils {
         });
         return {
           discard: [],
-          results: [newManifest],
+          results: [order.upper],
         };
       }
     } else {
@@ -228,30 +228,26 @@ export class ManifestUtils {
           return this.computeMerge(order.lower, order.upper);
         } else {
           // extend upper downwards
-          const extended = order.upper.extend(
-            'start',
-            order.lower,
-            findLowestId(items)?.id,
-          );
+          order.upper.extend('start', order.lower, findLowestId(items)?.id);
           return {
-            discard: [order.upper],
-            results: [extended],
+            discard: [],
+            results: [order.upper],
           };
         }
       } else if (order.lower instanceof ManifestEntity) {
         // extend lower upwards
-        const extended = order.lower.extend(
+        order.lower.extend(
           'end',
           resolveWithDate(findHighestDate(items)!),
           findHighestId(items)?.id,
         );
         return {
-          discard: [order.lower],
-          results: [extended],
+          discard: [],
+          results: [order.lower],
         };
       } else if (items.length > 0) {
         // create new manifest
-        const newManifest = new ManifestEntity({
+        order.upper = new ManifestEntity({
           type: type,
           lowerId: findLowestId(items)!.id,
           upperId: findHighestId(items)!.id,
@@ -260,7 +256,7 @@ export class ManifestUtils {
         });
         return {
           discard: [],
-          results: [newManifest],
+          results: [order.upper],
         };
       } else {
         // abort without data
