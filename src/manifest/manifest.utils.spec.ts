@@ -293,7 +293,7 @@ describe('ManifestUtils', () => {
   });
 
   describe('computeMerge', () => {
-    it('should keep lower manifest when it has priority', () => {
+    it('should keep lower manifest when it has lower ID', () => {
       const lower = new ManifestEntity({
         id: 1,
         startDate: new Date('2023-01-01'),
@@ -316,7 +316,7 @@ describe('ManifestUtils', () => {
       expect(instruction.discard).toEqual([upper]);
     });
 
-    it('should keep upper manifest when it has priority', () => {
+    it('should keep upper manifest when it has lower ID', () => {
       const lower = new ManifestEntity({
         id: 2,
         startDate: new Date('2023-01-01'),
@@ -339,6 +339,30 @@ describe('ManifestUtils', () => {
       expect(instruction.discard).toEqual([lower]);
     });
 
+    it('should extend in place when manifests have same ID (no discard)', () => {
+      const lower = new ManifestEntity({
+        id: 5,
+        startDate: new Date('2023-01-01'),
+        endDate: new Date('2023-01-03'),
+        type: ItemType.posts,
+      });
+
+      const upper = new ManifestEntity({
+        id: 5,
+        startDate: new Date('2023-01-03'),
+        endDate: new Date('2023-01-05'),
+        type: ItemType.posts,
+      });
+
+      const instruction = ManifestUtils.computeMerge(lower, upper);
+
+      expect(instruction.results).toHaveLength(1);
+      expect(instruction.results[0]!.id).toBe(5);
+      expect(instruction.results[0]!.startDate).toEqual(new Date('2023-01-01'));
+      expect(instruction.results[0]!.endDate).toEqual(new Date('2023-01-05'));
+      expect(instruction.discard).toEqual([]);
+    });
+
     it('should not discard manifest without ID', () => {
       const withId = new ManifestEntity({
         id: 1,
@@ -358,6 +382,29 @@ describe('ManifestUtils', () => {
       expect(instruction.results).toHaveLength(1);
       expect(instruction.results[0]!.id).toBe(1);
       expect(instruction.discard).toEqual([]);
+    });
+
+    it('should keep upper manifest and extend when lower has no ID', () => {
+      const withoutId = new ManifestEntity({
+        startDate: new Date('2023-01-01'),
+        endDate: new Date('2023-01-03'),
+        type: ItemType.posts,
+      });
+
+      const withId = new ManifestEntity({
+        id: 1,
+        startDate: new Date('2023-01-03'),
+        endDate: new Date('2023-01-05'),
+        type: ItemType.posts,
+      });
+
+      const instruction = ManifestUtils.computeMerge(withoutId, withId);
+
+      expect(instruction.results).toHaveLength(1);
+      expect(instruction.results[0]!.id).toBe(1); // Keeps the ID from withId
+      expect(instruction.results[0]!.startDate).toEqual(new Date('2023-01-01')); // Extended to cover withoutId
+      expect(instruction.results[0]!.endDate).toEqual(new Date('2023-01-05'));
+      expect(instruction.discard).toEqual([]); // Don't discard the manifest without ID
     });
   });
 
@@ -388,10 +435,12 @@ describe('ManifestUtils', () => {
         false,
       );
 
-      expect(instruction.results).toHaveLength(1);
-      expect(instruction.results[0]!.startDate).toEqual(new Date('2023-01-01'));
-      expect(instruction.order.upper).toBe(instruction.results[0]);
+      expect(instruction.order.upper).toBeInstanceOf(ManifestEntity);
+      const extendedUpper = instruction.order.upper as ManifestEntity;
+      expect(extendedUpper.startDate).toEqual(new Date('2023-01-01'));
+      expect(extendedUpper.endDate).toEqual(new Date('2023-01-10'));
       expect(instruction.order.lower).toBe(order.lower);
+      expect(instruction.discard).toEqual([]);
     });
 
     it('should create new manifest when upper is Date and not exhausted', () => {
@@ -407,12 +456,12 @@ describe('ManifestUtils', () => {
         false,
       );
 
-      expect(instruction.results).toHaveLength(1);
-      expect(instruction.results[0]!.type).toBe(ItemType.posts);
-      expect(instruction.results[0]!.lowerId).toBe(100);
-      expect(instruction.results[0]!.upperId).toBe(300);
+      expect(instruction.order.upper).toBeInstanceOf(ManifestEntity);
+      const newUpper = instruction.order.upper as ManifestEntity;
+      expect(newUpper.type).toBe(ItemType.posts);
+      expect(newUpper.lowerId).toBe(100);
+      expect(newUpper.upperId).toBe(300);
       expect(instruction.discard).toEqual([]);
-      expect(instruction.order.upper).toBe(instruction.results[0]);
       expect(instruction.order.lower).toBe(order.lower);
     });
 
@@ -443,10 +492,11 @@ describe('ManifestUtils', () => {
         true,
       );
 
-      expect(instruction.results).toHaveLength(1);
       expect(instruction.discard).toHaveLength(1);
-      expect(instruction.order.lower).toBe(instruction.results[0]);
-      expect(instruction.order.upper).toBe(instruction.results[0]);
+      expect(instruction.discard).toContain(upperManifest);
+      expect(instruction.order.lower).toBeInstanceOf(ManifestEntity);
+      expect(instruction.order.upper).toBeInstanceOf(ManifestEntity);
+      expect(instruction.order.lower).toBe(instruction.order.upper); // Same merged manifest
     });
 
     it('should return no-op when exhausted with no items', () => {
@@ -462,7 +512,6 @@ describe('ManifestUtils', () => {
         true,
       );
 
-      expect(instruction.results).toEqual([]);
       expect(instruction.discard).toEqual([]);
       expect(instruction.order).toBe(order);
     });

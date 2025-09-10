@@ -131,14 +131,29 @@ export class ManifestService {
     items,
     exhausted,
   }: OrderResults): Promise<Order> {
-    const instruction = ManifestUtils.computeSaveResults(
+    const { discard, order: update } = ManifestUtils.computeSaveResults(
       type,
       order,
       items,
       exhausted,
     );
-    await this.rewrite(instruction);
-    return instruction.order;
+
+    await this.remove(discard);
+    return this.updateOrder(order, update);
+  }
+
+  async updateOrder(order: Order, update: Partial<Order>): Promise<Order> {
+    return new Order({
+      ...order,
+      lower:
+        update.lower instanceof ManifestEntity
+          ? await this.save(update.lower)
+          : update.lower,
+      upper:
+        update.upper instanceof ManifestEntity
+          ? await this.save(update.upper)
+          : update.upper,
+    });
   }
 
   async mergeInRange(type: ItemType, range: DateRange): Promise<void> {

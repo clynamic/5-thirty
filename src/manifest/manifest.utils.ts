@@ -27,12 +27,17 @@ export interface ManifestRewrite {
   results: ManifestEntity[];
 }
 
-export interface ManifestOrderRewrite extends ManifestRewrite {
+export interface ManifestOrderUpdate {
+  /** Input manifests that should be removed from storage */
+  discard: ManifestEntity[];
   /** Updated order with new boundaries */
   order: Order;
 }
 
 export class ManifestUtils {
+  /**
+   * Calculates if two boundaries are adjacent.
+   */
   static areBoundariesContiguous(
     boundary1: OrderBoundary,
     boundary2: OrderBoundary,
@@ -49,6 +54,9 @@ export class ManifestUtils {
     );
   }
 
+  /**
+   * Calculates whether boundary1 is strictly before boundary2.
+   */
   static isBoundaryBefore(
     boundary1: OrderBoundary,
     boundary2: OrderBoundary,
@@ -61,6 +69,9 @@ export class ManifestUtils {
     );
   }
 
+  /**
+   * Calculates orders (gaps) between manifests within a date range.
+   */
   static computeOrders(
     manifests: ManifestEntity[],
     dateRange: DateRange,
@@ -102,6 +113,10 @@ export class ManifestUtils {
     return orders;
   }
 
+  /**
+   * Splits orders that exceed a maximum duration into smaller orders.
+   * This is useful to have smaller fully completable chunks when processing large gaps.
+   */
   static splitLongOrders(
     orders: Order[],
     maxOrderDuration: number = 7,
@@ -151,6 +166,9 @@ export class ManifestUtils {
     return splitOrders;
   }
 
+  /**
+   * Determines if two manifests are adjacent or overlapping.
+   */
   static shouldMergeManifests(
     manifest1: ManifestEntity,
     manifest2: ManifestEntity,
@@ -166,42 +184,55 @@ export class ManifestUtils {
     );
   }
 
+  /**
+   * Merge two manifests into one, discarding the other.
+   * Always prefers lower ID.
+   */
   static computeMerge(
     lower: ManifestEntity,
     upper: ManifestEntity,
   ): ManifestRewrite {
-    if ((lower.id && !upper.id) || lower.id <= upper.id) {
-      // Keep lower, extend it with upper, discard upper
+    // If IDs are the same, extend in place without discarding
+    if (lower.id === upper.id) {
       const result = new ManifestEntity({ ...lower });
       result.extendWith(upper, 'end');
-
+      return {
+        discard: [],
+        results: [result],
+      };
+    } else if (!upper.id || (lower.id && lower.id < upper.id)) {
+      // Keep lower: either upper has no ID, or lower has a smaller ID
+      const result = new ManifestEntity({ ...lower });
+      result.extendWith(upper, 'end');
       return {
         discard: upper.id ? [upper] : [],
         results: [result],
       };
     } else {
-      // Keep upper, extend it with lower, discard lower
+      // Keep upper: upper has a smaller ID than lower (or lower has no ID)
       const result = new ManifestEntity({ ...upper });
       result.extendWith(lower, 'start');
-
       return {
-        discard: lower.id ? [lower] : [],
+        discard: lower.id ? [lower] : [], // Don't discard if lower has no ID
         results: [result],
       };
     }
   }
 
+  /**
+   * Compute manifest and order updates based on fetched items.
+   * The logic assumes that items are fetched in descending order (newest to oldest).
+   * Based on this assumption, orders are always updated by first creating an upper boundary,
+   * or extending an existing upper boundary downwards.
+   * If this is not the case, you are doing something wrong, and this code needs to be modified.
+   */
   static computeSaveResults(
     type: ItemType,
     order: Order,
     items: OrderResult[],
     exhausted: boolean,
-  ): ManifestOrderRewrite {
+  ): ManifestOrderUpdate {
     if (!exhausted) {
-      // We assume that data is paginated newest to oldest.
-      // In loop, we therefore always create or extend an upper boundary.
-      // If this is not the case, we need to expand our logic,
-      // to allow starting at a lower boundary instead.
       if (order.upper instanceof ManifestEntity) {
         // existing upper boundary, extend downwards
         const extended = new ManifestEntity({ ...order.upper }).extend(
@@ -210,8 +241,7 @@ export class ManifestUtils {
           findLowestId(items)?.id,
         );
         return {
-          discard: [order.upper],
-          results: [extended],
+          discard: [],
           order: new Order({ ...order, upper: extended }),
         };
       } else {
@@ -225,7 +255,6 @@ export class ManifestUtils {
         });
         return {
           discard: [],
-          results: [result],
           order: new Order({ ...order, upper: result }),
         };
       }
@@ -235,7 +264,7 @@ export class ManifestUtils {
           // gap is exhausted, close by merging
           const mergeResult = this.computeMerge(order.lower, order.upper);
           return {
-            ...mergeResult,
+            discard: mergeResult.discard,
             order: new Order({
               lower: mergeResult.results[0]!,
               upper: mergeResult.results[0]!,
@@ -249,8 +278,7 @@ export class ManifestUtils {
             findLowestId(items)?.id,
           );
           return {
-            discard: [order.upper],
-            results: [extended],
+            discard: [],
             order: new Order({ ...order, upper: extended }),
           };
         }
@@ -262,8 +290,7 @@ export class ManifestUtils {
           findHighestId(items)?.id,
         );
         return {
-          discard: [order.lower],
-          results: [extended],
+          discard: [],
           order: new Order({ ...order, lower: extended }),
         };
       } else if (items.length > 0) {
@@ -277,20 +304,23 @@ export class ManifestUtils {
         });
         return {
           discard: [],
-          results: [result],
           order: new Order({ ...order, upper: result }),
         };
       } else {
         // abort without data
         return {
           discard: [],
-          results: [],
           order: order,
         };
       }
     }
   }
 
+  /**
+   * Calculates availability of data within a date range for given item types.
+   * Availability is a number between 0 and 1, where 1 means fully available, and 0 means not available at all.
+   * Future data (after currentTime) is considered fully available.
+   */
   static computeAvailability(
     manifests: ManifestEntity[],
     range: DateRange,
@@ -343,6 +373,9 @@ export class ManifestUtils {
     return availability;
   }
 
+  /**
+   * Computes merging of all manifests in the given list that are overlapping or adjacent.
+   */
   static computeMergeInRange(manifests: ManifestEntity[]): ManifestRewrite {
     if (manifests.length === 0) {
       return { discard: [], results: [] };
