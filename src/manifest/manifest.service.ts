@@ -1,7 +1,7 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { startOfDay } from 'date-fns';
 import { Cacheable, withInvalidation } from 'src/app/browser.module';
-import { DateRange, TimeScale, startOf } from 'src/common';
+import { DateRange, TimeScale } from 'src/common';
 import { ItemType } from 'src/label/label.entity';
 import {
   Between,
@@ -131,13 +131,11 @@ export class ManifestService {
     items,
     exhausted,
   }: OrderResults): Promise<void> {
-    const currentDate = startOf(TimeScale.Day, new Date());
     const instruction = ManifestUtils.computeSaveResults(
       type,
       order,
       items,
       exhausted,
-      currentDate,
     );
     await this.rewrite(instruction);
   }

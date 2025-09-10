@@ -3,6 +3,7 @@ import {
   DateRange,
   TimeScale,
   endOf,
+  findHighestDate,
   findHighestId,
   findLowestDate,
   findLowestId,
@@ -190,7 +191,6 @@ export class ManifestUtils {
     order: Order,
     items: OrderResult[],
     exhausted: boolean,
-    currentDate: Date,
   ): ManifestRewrite {
     if (!exhausted) {
       // we assume that data is paginated newest to oldest,
@@ -215,7 +215,7 @@ export class ManifestUtils {
           lowerId: findLowestId(items)!.id,
           upperId: findHighestId(items)!.id,
           startDate: resolveWithDate(findLowestDate(items)!),
-          endDate: min([order.upper, currentDate]),
+          endDate: resolveWithDate(findHighestDate(items)!),
         });
         return {
           discard: [],
@@ -242,7 +242,7 @@ export class ManifestUtils {
         // extend lower upwards
         const extended = order.lower.extend(
           'end',
-          min([order.upper, currentDate]),
+          resolveWithDate(findHighestDate(items)!),
           findHighestId(items)?.id,
         );
         return {
@@ -256,7 +256,7 @@ export class ManifestUtils {
           lowerId: findLowestId(items)!.id,
           upperId: findHighestId(items)!.id,
           startDate: order.lower,
-          endDate: min([order.upper, currentDate]),
+          endDate: resolveWithDate(findHighestDate(items)!),
         });
         return {
           discard: [],

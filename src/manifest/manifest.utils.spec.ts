@@ -386,7 +386,6 @@ describe('ManifestUtils', () => {
         order,
         mockItems,
         false,
-        new Date('2023-01-15'),
       );
 
       expect(instruction.results).toHaveLength(1);
@@ -405,7 +404,6 @@ describe('ManifestUtils', () => {
         order,
         mockItems,
         false,
-        new Date('2023-01-15'),
       );
 
       expect(instruction.results).toHaveLength(1);
@@ -440,7 +438,6 @@ describe('ManifestUtils', () => {
         order,
         mockItems,
         true,
-        new Date('2023-01-15'),
       );
 
       expect(instruction.results).toHaveLength(1);
@@ -458,7 +455,6 @@ describe('ManifestUtils', () => {
         order,
         [],
         true,
-        new Date('2023-01-15'),
       );
 
       expect(instruction.results).toEqual([]);
