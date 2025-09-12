@@ -20,7 +20,7 @@ describe('ManifestUtils', () => {
       expect(result).toBe(true);
     });
 
-    it('should return true for dates 1ms apart', () => {
+    it('should return false for dates 1ms apart', () => {
       const date1 = new Date('2023-01-01T12:00:00.000Z');
       const date2 = new Date('2023-01-01T12:00:00.001Z');
 
@@ -31,7 +31,7 @@ describe('ManifestUtils', () => {
         'start',
       );
 
-      expect(result).toBe(true);
+      expect(result).toBe(false);
     });
 
     it('should return false for dates more than 1ms apart', () => {
@@ -185,6 +185,26 @@ describe('ManifestUtils', () => {
       expect(result[0]!.lower).toEqual(manifests[1]);
       expect(result[0]!.upper).toEqual(dateRange.endDate);
     });
+
+    it('should not create trailing order when last manifest ends exactly at range end', () => {
+      const manifests = [
+        new ManifestEntity({
+          id: 1,
+          startDate: new Date('2023-01-01'),
+          endDate: new Date('2023-01-10'),
+          type: ItemType.posts,
+        }),
+      ];
+
+      const dateRange = new DateRange({
+        startDate: new Date('2023-01-01'),
+        endDate: new Date('2023-01-10'),
+      });
+
+      const result = ManifestUtils.computeOrders(manifests, dateRange);
+
+      expect(result).toHaveLength(0);
+    });
   });
 
   describe('splitLongOrders', () => {
@@ -215,6 +235,38 @@ describe('ManifestUtils', () => {
       expect(result.length).toBeGreaterThan(1);
       expect(result[0]!.lower).toEqual(orders[0]!.lower);
       expect(result[result.length - 1]!.upper).toEqual(orders[0]!.upper);
+    });
+
+    it('should maintain order invariants after splitting', () => {
+      const orders = [
+        new Order({
+          lower: new Date('2023-01-01'),
+          upper: new Date('2023-01-30'),
+        }),
+      ];
+
+      const result = ManifestUtils.splitLongOrders(orders, 10);
+
+      // All orders should be <= maxOrderDuration
+      for (const order of result) {
+        const durationMs =
+          order.upperDate.getTime() - order.lowerDate.getTime();
+        const maxDurationMs = 10 * 24 * 60 * 60 * 1000;
+        expect(durationMs).toBeLessThanOrEqual(maxDurationMs);
+      }
+
+      // Union of segments should equal original order
+      expect(result[0]!.lowerDate).toEqual(orders[0]!.lowerDate);
+      expect(result[result.length - 1]!.upperDate).toEqual(
+        orders[0]!.upperDate,
+      );
+
+      // Segments should be contiguous
+      for (let i = 0; i < result.length - 1; i++) {
+        expect(result[i]!.upperDate.getTime()).toEqual(
+          result[i + 1]!.lowerDate.getTime(),
+        );
+      }
     });
   });
 
@@ -515,6 +567,23 @@ describe('ManifestUtils', () => {
       expect(instruction.discard).toEqual([]);
       expect(instruction.order).toBe(order);
     });
+
+    it('should return no-op when not exhausted with no items', () => {
+      const order = new Order({
+        lower: new Date('2023-01-01'),
+        upper: new Date('2023-01-10'),
+      });
+
+      const instruction = ManifestUtils.computeSaveResults(
+        ItemType.posts,
+        order,
+        [],
+        false,
+      );
+
+      expect(instruction.discard).toEqual([]);
+      expect(instruction.order).toBe(order);
+    });
   });
 
   describe('computeAvailability', () => {
@@ -712,6 +781,43 @@ describe('ManifestUtils', () => {
       expect(instruction.results[0]!.endDate).toEqual(new Date('2023-01-05'));
       expect(instruction.results[1]!.startDate).toEqual(new Date('2023-01-10'));
       expect(instruction.results[1]!.endDate).toEqual(new Date('2023-01-14'));
+    });
+
+    it('should handle multiple overlapping intervals', () => {
+      const manifest1 = new ManifestEntity({
+        id: 1,
+        startDate: new Date('2023-01-01'),
+        endDate: new Date('2023-01-05'),
+        type: ItemType.posts,
+      });
+
+      const manifest2 = new ManifestEntity({
+        id: 2,
+        startDate: new Date('2023-01-03'),
+        endDate: new Date('2023-01-07'),
+        type: ItemType.posts,
+      });
+
+      const manifest3 = new ManifestEntity({
+        id: 3,
+        startDate: new Date('2023-01-06'),
+        endDate: new Date('2023-01-10'),
+        type: ItemType.posts,
+      });
+
+      const instruction = ManifestUtils.computeMergeInRange([
+        manifest3,
+        manifest1,
+        manifest2,
+      ]);
+
+      expect(instruction.discard).toHaveLength(2);
+      expect(instruction.discard).toContain(manifest2);
+      expect(instruction.discard).toContain(manifest3);
+      expect(instruction.results).toHaveLength(1);
+      expect(instruction.results[0]!.id).toBe(1); // Lowest ID is kept
+      expect(instruction.results[0]!.startDate).toEqual(new Date('2023-01-01'));
+      expect(instruction.results[0]!.endDate).toEqual(new Date('2023-01-10'));
     });
   });
 });

@@ -1,14 +1,11 @@
-import { add, addMilliseconds, isEqual, min } from 'date-fns';
+import { isBefore, isEqual } from 'date-fns';
 import {
   DateRange,
-  TimeScale,
-  endOf,
   findHighestDate,
   findHighestId,
   findLowestDate,
   findLowestId,
   resolveWithDate,
-  startOf,
 } from 'src/common';
 import { ItemType } from 'src/label/label.entity';
 
@@ -47,11 +44,7 @@ export class ManifestUtils {
     const date1 = Order.getBoundaryDate(boundary1, side1);
     const date2 = Order.getBoundaryDate(boundary2, side2);
 
-    return (
-      isEqual(date1, date2) ||
-      isEqual(addMilliseconds(date1, 1), date2) ||
-      isEqual(date1, addMilliseconds(date2, 1))
-    );
+    return isEqual(date1, date2);
   }
 
   /**
@@ -63,9 +56,9 @@ export class ManifestUtils {
     side1: OrderSide,
     side2: OrderSide,
   ): boolean {
-    return (
-      Order.getBoundaryDate(boundary1, side1) <
-      Order.getBoundaryDate(boundary2, side2)
+    return isBefore(
+      Order.getBoundaryDate(boundary1, side1),
+      Order.getBoundaryDate(boundary2, side2),
     );
   }
 
@@ -76,12 +69,14 @@ export class ManifestUtils {
     manifests: ManifestEntity[],
     dateRange: DateRange,
   ): Order[] {
-    manifests.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+    const sorted = [...manifests].sort((a, b) =>
+      isBefore(a.startDate, b.startDate) ? -1 : 1,
+    );
 
     const orders: Order[] = [];
     let boundary: OrderBoundary = dateRange.startDate;
 
-    for (const manifest of manifests) {
+    for (const manifest of sorted) {
       if (this.areBoundariesContiguous(boundary, manifest, 'end', 'start')) {
         boundary = manifest;
       } else if (this.isBoundaryBefore(boundary, manifest, 'end', 'start')) {
@@ -97,11 +92,8 @@ export class ManifestUtils {
       }
     }
 
-    if (
-      orders.length === 0 ||
-      (orders.length > 0 &&
-        orders[orders.length - 1]!.upper !== dateRange.endDate)
-    ) {
+    const boundaryEnd = Order.getBoundaryDate(boundary, 'end');
+    if (isBefore(boundaryEnd, dateRange.endDate)) {
       orders.push(
         new Order({
           lower: boundary,
@@ -125,41 +117,51 @@ export class ManifestUtils {
 
     for (const order of orders) {
       const { lowerDate, upperDate } = order;
+      const durationMs = upperDate.getTime() - lowerDate.getTime();
+      const maxDurationMs = maxOrderDuration * 24 * 60 * 60 * 1000; // days to milliseconds
 
-      let currentStart = lowerDate;
-      const originalLowerBoundary = order.lower;
-      const originalUpperBoundary = order.upper;
+      if (durationMs <= maxDurationMs) {
+        // Order is within duration limit, keep as is
+        splitOrders.push(order);
+      } else {
+        // Split order into segments of maxOrderDuration
+        let currentStart = lowerDate;
+        const originalLowerBoundary = order.lower;
+        const originalUpperBoundary = order.upper;
 
-      while (currentStart < upperDate) {
-        const currentEnd = min([
-          endOf(TimeScale.Day, add(currentStart, { days: maxOrderDuration })),
-          upperDate,
-        ]);
+        while (isBefore(currentStart, upperDate)) {
+          const remainingMs = upperDate.getTime() - currentStart.getTime();
+          const segmentMs = Math.min(maxDurationMs, remainingMs);
+          const currentEnd = new Date(currentStart.getTime() + segmentMs);
 
-        if (isEqual(currentStart, lowerDate)) {
-          splitOrders.push(
-            new Order({
-              lower: originalLowerBoundary,
-              upper: currentEnd,
-            }),
-          );
-        } else if (isEqual(currentEnd, upperDate)) {
-          splitOrders.push(
-            new Order({
-              lower: currentStart,
-              upper: originalUpperBoundary,
-            }),
-          );
-        } else {
-          splitOrders.push(
-            new Order({
-              lower: currentStart,
-              upper: currentEnd,
-            }),
-          );
+          if (isEqual(currentStart, lowerDate)) {
+            // First segment uses original lower boundary
+            splitOrders.push(
+              new Order({
+                lower: originalLowerBoundary,
+                upper: currentEnd,
+              }),
+            );
+          } else if (isEqual(currentEnd, upperDate)) {
+            // Last segment uses original upper boundary
+            splitOrders.push(
+              new Order({
+                lower: currentStart,
+                upper: originalUpperBoundary,
+              }),
+            );
+          } else {
+            // Middle segment uses dates
+            splitOrders.push(
+              new Order({
+                lower: currentStart,
+                upper: currentEnd,
+              }),
+            );
+          }
+
+          currentStart = currentEnd;
         }
-
-        currentStart = startOf(TimeScale.Day, add(currentEnd, { days: 1 }));
       }
     }
 
@@ -173,10 +175,9 @@ export class ManifestUtils {
     manifest1: ManifestEntity,
     manifest2: ManifestEntity,
   ): boolean {
-    const [first, second] =
-      manifest1.startDate <= manifest2.startDate
-        ? [manifest1, manifest2]
-        : [manifest2, manifest1];
+    const [first, second] = isBefore(manifest1.startDate, manifest2.startDate)
+      ? [manifest1, manifest2]
+      : [manifest2, manifest1];
 
     return (
       this.areBoundariesContiguous(first, second, 'end', 'start') ||
@@ -233,12 +234,20 @@ export class ManifestUtils {
     exhausted: boolean,
   ): ManifestOrderUpdate {
     if (!exhausted) {
+      if (items.length === 0) {
+        // continue without changes
+        return {
+          discard: [],
+          order: order,
+        };
+      }
+
       if (order.upper instanceof ManifestEntity) {
         // existing upper boundary, extend downwards
         const extended = new ManifestEntity({ ...order.upper }).extend(
           'start',
-          resolveWithDate(findLowestDate(items)),
-          findLowestId(items)?.id,
+          resolveWithDate(findLowestDate(items)!),
+          findLowestId(items)!.id,
         );
         return {
           discard: [],
@@ -381,36 +390,31 @@ export class ManifestUtils {
       return { discard: [], results: [] };
     }
 
-    const sorted = [...manifests].sort(
-      (a, b) => a.startDate.getTime() - b.startDate.getTime(),
+    const sorted = [...manifests].sort((a, b) =>
+      isBefore(a.startDate, b.startDate) ? -1 : 1,
     );
 
     const toDiscard: ManifestEntity[] = [];
     const results: ManifestEntity[] = [];
 
-    let i = 0;
-    while (i < sorted.length) {
-      let current = sorted[i]!;
-      let j = i + 1;
+    let current = sorted[0]!;
 
-      while (j < sorted.length) {
-        const next = sorted[j]!;
+    for (let i = 1; i < sorted.length; i++) {
+      const next = sorted[i]!;
 
-        if (this.shouldMergeManifests(current, next)) {
-          const mergeInstruction = this.computeMerge(current, next);
-
-          toDiscard.push(...mergeInstruction.discard);
-          current = mergeInstruction.results[0]!;
-
-          sorted.splice(j, 1);
-        } else {
-          j++;
-        }
+      if (this.shouldMergeManifests(current, next)) {
+        const mergeInstruction = this.computeMerge(current, next);
+        toDiscard.push(...mergeInstruction.discard);
+        current = mergeInstruction.results[0]!;
+      } else {
+        // No merge possible, finalize current and move to next
+        results.push(current);
+        current = next;
       }
-
-      results.push(current);
-      i++;
     }
+
+    // Add the final current manifest
+    results.push(current);
 
     return {
       discard: toDiscard,
