@@ -59,6 +59,7 @@ export class TagImplicationSyncWorker {
           for (let order of orders) {
             const results: TagImplication[] = [];
             const loopGuard = new LoopGuard();
+            const inPast = order.inPast;
 
             while (true) {
               cancelToken.ensureRunning();
@@ -97,7 +98,8 @@ export class TagImplicationSyncWorker {
                 type: this.type,
                 order,
                 items: stored,
-                exhausted,
+                bottom: exhausted,
+                top: inPast,
               });
 
               if (exhausted) {

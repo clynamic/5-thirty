@@ -56,6 +56,7 @@ export class FeedbackSyncWorker {
             const results: UserFeedback[] = [];
 
             const loopGuard = new LoopGuard();
+            const inPast = order.inPast;
 
             while (true) {
               cancelToken.ensureRunning();
@@ -97,7 +98,8 @@ export class FeedbackSyncWorker {
                 type: ItemType.feedbacks,
                 order: order,
                 items: stored,
-                exhausted,
+                bottom: exhausted,
+                top: inPast,
               });
 
               if (exhausted) {

@@ -51,6 +51,7 @@ export class ModActionSyncWorker {
           for (let order of orders) {
             const results: ModAction[] = [];
             const loopGuard = new LoopGuard();
+            const inPast = order.inPast;
 
             while (true) {
               cancelToken.ensureRunning();
@@ -92,7 +93,8 @@ export class ModActionSyncWorker {
                 type: ItemType.modActions,
                 order,
                 items: stored,
-                exhausted,
+                bottom: exhausted,
+                top: inPast,
               });
 
               if (exhausted) {

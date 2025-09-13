@@ -65,6 +65,7 @@ export class UploadSyncWorker {
           for (let order of orders) {
             const results: PostVersion[] = [];
             const loopGuard = new LoopGuard();
+            const inPast = order.inPast;
 
             while (true) {
               cancelToken.ensureRunning();
@@ -107,7 +108,8 @@ export class UploadSyncWorker {
                 type: ItemType.postVersions,
                 order,
                 items: stored,
-                exhausted,
+                bottom: exhausted,
+                top: inPast,
               });
 
               if (result.length) {

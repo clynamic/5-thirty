@@ -60,6 +60,7 @@ export class BulkUpdateRequestSyncWorker {
           for (let order of orders) {
             const results: BulkUpdateRequest[] = [];
             const loopGuard = new LoopGuard();
+            const inPast = order.inPast;
 
             while (true) {
               cancelToken.ensureRunning();
@@ -101,7 +102,8 @@ export class BulkUpdateRequestSyncWorker {
                 type: this.type,
                 order,
                 items: stored,
-                exhausted,
+                bottom: exhausted,
+                top: inPast,
               });
 
               if (exhausted) {

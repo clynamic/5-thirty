@@ -102,7 +102,8 @@ export interface OrderResults {
   type: ItemType;
   order: Order;
   items: OrderResult[];
-  exhausted: boolean;
+  bottom: boolean;
+  top: boolean;
 }
 
 export type OrderSide = 'start' | 'end';
@@ -169,5 +170,12 @@ export class Order {
     } else {
       return { idRange, dateRange };
     }
+  }
+
+  /**
+   * Returns true if this order's date range is entirely in the past.
+   */
+  get inPast(): boolean {
+    return this.upperDate <= new Date();
   }
 }

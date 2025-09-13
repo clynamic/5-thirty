@@ -480,12 +480,13 @@ describe('ManifestUtils', () => {
         upper: upperManifest,
       });
 
-      const instruction = ManifestUtils.computeSaveResults(
-        ItemType.posts,
+      const instruction = ManifestUtils.computeSaveResults({
+        type: ItemType.posts,
         order,
-        mockItems,
-        false,
-      );
+        items: mockItems,
+        bottom: false,
+        top: false,
+      });
 
       expect(instruction.order.upper).toBeInstanceOf(ManifestEntity);
       const extendedUpper = instruction.order.upper as ManifestEntity;
@@ -501,12 +502,13 @@ describe('ManifestUtils', () => {
         upper: new Date('2023-01-10'),
       });
 
-      const instruction = ManifestUtils.computeSaveResults(
-        ItemType.posts,
+      const instruction = ManifestUtils.computeSaveResults({
+        type: ItemType.posts,
         order,
-        mockItems,
-        false,
-      );
+        items: mockItems,
+        bottom: false,
+        top: false,
+      });
 
       expect(instruction.order.upper).toBeInstanceOf(ManifestEntity);
       const newUpper = instruction.order.upper as ManifestEntity;
@@ -537,12 +539,13 @@ describe('ManifestUtils', () => {
         upper: upperManifest,
       });
 
-      const instruction = ManifestUtils.computeSaveResults(
-        ItemType.posts,
+      const instruction = ManifestUtils.computeSaveResults({
+        type: ItemType.posts,
         order,
-        mockItems,
-        true,
-      );
+        items: mockItems,
+        bottom: true,
+        top: false,
+      });
 
       expect(instruction.discard).toHaveLength(1);
       expect(instruction.discard).toContain(upperManifest);
@@ -551,21 +554,26 @@ describe('ManifestUtils', () => {
       expect(instruction.order.lower).toBe(instruction.order.upper); // Same merged manifest
     });
 
-    it('should return no-op when exhausted with no items', () => {
+    it('should create empty manifest when exhausted with no items', () => {
       const order = new Order({
         lower: new Date('2023-01-01'),
         upper: new Date('2023-01-10'),
       });
 
-      const instruction = ManifestUtils.computeSaveResults(
-        ItemType.posts,
+      const instruction = ManifestUtils.computeSaveResults({
+        type: ItemType.posts,
         order,
-        [],
-        true,
-      );
+        items: [],
+        bottom: true,
+        top: false,
+      });
 
       expect(instruction.discard).toEqual([]);
-      expect(instruction.order).toBe(order);
+      expect(instruction.order.upper).toBeInstanceOf(ManifestEntity);
+      const manifest = instruction.order.upper as ManifestEntity;
+      expect(manifest.type).toBe(ItemType.posts);
+      expect(manifest.startDate).toEqual(new Date('2023-01-01'));
+      expect(manifest.endDate).toEqual(new Date('2023-01-10'));
     });
 
     it('should return no-op when not exhausted with no items', () => {
@@ -574,12 +582,13 @@ describe('ManifestUtils', () => {
         upper: new Date('2023-01-10'),
       });
 
-      const instruction = ManifestUtils.computeSaveResults(
-        ItemType.posts,
+      const instruction = ManifestUtils.computeSaveResults({
+        type: ItemType.posts,
         order,
-        [],
-        false,
-      );
+        items: [],
+        bottom: false,
+        top: false,
+      });
 
       expect(instruction.discard).toEqual([]);
       expect(instruction.order).toBe(order);

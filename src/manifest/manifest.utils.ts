@@ -1,4 +1,4 @@
-import { isBefore, isEqual } from 'date-fns';
+import { isAfter, isBefore, isEqual } from 'date-fns';
 import {
   DateRange,
   findHighestDate,
@@ -14,6 +14,7 @@ import {
   Order,
   OrderBoundary,
   OrderResult,
+  OrderResults,
   OrderSide,
 } from './manifest.entity';
 
@@ -69,8 +70,8 @@ export class ManifestUtils {
     manifests: ManifestEntity[],
     dateRange: DateRange,
   ): Order[] {
-    const sorted = [...manifests].sort((a, b) =>
-      isBefore(a.startDate, b.startDate) ? -1 : 1,
+    const sorted = [...manifests].sort(
+      (a, b) => a.startDate.getTime() - b.startDate.getTime(),
     );
 
     const orders: Order[] = [];
@@ -221,19 +222,35 @@ export class ManifestUtils {
   }
 
   /**
+   * Calculate Manifest end date based on order and fetched items.
+   */
+  private static getTopDate(
+    order: Order,
+    items: OrderResult[],
+    top: boolean,
+  ): Date | undefined {
+    if (top) {
+      return order.upperDate;
+    } else {
+      const itemDate = resolveWithDate(findHighestDate(items));
+      if (!itemDate) {
+        return undefined;
+      }
+      return isAfter(itemDate, order.upperDate) ? order.upperDate : itemDate;
+    }
+  }
+
+  /**
    * Compute manifest and order updates based on fetched items.
    * The logic assumes that items are fetched in descending order (newest to oldest).
    * Based on this assumption, orders are always updated by first creating an upper boundary,
    * or extending an existing upper boundary downwards.
    * If this is not the case, you are doing something wrong, and this code needs to be modified.
    */
-  static computeSaveResults(
-    type: ItemType,
-    order: Order,
-    items: OrderResult[],
-    exhausted: boolean,
-  ): ManifestOrderUpdate {
-    if (!exhausted) {
+  static computeSaveResults(results: OrderResults): ManifestOrderUpdate {
+    const { type, order, items, bottom, top } = results;
+
+    if (!bottom) {
       if (items.length === 0) {
         // continue without changes
         return {
@@ -260,7 +277,7 @@ export class ManifestUtils {
           lowerId: findLowestId(items)!.id,
           upperId: findHighestId(items)!.id,
           startDate: resolveWithDate(findLowestDate(items)!),
-          endDate: resolveWithDate(findHighestDate(items)!),
+          endDate: ManifestUtils.getTopDate(order, items, top)!,
         });
         return {
           discard: [],
@@ -292,35 +309,41 @@ export class ManifestUtils {
           };
         }
       } else if (order.lower instanceof ManifestEntity) {
-        // upper is date, extend lower upwards to include it
+        // upper is date, extend lower upwards
         const extended = new ManifestEntity({ ...order.lower }).extend(
           'end',
-          resolveWithDate(findHighestDate(items)!),
-          findHighestId(items)?.id,
+          ManifestUtils.getTopDate(order, items, top),
         );
         return {
           discard: [],
           order: new Order({ ...order, lower: extended }),
         };
-      } else if (items.length > 0) {
-        // both are dates, create new boundary
-        const result = new ManifestEntity({
-          type: type,
-          lowerId: findLowestId(items)!.id,
-          upperId: findHighestId(items)!.id,
-          startDate: order.lower,
-          endDate: resolveWithDate(findHighestDate(items)!),
-        });
-        return {
-          discard: [],
-          order: new Order({ ...order, upper: result }),
-        };
       } else {
-        // abort without data
-        return {
-          discard: [],
-          order: order,
-        };
+        // both are dates, create new boundary
+        if (items.length > 0) {
+          const result = new ManifestEntity({
+            type: type,
+            lowerId: findLowestId(items)?.id,
+            upperId: findHighestId(items)?.id,
+            startDate: order.lower,
+            endDate: ManifestUtils.getTopDate(order, items, top),
+          });
+          return {
+            discard: [],
+            order: new Order({ ...order, upper: result }),
+          };
+        } else {
+          // create empty manifest to close the gap
+          const result = new ManifestEntity({
+            type: type,
+            startDate: order.lower,
+            endDate: order.upperDate,
+          });
+          return {
+            discard: [],
+            order: new Order({ ...order, upper: result }),
+          };
+        }
       }
     }
   }
@@ -390,11 +413,11 @@ export class ManifestUtils {
       return { discard: [], results: [] };
     }
 
-    const sorted = [...manifests].sort((a, b) =>
-      isBefore(a.startDate, b.startDate) ? -1 : 1,
+    const sorted = [...manifests].sort(
+      (a, b) => a.startDate.getTime() - b.startDate.getTime(),
     );
 
-    const toDiscard: ManifestEntity[] = [];
+    const discard: ManifestEntity[] = [];
     const results: ManifestEntity[] = [];
 
     let current = sorted[0]!;
@@ -404,7 +427,7 @@ export class ManifestUtils {
 
       if (this.shouldMergeManifests(current, next)) {
         const mergeInstruction = this.computeMerge(current, next);
-        toDiscard.push(...mergeInstruction.discard);
+        discard.push(...mergeInstruction.discard);
         current = mergeInstruction.results[0]!;
       } else {
         // No merge possible, finalize current and move to next
@@ -417,8 +440,8 @@ export class ManifestUtils {
     results.push(current);
 
     return {
-      discard: toDiscard,
-      results: results,
+      discard,
+      results,
     };
   }
 }

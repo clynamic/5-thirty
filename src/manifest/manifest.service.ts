@@ -125,21 +125,12 @@ export class ManifestService {
     });
   }
 
-  async saveResults({
-    type,
-    order,
-    items,
-    exhausted,
-  }: OrderResults): Promise<Order> {
-    const { discard, order: update } = ManifestUtils.computeSaveResults(
-      type,
-      order,
-      items,
-      exhausted,
-    );
+  async saveResults(results: OrderResults): Promise<Order> {
+    const { discard, order: update } =
+      ManifestUtils.computeSaveResults(results);
 
     await this.remove(discard);
-    return this.updateOrder(order, update);
+    return this.updateOrder(results.order, update);
   }
 
   async updateOrder(order: Order, update: Partial<Order>): Promise<Order> {

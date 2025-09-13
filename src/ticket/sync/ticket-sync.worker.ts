@@ -59,6 +59,7 @@ export class TicketSyncWorker {
           for (let order of orders) {
             const results: Ticket[] = [];
             const loopGuard = new LoopGuard();
+            const inPast = order.inPast;
 
             while (true) {
               cancelToken.ensureRunning();
@@ -100,7 +101,8 @@ export class TicketSyncWorker {
                 type: ItemType.tickets,
                 order,
                 items: stored,
-                exhausted,
+                bottom: exhausted,
+                top: inPast,
               });
 
               if (exhausted) {

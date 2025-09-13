@@ -52,6 +52,7 @@ export class TagAliasSyncWorker {
           for (let order of orders) {
             const results: TagAlias[] = [];
             const loopGuard = new LoopGuard();
+            const inPast = order.inPast;
 
             while (true) {
               cancelToken.ensureRunning();
@@ -90,7 +91,8 @@ export class TagAliasSyncWorker {
                 type: this.type,
                 order,
                 items: stored,
-                exhausted,
+                bottom: exhausted,
+                top: inPast,
               });
 
               if (exhausted) {

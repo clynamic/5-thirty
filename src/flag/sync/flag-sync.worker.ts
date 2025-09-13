@@ -54,6 +54,7 @@ export class FlagSyncWorker {
           for (let order of orders) {
             const results: PostFlag[] = [];
             const loopGuard = new LoopGuard();
+            const inPast = order.inPast;
 
             while (true) {
               cancelToken.ensureRunning();
@@ -94,7 +95,8 @@ export class FlagSyncWorker {
                 type: ItemType.flags,
                 order,
                 items: stored,
-                exhausted,
+                bottom: exhausted,
+                top: inPast,
               });
 
               if (results.length) {

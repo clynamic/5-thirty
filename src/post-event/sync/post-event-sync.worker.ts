@@ -51,6 +51,7 @@ export class PostEventSyncWorker {
           for (let order of orders) {
             const results: PostEvent[] = [];
             const loopGuard = new LoopGuard();
+            const inPast = order.inPast;
 
             while (true) {
               cancelToken.ensureRunning();
@@ -91,7 +92,8 @@ export class PostEventSyncWorker {
                 type: ItemType.postEvents,
                 order,
                 items: stored,
-                exhausted,
+                bottom: exhausted,
+                top: inPast,
               });
 
               if (exhausted) {

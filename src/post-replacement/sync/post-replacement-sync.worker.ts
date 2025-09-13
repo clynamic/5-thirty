@@ -55,6 +55,7 @@ export class PostReplacementSyncWorker {
           for (let order of orders) {
             const results: PostReplacement[] = [];
             const loopGuard = new LoopGuard();
+            const inPast = order.inPast;
 
             while (true) {
               cancelToken.ensureRunning();
@@ -96,7 +97,8 @@ export class PostReplacementSyncWorker {
                 type: ItemType.postReplacements,
                 order,
                 items: stored,
-                exhausted,
+                bottom: exhausted,
+                top: inPast,
               });
 
               if (exhausted) {
