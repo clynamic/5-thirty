@@ -26,6 +26,20 @@ export const getItemName = (type: ItemType) => {
 };
 
 /**
+ * Item types that are "porous" (don't have ID contiguity).
+ * This might be a result of either how we sync data or what data is available
+ * due to permissions or true deletions.
+ */
+export const POROUS_ITEM_TYPES: ItemType[] = [
+  ItemType.feedbacks,
+  ItemType.tagAliases,
+  ItemType.tagImplications,
+  ItemType.modActions,
+  ItemType.postVersions,
+  ItemType.permits,
+];
+
+/**
  * A label, like a shipping label,
  * stores metadata about an entity we have synced from upstream.
  *

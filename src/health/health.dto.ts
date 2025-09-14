@@ -23,6 +23,7 @@ export class ManifestHealth {
   id: number;
   @ApiProperty({ enum: ItemType, enumName: 'ItemType' })
   type: ItemType;
+  porous: boolean;
   startDate: Date;
   endDate: Date;
   startId: number;

@@ -5,7 +5,7 @@ import { BulkUpdateRequestEntity } from 'src/bulk-update-request/bulk-update-req
 import { PaginationParams, WithId } from 'src/common';
 import { FeedbackEntity } from 'src/feedback/feedback.entity';
 import { FlagEntity } from 'src/flag/flag.entity';
-import { ItemType } from 'src/label/label.entity';
+import { ItemType, POROUS_ITEM_TYPES } from 'src/label/label.entity';
 import { ManifestEntity } from 'src/manifest/manifest.entity';
 import { ModActionEntity } from 'src/mod-action/mod-action.entity';
 import { PermitEntity } from 'src/permit/permit.entity';
@@ -121,6 +121,7 @@ export class HealthService {
         new ManifestHealth({
           id: manifest.id,
           type: manifest.type,
+          porous: POROUS_ITEM_TYPES.includes(manifest.type),
           startDate: manifest.startDate,
           endDate: manifest.endDate,
           startId: manifest.lowerId,
