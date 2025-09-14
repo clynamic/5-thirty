@@ -1,5 +1,4 @@
-import { UpdateDateTimeColumn } from 'src/common';
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 export enum NotabilityType {
   staff = 'staff',
@@ -19,6 +18,6 @@ export class NotableUserEntity {
   @Column({ type: 'simple-enum', enum: NotabilityType })
   type: NotabilityType;
 
-  @UpdateDateTimeColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }

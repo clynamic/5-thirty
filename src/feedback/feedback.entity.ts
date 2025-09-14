@@ -1,5 +1,4 @@
 import { UserFeedback, UserFeedbackCategory } from 'src/api';
-import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
@@ -19,7 +18,7 @@ export class FeedbackEntity extends LabelLink {
   @Column({ type: 'int' })
   creatorId: number;
 
-  @DateTimeColumn()
+  @Column({ type: 'timestamptz' })
   createdAt: Date;
 
   @Column({ type: 'text' })
@@ -28,7 +27,7 @@ export class FeedbackEntity extends LabelLink {
   @Column({ type: 'simple-enum', enum: UserFeedbackCategory })
   category: UserFeedbackCategory;
 
-  @DateTimeColumn()
+  @Column({ type: 'timestamptz' })
   updatedAt: Date;
 
   @Column({ type: 'int' })

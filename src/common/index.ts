@@ -1,7 +1,6 @@
 export * from './case';
 export * from './chart.dto';
 export * from './date-buckets';
-export * from './date-column';
 export * from './date-fns';
 export * from './date-objects';
 export * from './date-range.dto';
@@ -9,7 +8,6 @@ export * from './id-range.dto';
 export * from './limit';
 export * from './logs';
 export * from './loop';
-export * from './meta-column';
 export * from './pagination.dto';
 export * from './raw';
 export * from './repository';

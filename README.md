@@ -1,27 +1,44 @@
 # 5-thirty
 
-e6 staff aggregator
+e6 staff stats aggregator
 
-## Setup
+## Development Setup
+
+The following instructions are for setting up a local development environment.
+
+### Prerequisites
 
 1. Install [Node.js](https://nodejs.org/en/download/)  
    The project uses Node 20 and above
 2. Install [Yarn](https://yarnpkg.com/en/docs/install)  
    We use yarn instead of npm
-3. Clone the [repository](https://github.com/clynamic/5-thirty)
+3. Install [PostgreSQL](https://www.postgresql.org/download/)  
+   This is the database we use
+4. Install [pgAdmin 4](https://www.pgadmin.org/download/) (optional)  
+   For easy database management
+
+### Getting Started
+
+1. Clone the [repository](https://github.com/clynamic/5-thirty)
 
 ```bash
 git clone https://github.com/clynamic/5-thirty.git
 ```
 
-4. Set up the [Frontend](https://github.com/clynamic/6oclock)  
+2. Set up the [Frontend](https://github.com/clynamic/6oclock)  
    Follow the instructions in the README
 
-5. Install dependencies
+3. Install dependencies
 
 ```bash
 yarn
 ```
+
+4. Set up your database  
+   Create a PostgreSQL database for the project
+
+5. Set up your environment  
+   Copy `.env.example` to `.env` and fill in the required values
 
 6. Start the development server  
    It will be available at [http://localhost:3000](http://localhost:3000)
@@ -30,23 +47,20 @@ yarn
 yarn dev
 ```
 
-## Environment Variables
+## Deployment
 
-Create a `.env` file in the root directory with the following variables:
+For production, we recommend using our Docker setup.
 
-```env
-# Required: E621 API credentials for server operations
-E621_GLOBAL_USERNAME=your_username
-E621_GLOBAL_API_KEY=your_api_key
+1. Ensure you have [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed.
 
-# Optional: CORS configuration
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+2. Set up your environment
+   Copy `.env.example` to `.env` and fill in the required values.
+   Database configuration can be removed, as the Docker setup includes a PostgreSQL container.
 
-# Optional: Data directory
-DATA_DIR=./data
+3. Start the services
 
-# Optional: Users which have admin privileges for managing the server
-SERVER_ADMINS=admin1,admin2,admin3
+```bash
+docker compose up -d
 ```
 
 ## Stack
@@ -56,8 +70,9 @@ SERVER_ADMINS=admin1,admin2,admin3
 - [Yarn](https://yarnpkg.com/) - package manager
 - [ESLint](https://eslint.org/) - linting
 - [Prettier](https://prettier.io/) - code formatting
+- [Jest](https://jestjs.io/) - testing framework
 - [TypeORM](https://typeorm.io/) - database ORM
-- [SQLite](https://www.sqlite.org/index.html) - database
+- [PostgreSQL](https://www.postgresql.org/) - database
 - [Orval](https://orval.dev/) - API client generator
 - [Axios](https://axios-http.com/) - HTTP client
-- [Luxon](https://moment.github.io/luxon/) - date time library
+- [date-fns](https://date-fns.org/) - date time library

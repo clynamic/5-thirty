@@ -5,7 +5,6 @@ import {
   WithDate,
   WithId,
 } from 'src/common';
-import { DateTimeColumn } from 'src/common';
 import { ItemType } from 'src/label/label.entity';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -21,10 +20,10 @@ export class ManifestEntity {
   @Column({ type: 'simple-enum', enum: ItemType })
   type: ItemType;
 
-  @DateTimeColumn()
+  @Column({ type: 'timestamptz' })
   startDate: Date;
 
-  @DateTimeColumn()
+  @Column({ type: 'timestamptz' })
   endDate: Date;
 
   get dateRange(): DateRange {
@@ -34,7 +33,7 @@ export class ManifestEntity {
     });
   }
 
-  @DateTimeColumn({ nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   refreshedAt?: Date;
 
   @Column({ type: 'int' })

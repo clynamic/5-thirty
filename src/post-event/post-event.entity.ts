@@ -1,5 +1,4 @@
 import { PostEvent, PostEventAction } from 'src/api';
-import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
@@ -24,7 +23,7 @@ export class PostEventEntity extends LabelLink {
   @Column({ type: 'simple-enum', enum: PostEventAction })
   action: PostEventAction;
 
-  @DateTimeColumn()
+  @Column({ type: 'timestamptz' })
   createdAt: Date;
 }
 

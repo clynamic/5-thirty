@@ -1,5 +1,4 @@
 import { PostReplacement, PostReplacementStatus } from 'src/api/e621';
-import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
@@ -16,13 +15,13 @@ export class PostReplacementEntity extends LabelLink {
   @Column({ type: 'int' })
   postId: number;
 
-  @DateTimeColumn()
+  @Column({ type: 'timestamptz' })
   createdAt: Date;
 
   @Column({ type: 'int' })
   creatorId: number;
 
-  @DateTimeColumn()
+  @Column({ type: 'timestamptz' })
   updatedAt: Date;
 
   @Column({ type: 'int', nullable: true })

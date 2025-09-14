@@ -1,4 +1,3 @@
-import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
@@ -31,7 +30,7 @@ export class PermitEntity extends LabelLink {
   /**
    * The date and time when this Post was created.
    */
-  @DateTimeColumn()
+  @Column({ type: 'timestamptz' })
   @Index()
   createdAt: Date;
 }

@@ -1,5 +1,10 @@
-import { UpdateDateTimeColumn } from 'src/common';
-import { Entity, JoinColumn, OneToOne, PrimaryColumn } from 'typeorm';
+import {
+  Entity,
+  JoinColumn,
+  OneToOne,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export enum ItemType {
   tickets = 'tickets',
@@ -54,7 +59,7 @@ export class LabelEntity {
   @PrimaryColumn({ type: 'text' })
   id: string;
 
-  @UpdateDateTimeColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   refreshedAt: Date;
 }
 

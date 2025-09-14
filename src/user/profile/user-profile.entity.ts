@@ -1,5 +1,4 @@
 import { UserProfile } from 'src/api';
-import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
@@ -85,7 +84,7 @@ export class UserProfileEntity extends LabelLink {
   @Column({ type: 'text', nullable: true })
   profileArtinfo: string | null;
 
-  @DateTimeColumn()
+  @Column({ type: 'timestamptz' })
   createdAt: Date;
 }
 

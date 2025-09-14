@@ -5,20 +5,15 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 dotenv.config();
 
-const dataDir = process.env['DATA_DIR'] || './data';
-const dbType = process.env['DB_TYPE'] || 'sqlite';
-
 export const AppDataSourceOptions = {
-  type: dbType as DataSourceOptions['type'],
+  type: 'postgres' as const,
   host: process.env['DB_HOST'],
-  port: process.env['DB_PORT'] ? parseInt(process.env['DB_PORT']) : undefined,
+  port: process.env['DB_PORT'] ? parseInt(process.env['DB_PORT']) : 5432,
   username: process.env['DB_USER'],
   password: process.env['DB_PASSWORD'],
-  database:
-    process.env['DB_NAME'] ||
-    (dbType === 'sqlite' ? `${dataDir}/db.sqlite` : undefined),
+  database: process.env['DB_NAME'] || 'five_thirty',
   entities: [path.join(__dirname, '**', '*.entity.@(js|ts)')],
-  migrations: [path.join(__dirname, 'migration', dbType, '*.js')],
+  migrations: [path.join(__dirname, 'migration', '*.js')],
   migrationsRun: process.env['NODE_ENV'] === 'production',
   synchronize: process.env['NODE_ENV'] !== 'production',
   namingStrategy: new SnakeNamingStrategy(),

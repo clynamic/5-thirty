@@ -1,5 +1,4 @@
 import { TagImplication, TagImplicationStatus } from 'src/api';
-import { DateTimeColumn } from 'src/common';
 import { ItemType, LabelEntity, LabelLink } from 'src/label/label.entity';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
@@ -13,10 +12,10 @@ export class TagImplicationEntity extends LabelLink {
   @PrimaryColumn({ type: 'int' })
   id: number;
 
-  @DateTimeColumn()
+  @Column({ type: 'timestamptz' })
   createdAt: Date;
 
-  @DateTimeColumn()
+  @Column({ type: 'timestamptz' })
   updatedAt: Date;
 
   @Column({ type: 'int' })
