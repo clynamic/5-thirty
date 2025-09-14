@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ManifestModule } from 'src/manifest/manifest.module';
 import { PostEventEntity } from 'src/post-event/post-event.entity';
-import { PostVersionEntity } from 'src/post-version/post-version.entity';
-import { PostEntity } from 'src/post/post.entity';
 
 import { PermitEntity } from '../permit.entity';
 import { PermitSyncService } from './permit-sync.service';
@@ -10,14 +9,10 @@ import { PermitSyncWorker } from './permit-sync.worker';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      PermitEntity,
-      PostEntity,
-      PostVersionEntity,
-      PostEventEntity,
-    ]),
+    TypeOrmModule.forFeature([PermitEntity, PostEventEntity]),
+    ManifestModule,
   ],
   providers: [PermitSyncService, PermitSyncWorker],
-  exports: [],
+  exports: [PermitSyncService],
 })
 export class PermitSyncModule {}

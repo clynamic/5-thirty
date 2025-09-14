@@ -8,6 +8,7 @@ import { FlagEntity } from 'src/flag/flag.entity';
 import { ItemType } from 'src/label/label.entity';
 import { ManifestEntity } from 'src/manifest/manifest.entity';
 import { ModActionEntity } from 'src/mod-action/mod-action.entity';
+import { PermitEntity } from 'src/permit/permit.entity';
 import { PostEventEntity } from 'src/post-event/post-event.entity';
 import { PostReplacementEntity } from 'src/post-replacement/post-replacement.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
@@ -44,6 +45,8 @@ export class HealthService {
     private readonly tagAliasRepository: Repository<TagAliasEntity>,
     @InjectRepository(TagImplicationEntity)
     private readonly tagImplicationRepository: Repository<TagImplicationEntity>,
+    @InjectRepository(PermitEntity)
+    private readonly permitRepository: Repository<PermitEntity>,
   ) {}
 
   private itemRepositories: Partial<Record<ItemType, Repository<WithId>>> = {
@@ -57,6 +60,7 @@ export class HealthService {
     [ItemType.bulkUpdateRequests]: this.bulkUpdateRequestRepository,
     [ItemType.tagAliases]: this.tagAliasRepository,
     [ItemType.tagImplications]: this.tagImplicationRepository,
+    [ItemType.permits]: this.permitRepository,
   };
 
   @Cacheable({
@@ -74,6 +78,7 @@ export class HealthService {
       BulkUpdateRequestEntity,
       TagAliasEntity,
       TagImplicationEntity,
+      PermitEntity,
     ],
   })
   async manifest(pages?: PaginationParams): Promise<ManifestHealth[]> {

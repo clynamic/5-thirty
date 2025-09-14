@@ -2,27 +2,23 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PostEventAction } from 'src/api';
 import { withInvalidation } from 'src/app/browser.module';
-import { PostVersionEntity } from 'src/post-version/post-version.entity';
-import { PostEntity } from 'src/post/post.entity';
-import { In, Repository } from 'typeorm';
+import { constructCountUpdated, constructFirstFromId } from 'src/common';
+import { PostEventEntity } from 'src/post-event/post-event.entity';
+import { Repository } from 'typeorm';
 
 import { PermitEntity } from '../permit.entity';
-
-export interface UnexplainedPost {
-  id: number;
-  uploaderId: number;
-}
 
 @Injectable()
 export class PermitSyncService {
   constructor(
     @InjectRepository(PermitEntity)
     private readonly permitRepository: Repository<PermitEntity>,
-    @InjectRepository(PostEntity)
-    private readonly postRepository: Repository<PostEntity>,
-    @InjectRepository(PostVersionEntity)
-    private readonly postVersionRepository: Repository<PostVersionEntity>,
+    @InjectRepository(PostEventEntity)
+    private readonly postEventRepository: Repository<PostEventEntity>,
   ) {}
+
+  firstFromId = constructFirstFromId(this.permitRepository);
+  countUpdated = constructCountUpdated(this.permitRepository);
 
   save = withInvalidation(
     this.permitRepository.save.bind(this.permitRepository),
@@ -39,82 +35,30 @@ export class PermitSyncService {
     PermitEntity,
   );
 
-  savePosts = withInvalidation(
-    this.postRepository.save.bind(this.postRepository),
-    PostEntity,
-  );
-
   /**
-   * Unexplained posts are ones that are potentially in Pending status.
+   * Find permits that have corresponding approvals or deletions and should be removed.
    *
-   * To the aggregate, a Post is in Pending status when:
-   * - It has not been approved
-   * - It has not been deleted
-   * - It has not been permitted
-   */
-  async findUnexplainedPosts(): Promise<UnexplainedPost[]> {
-    return this.postVersionRepository
-      .createQueryBuilder('post_version')
-      .select('post_version.post_id', 'id')
-      .addSelect('post_version.updater_id', 'uploaderId')
-      .distinct(true)
-      .leftJoin('permits', 'permit', 'post_version.post_id = permit.post_id')
-      .leftJoin(
-        'post_events',
-        'event',
-        'post_version.post_id = event.post_id AND event.action IN (:...excludeActions)',
-        {
-          excludeActions: [
-            PostEventAction.approved,
-            PostEventAction.unapproved,
-            PostEventAction.deleted,
-            PostEventAction.undeleted,
-          ],
-        },
-      )
-      .where('post_version.version = 1')
-      .andWhere('permit.post_id IS NULL')
-      .andWhere('event.post_id IS NULL')
-      .getRawMany<{ id: number; uploaderId: number }>();
-  }
-
-  /**
-   * Overexplained posts are ones that our server mistakenly marked as permitted.
+   * These permits technically existed at the moment of sync, but they represent
+   * an ephemeral state that cannot be reproduced. Later approvals or deletions
+   * retroactively invalidate them, and any database initialized afterward would never
+   * observe these permits at all.
    *
-   * This can happen when a permit sync runs before an approval or deletion flag sync.
+   * To keep our state reproducible and aligned with canonical history, we
+   * retcon these time-sensitive entries.
+   *
+   * This is a direct loss of history that we accept for the sake of consistency.
    */
-  async findOverexplainedPosts(): Promise<number[]> {
-    return this.postVersionRepository
-      .createQueryBuilder('post_version')
-      .select('post_version.post_id', 'post_id')
-      .distinct(true)
-      .innerJoin('permits', 'permit', 'post_version.post_id = permit.post_id')
+  async findInvalidPermits(): Promise<PermitEntity[]> {
+    return this.permitRepository
+      .createQueryBuilder('permit')
       .innerJoin(
-        'post_events',
+        this.postEventRepository.metadata.tableName,
         'event',
-        'post_version.post_id = event.post_id AND event.action IN (:...includeActions)',
+        'permit.id = event.post_id AND event.action IN (:...actions)',
         {
-          includeActions: [PostEventAction.approved, PostEventAction.deleted],
+          actions: [PostEventAction.approved, PostEventAction.deleted],
         },
       )
-      .where('post_version.version = 1')
-      .getRawMany<{ post_id: number }>()
-      .then((results) => results.map((result) => result.post_id));
-  }
-
-  /**
-   * Removes permits associated with the given post IDs.
-   */
-  async removeFor(postIds: number): Promise<void>;
-
-  /**
-   * Removes permits associated with the given post ID.
-   */
-  async removeFor(postId: number[]): Promise<void>;
-
-  async removeFor(postIds: number | number[]): Promise<void> {
-    await this.delete({
-      postId: In(Array.isArray(postIds) ? postIds : [postIds]),
-    });
+      .getMany();
   }
 }

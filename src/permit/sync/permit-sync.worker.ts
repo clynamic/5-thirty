@@ -1,17 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { chunk } from 'lodash';
-import { Post, posts } from 'src/api';
+import { posts } from 'src/api';
 import { MAX_API_LIMIT } from 'src/api/http/params';
 import { CacheManager } from 'src/app/browser.module';
 import { AuthService } from 'src/auth/auth.service';
-import { LoopGuard, rateLimit } from 'src/common';
+import {
+  DateRange,
+  LoopGuard,
+  logOrderFetch,
+  logOrderResult,
+  rateLimit,
+} from 'src/common';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
-import { PostEntity } from 'src/post/post.entity';
+import { ItemType } from 'src/label/label.entity';
+import { ManifestService } from 'src/manifest/manifest.service';
 
-import { PermitEntity } from '../permit.entity';
-import { PermitSyncService, UnexplainedPost } from './permit-sync.service';
+import { PermitEntity, PermitLabelEntity } from '../permit.entity';
+import { PermitSyncService } from './permit-sync.service';
 
 @Injectable()
 export class PermitSyncWorker {
@@ -19,112 +25,120 @@ export class PermitSyncWorker {
     private readonly jobService: JobService,
     private readonly authService: AuthService,
     private readonly permitSyncService: PermitSyncService,
+    private readonly manifestService: ManifestService,
     private readonly cacheManager: CacheManager,
   ) {}
 
   private readonly logger = new Logger(PermitSyncWorker.name);
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
-  runPending() {
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async runOrders() {
     this.jobService.add(
       new Job({
-        title: 'Permit Pending Sync',
-        key: `/permits/pending`,
+        title: 'Permit Orders Sync',
+        key: `/${ItemType.permits}/orders`,
+        timeout: 1000 * 60 * 5,
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.authService.getServerAxiosConfig();
 
-          const results: Post[] = [];
-          const loopGuard = new LoopGuard();
+          const recentlyRange = DateRange.recentMonths();
 
-          let page = 1;
-
-          while (true) {
-            cancelToken.ensureRunning();
-
-            this.logger.log(`Fetching pending posts page ${page}...`);
-
-            const result = await rateLimit(
-              posts(
-                loopGuard.iter({
-                  page,
-                  limit: MAX_API_LIMIT,
-                  tags: `status:pending`,
-                }),
-                axiosConfig,
-              ),
-            );
-
-            results.push(...result);
-
-            await this.permitSyncService.savePosts(
-              result.map(PostEntity.fromPost),
-            );
-
-            this.logger.log(`Fetched ${result.length} pending posts`);
-
-            if (result.length === 0) break;
-
-            page++;
-          }
-
-          if (results.length === 0) {
-            this.logger.log('No pending posts found');
-            return;
-          }
-
-          const unexplained =
-            await this.permitSyncService.findUnexplainedPosts();
-
-          const pending: UnexplainedPost[] = [];
-
-          for (const post of unexplained) {
-            if (results.find((p) => p.id === post.id)) {
-              pending.push(post);
-            }
-          }
-
-          this.logger.log(`Found ${pending.length} definitely pending posts`);
-
-          await Promise.all(
-            chunk(pending, 100).map(async (items) => {
-              await this.permitSyncService.remove(
-                items.map((post) => new PermitEntity({ id: post.id })),
-              );
-            }),
+          const orders = await this.manifestService.listOrdersByRange(
+            ItemType.permits,
+            recentlyRange,
           );
 
-          const permitted: UnexplainedPost[] = unexplained.filter(
-            (post) => !pending.find((p) => p.id === post.id),
-          );
+          for (let order of orders) {
+            const results: PermitEntity[] = [];
+            const loopGuard = new LoopGuard();
+            const inPast = order.inPast;
 
-          this.logger.log(`Found ${permitted.length} permitted posts`);
+            while (true) {
+              cancelToken.ensureRunning();
 
-          await Promise.all(
-            chunk(permitted, 100).map(async (items) => {
-              await this.permitSyncService.save(
-                items.map(
-                  (post) =>
-                    new PermitEntity({
-                      userId: post.uploaderId,
-                      postId: post.id,
-                    }),
+              const { idRange, dateRange } = order;
+
+              logOrderFetch(this.logger, ItemType.permits, order);
+
+              const tagsQuery = [
+                'approver:none',
+                '-status:pending',
+                `date:${dateRange.toE621RangeString()}`,
+                !idRange.isEmpty ? `id:${idRange.toE621RangeString()}` : '',
+              ]
+                .filter(Boolean)
+                .join(' ');
+
+              const result = await rateLimit(
+                posts(
+                  loopGuard.iter({
+                    page: 1,
+                    limit: MAX_API_LIMIT,
+                    tags: tagsQuery,
+                  }),
+                  axiosConfig,
                 ),
               );
-            }),
-          );
 
-          const overexplained =
-            await this.permitSyncService.findOverexplainedPosts();
+              const permits = result.map(
+                (post) =>
+                  new PermitEntity({
+                    id: post.id,
+                    uploaderId: post.uploader_id,
+                    createdAt: new Date(post.created_at),
+                    label: new PermitLabelEntity(post.id),
+                  }),
+              );
 
-          this.logger.log(`Found ${overexplained.length} overexplained posts`);
+              results.push(...permits);
 
-          await Promise.all(
-            chunk(overexplained, 100).map(async (items) => {
-              await this.permitSyncService.removeFor(items);
-            }),
-          );
+              const stored = await this.permitSyncService.save(permits);
 
-          this.cacheManager.inv(PermitEntity);
+              logOrderResult(this.logger, ItemType.permits, stored);
+
+              const exhausted = result.length < MAX_API_LIMIT;
+
+              order = await this.manifestService.saveResults({
+                type: ItemType.permits,
+                order,
+                items: stored,
+                bottom: exhausted,
+                top: inPast,
+              });
+
+              if (permits.length) {
+                this.cacheManager.inv(PermitEntity);
+              }
+
+              if (exhausted) {
+                // This sync is porous and always has gaps.
+                // logContiguityGaps(this.logger, ItemType.permits, results);
+                break;
+              }
+            }
+          }
+        },
+      }),
+    );
+  }
+
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async runCleanup() {
+    this.jobService.add(
+      new Job({
+        title: 'Permit Cleanup',
+        key: `/${ItemType.permits}/cleanup`,
+        execute: async () => {
+          const invalidPermits =
+            await this.permitSyncService.findInvalidPermits();
+
+          if (invalidPermits.length > 0) {
+            await this.permitSyncService.remove(invalidPermits);
+            this.logger.log(
+              `Cleaned up ${invalidPermits.length} invalid permits`,
+            );
+            this.cacheManager.inv(PermitEntity);
+          }
         },
       }),
     );

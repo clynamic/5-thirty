@@ -23,6 +23,10 @@ export class PartialIdRange {
   @IsInt()
   endId?: number;
 
+  get isEmpty(): boolean {
+    return this.startId === undefined && this.endId === undefined;
+  }
+
   /**
    * Turns the ID range into a string fit for an e621 search query.
    * Inclusive on both ends.

@@ -117,7 +117,8 @@ export class UploadSyncWorker {
               }
 
               if (exhausted) {
-                // upload-only post versions will never be contiguous, so we can skip that check
+                // This sync is porous and always has gaps.
+                // logContiguityGaps(this.logger, ItemType.postVersions, results);
                 break;
               }
             }

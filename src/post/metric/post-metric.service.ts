@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { max, min, sub } from 'date-fns';
+import { max, min, startOfMonth, sub } from 'date-fns';
 import { Cacheable } from 'src/app/browser.module';
 import {
   DateRange,
@@ -25,6 +25,15 @@ export class PostMetricService {
     private readonly postVersionRepository: Repository<PostVersionEntity>,
   ) {}
 
+  /**
+   * Posts can only be pending for 30 days after upload.
+   * For performance reasons and for issues with sync misalignment (uploads, approvals/deletions, permits),
+   * we choose a period of 2 months. 1 month would likely suffice.
+   */
+  private get pendingCutoffDate() {
+    return sub(startOfMonth(new Date()), { months: 2 });
+  }
+
   @Cacheable({
     prefix: 'post',
     ttl: 5 * 60 * 1000,
@@ -34,6 +43,7 @@ export class PostMetricService {
     partialRange?: PartialDateRange,
   ): Promise<PostStatusSummary> {
     const range = DateRange.fill(partialRange);
+    const cutOff = this.pendingCutoffDate;
 
     const posts = await this.postVersionRepository
       .createQueryBuilder('post_version')
@@ -51,8 +61,9 @@ export class PostMetricService {
         'deletion_event',
         "post_version.post_id = deletion_event.post_id AND deletion_event.action = 'deleted'",
       )
-      .leftJoin(PermitEntity, 'permit', 'post_version.post_id = permit.post_id')
+      .leftJoin(PermitEntity, 'permit', 'post_version.post_id = permit.id')
       .where('post_version.version = 1')
+      .andWhere('post_version.updated_at >= :cutOff', { cutOff })
       .andWhere(
         new Brackets((qb) => {
           qb.where({ updatedAt: range.find() }).orWhere(
@@ -60,7 +71,7 @@ export class PostMetricService {
               subQb
                 .where('approval_event.created_at IS NULL')
                 .andWhere('deletion_event.created_at IS NULL')
-                .andWhere('permit.post_id IS NULL')
+                .andWhere('permit.id IS NULL')
                 .andWhere('post_version.updated_at < :end', {
                   end: range.endDate,
                 });
@@ -96,12 +107,13 @@ export class PostMetricService {
   @Cacheable({
     prefix: 'post',
     ttl: 10 * 60 * 1000,
-    dependencies: [PostVersionEntity, PermitEntity, PostEventEntity],
+    dependencies: [PostVersionEntity, PostEventEntity, PermitEntity],
   })
   async pendingSeries(
     partialRange?: PartialDateRange,
   ): Promise<SeriesCountPoint[]> {
     const range = DateRange.fill(partialRange);
+    const cutOff = this.pendingCutoffDate;
 
     const posts = await this.postVersionRepository
       .createQueryBuilder('post_version')
@@ -119,10 +131,11 @@ export class PostMetricService {
         'deletion_event',
         "post_version.post_id = deletion_event.post_id AND deletion_event.action = 'deleted'",
       )
-      .leftJoin(PermitEntity, 'permit', 'post_version.post_id = permit.post_id')
+      .leftJoin(PermitEntity, 'permit', 'post_version.post_id = permit.id')
       .where('post_version.version = 1')
+      .andWhere('post_version.updated_at >= :cutOff', { cutOff })
       .andWhere({ updatedAt: LessThan(range.endDate) })
-      .andWhere('permit.post_id IS NULL')
+      .andWhere('permit.id IS NULL')
       .andWhere(
         new Brackets((qb) => {
           qb.where('approval_event.created_at IS NULL').orWhere(
