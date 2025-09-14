@@ -64,7 +64,7 @@ export class TicketSyncWorker {
             while (true) {
               cancelToken.ensureRunning();
 
-              const { idRange, dateRange } = order.ranges;
+              const { idRange, dateRange } = order;
 
               logOrderFetch(this.logger, ItemType.tickets, order);
 

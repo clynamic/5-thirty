@@ -63,7 +63,7 @@ export class TagImplicationSyncWorker {
 
             while (true) {
               cancelToken.ensureRunning();
-              const { idRange, dateRange } = order.ranges;
+              const { idRange, dateRange } = order;
               logOrderFetch(this.logger, this.type, order);
 
               const result = await rateLimit(

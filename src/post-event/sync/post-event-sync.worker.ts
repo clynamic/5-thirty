@@ -56,7 +56,7 @@ export class PostEventSyncWorker {
             while (true) {
               cancelToken.ensureRunning();
 
-              const { idRange, dateRange } = order.ranges;
+              const { idRange, dateRange } = order;
 
               logOrderFetch(this.logger, ItemType.postEvents, order);
 
