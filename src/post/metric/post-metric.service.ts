@@ -30,8 +30,8 @@ export class PostMetricService {
    * For performance reasons and for issues with sync misalignment (uploads, approvals/deletions, permits),
    * we choose a period of 2 months. 1 month would likely suffice.
    */
-  private get pendingCutoffDate() {
-    return sub(startOfMonth(new Date()), { months: 2 });
+  private pendingCutoffDate(range: DateRange) {
+    return sub(startOfMonth(range.startDate), { months: 2 });
   }
 
   @Cacheable({
@@ -43,7 +43,7 @@ export class PostMetricService {
     partialRange?: PartialDateRange,
   ): Promise<PostStatusSummary> {
     const range = DateRange.fill(partialRange);
-    const cutOff = this.pendingCutoffDate;
+    const cutOff = this.pendingCutoffDate(range);
 
     const posts = await this.postVersionRepository
       .createQueryBuilder('post_version')
@@ -113,7 +113,7 @@ export class PostMetricService {
     partialRange?: PartialDateRange,
   ): Promise<SeriesCountPoint[]> {
     const range = DateRange.fill(partialRange);
-    const cutOff = this.pendingCutoffDate;
+    const cutOff = this.pendingCutoffDate(range);
 
     const posts = await this.postVersionRepository
       .createQueryBuilder('post_version')
