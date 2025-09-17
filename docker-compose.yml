@@ -12,6 +12,7 @@ services:
       DB_PASSWORD: postgres
       DB_NAME: five_thirty
       DATA_DIR: /data
+      NODE_ENV: production
     volumes:
       - ./data:/data
     depends_on:
