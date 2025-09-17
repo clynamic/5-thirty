@@ -1,7 +1,7 @@
 import { TZDate, tz } from '@date-fns/tz';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CronExpressionParser } from 'cron-parser';
+import { CronTime } from 'cron';
 import { isSameDay, parseISO } from 'date-fns';
 import * as fs from 'fs/promises';
 import { join } from 'path';
@@ -65,15 +65,9 @@ export class GadgetService {
     }
 
     try {
-      const interval = CronExpressionParser.parse(schedule, {
-        currentDate: date,
-        tz: SHIP_TIMEZONE,
-      });
-
-      const next = interval.next().toDate();
-      const prev = interval.prev().toDate();
-
-      const result = isSameDay(date, next) || isSameDay(date, prev);
+      const cron = new CronTime(schedule, SHIP_TIMEZONE);
+      const next = cron.getNextDateFrom(date).toJSDate();
+      const result = isSameDay(date, next);
       this.scheduleCache.set(cacheKey, { result, timestamp: Date.now() });
       return result;
     } catch {
