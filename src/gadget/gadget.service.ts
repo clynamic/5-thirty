@@ -34,7 +34,7 @@ export class GadgetService {
     string,
     { result: boolean; timestamp: number }
   >();
-  private readonly SCHEDULE_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+  private readonly SCHEDULE_CACHE_TTL = 72 * 60 * 60 * 1000;
 
   constructor(
     private readonly config: ConfigService,
