@@ -38,14 +38,12 @@ export class DailyActivity {
   value: number;
 
   @ApiProperty({
-    description: 'The time scale of the counter',
     enum: TimeScale,
     enumName: 'TimeScale',
   })
   timescale: TimeScale;
 
   @ApiProperty({
-    description: 'The activity key for this counter',
     enum: Activity,
     enumName: 'Activity',
   })
