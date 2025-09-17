@@ -10,5 +10,6 @@ import { ApprovalMetricService } from './approval-metric.service';
   imports: [TypeOrmModule.forFeature([PostEventEntity]), UserHeadModule],
   controllers: [ApprovalMetricController],
   providers: [ApprovalMetricService],
+  exports: [ApprovalMetricService],
 })
 export class ApprovalMetricModule {}

@@ -7,6 +7,7 @@ import { DashboardModule } from 'src/dashboard/dashboard.module';
 import { DeletionModule } from 'src/deletion/deletion.module';
 import { FeedbackModule } from 'src/feedback/feedback.module';
 import { FlagModule } from 'src/flag/flag.module';
+import { GadgetModule } from 'src/gadget/gadget.module';
 import { HealthModule } from 'src/health/health.module';
 import { JobModule } from 'src/job/job.module';
 import { LabelModule } from 'src/label/label.module';
@@ -44,6 +45,7 @@ import { DatabaseModule } from './database.module';
     DashboardModule,
     LabelModule,
     ManifestModule,
+    GadgetModule,
     PerformanceModule,
     ApprovalModule,
     TicketModule,

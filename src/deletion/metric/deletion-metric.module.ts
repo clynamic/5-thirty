@@ -9,5 +9,6 @@ import { DeletionMetricService } from './deletion-metric.service';
   imports: [TypeOrmModule.forFeature([PostEventEntity])],
   providers: [DeletionMetricService],
   controllers: [DeletionMetricController],
+  exports: [DeletionMetricService],
 })
 export class DeletionMetricModule {}

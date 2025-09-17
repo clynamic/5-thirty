@@ -16,6 +16,21 @@ export const AuthLevel = (level: UserLevel) => SetMetadata('level', level);
 export class JwtAuthGuard extends AuthGuard('jwt') {}
 
 @Injectable()
+export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
+  override async canActivate(context: ExecutionContext): Promise<boolean> {
+    try {
+      return (await super.canActivate(context)) as boolean;
+    } catch {
+      return true;
+    }
+  }
+
+  override handleRequest(_: any, user: any) {
+    return user;
+  }
+}
+
+@Injectable()
 export class RolesGuard extends JwtAuthGuard {
   constructor(private reflector: Reflector) {
     super();

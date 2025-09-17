@@ -10,5 +10,6 @@ import { PostReplacementMetricService } from './post-replacement-metric.service'
   imports: [TypeOrmModule.forFeature([PostReplacementEntity, PostEventEntity])],
   controllers: [PostReplacementMetricController],
   providers: [PostReplacementMetricService],
+  exports: [PostReplacementMetricService],
 })
 export class PostReplacementMetricModule {}
