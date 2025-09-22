@@ -2,7 +2,7 @@ import { TZDate, tz } from '@date-fns/tz';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CronTime } from 'cron';
-import { isSameDay, parseISO } from 'date-fns';
+import { isSameDay, parseISO, startOfDay, subDays } from 'date-fns';
 import * as fs from 'fs/promises';
 import { join } from 'path';
 import { Cacheable } from 'src/app/browser.module';
@@ -40,8 +40,11 @@ export class MotdService {
 
     try {
       const cron = new CronTime(schedule, SHIP_TIMEZONE);
-      const next = cron.getNextDateFrom(date).toJSDate();
-      const result = isSameDay(date, next);
+      const prevDay = startOfDay(subDays(date, 1));
+      const next = cron.getNextDateFrom(prevDay).toJSDate();
+      const dateUTC = TZDate.tz('UTC', date);
+      const result = isSameDay(dateUTC, next);
+
       this.scheduleCache.set(cacheKey, { result, timestamp: Date.now() });
       return result;
     } catch {
@@ -136,6 +139,7 @@ export class MotdService {
   async getMotd(date: Date = TZDate.tz(SHIP_TIMEZONE)): Promise<Motd> {
     const items = await this.getMotdItems();
     const message = this.selectMotd(items, date);
+    console.log(`MOTD for ${date.toISOString().split('T')[0]}: ${message}`);
     return new Motd({
       message: message ?? defaultMotd,
     });
