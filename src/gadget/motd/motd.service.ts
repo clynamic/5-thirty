@@ -2,7 +2,13 @@ import { TZDate, tz } from '@date-fns/tz';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CronTime } from 'cron';
-import { isSameDay, parseISO, startOfDay, subDays } from 'date-fns';
+import {
+  isSameDay,
+  isSameDay as isSameDayFns,
+  parseISO,
+  startOfDay,
+  subDays,
+} from 'date-fns';
 import * as fs from 'fs/promises';
 import { join } from 'path';
 import { Cacheable } from 'src/app/browser.module';
@@ -40,10 +46,11 @@ export class MotdService {
 
     try {
       const cron = new CronTime(schedule, SHIP_TIMEZONE);
-      const prevDay = startOfDay(subDays(date, 1));
-      const next = cron.getNextDateFrom(prevDay).toJSDate();
-      const dateUTC = TZDate.tz('UTC', date);
-      const result = isSameDay(dateUTC, next);
+      const beforeSched = subDays(startOfDay(date), 1);
+
+      const nextLuxon = cron.getNextDateFrom(beforeSched);
+      const next = new Date(nextLuxon.valueOf());
+      const result = isSameDayFns(next, date);
 
       this.scheduleCache.set(cacheKey, { result, timestamp: Date.now() });
       return result;
