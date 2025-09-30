@@ -146,7 +146,6 @@ export class MotdService {
   async getMotd(date: Date = TZDate.tz(SHIP_TIMEZONE)): Promise<Motd> {
     const items = await this.getMotdItems();
     const message = this.selectMotd(items, date);
-    console.log(`MOTD for ${date.toISOString().split('T')[0]}: ${message}`);
     return new Motd({
       message: message ?? defaultMotd,
     });
