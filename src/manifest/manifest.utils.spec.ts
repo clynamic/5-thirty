@@ -593,6 +593,45 @@ describe('ManifestUtils', () => {
       expect(instruction.discard).toEqual([]);
       expect(instruction.order).toBe(order);
     });
+
+    it('should extend manifest upwards with new items when exhausted', () => {
+      const existingManifest = new ManifestEntity({
+        id: 1,
+        type: ItemType.posts,
+        startDate: new Date('2023-01-01'),
+        endDate: new Date('2023-01-15'),
+        lowerId: 100,
+        upperId: 200,
+      });
+
+      const order = new Order({
+        lower: existingManifest,
+        upper: new Date('2023-01-31'),
+      });
+
+      const newItems = [
+        { id: 250, updatedAt: new Date('2023-01-16') },
+        { id: 275, updatedAt: new Date('2023-01-17') },
+        { id: 300, updatedAt: new Date('2023-01-20') },
+      ];
+
+      const result = ManifestUtils.computeSaveResults({
+        type: ItemType.posts,
+        order,
+        items: newItems,
+        bottom: true,
+        top: false,
+      });
+
+      const extendedManifest = result.order.lower as ManifestEntity;
+
+      expect(extendedManifest.upperId).toBe(300);
+      expect(extendedManifest.lowerId).toBe(100);
+      expect(extendedManifest.id).toBe(1);
+      expect(extendedManifest.endDate.getTime()).toBeGreaterThan(
+        existingManifest.endDate.getTime(),
+      );
+    });
   });
 
   describe('computeAvailability', () => {

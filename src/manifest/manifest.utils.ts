@@ -313,6 +313,7 @@ export class ManifestUtils {
         const extended = new ManifestEntity({ ...order.lower }).extend(
           'end',
           ManifestUtils.getTopDate(order, items, top),
+          findHighestId(items)?.id,
         );
         return {
           discard: [],
