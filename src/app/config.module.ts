@@ -20,9 +20,10 @@ export enum AppConfigKeys {
         E621_GLOBAL_API_KEY: Joi.string().required(),
         CORS_ALLOWED_ORIGINS: Joi.alternatives()
           .try(Joi.string(), Joi.array().items(Joi.string()))
-          .optional(),
+          .optional()
+          .allow(''),
         DATA_DIR: Joi.string().optional().default('./data'),
-        SERVER_ADMINS: Joi.string().optional().default(''),
+        SERVER_ADMINS: Joi.string().optional().default('').allow(''),
       }),
     }),
   ],
