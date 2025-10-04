@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { ItemType } from 'src/label/label.entity';
 import { Order } from 'src/manifest/manifest.entity';
 
-import { WithDate, findDateBounds } from './date-objects';
+import { WithDate, findDateBounds } from './date';
 import { WithId, findContiguityGaps, findIdBounds } from './id-range.dto';
 
 /**

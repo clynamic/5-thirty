@@ -23,8 +23,8 @@ import {
   MoreThanOrEqual,
 } from 'typeorm';
 
+import { PartialBy, Raw } from '../raw';
 import { WithCreationDate } from './date-objects';
-import { PartialBy, Raw } from './raw';
 
 /**
  * A measure of time, used to group or normalize date points.

@@ -6,7 +6,7 @@ import {
   Repository,
 } from 'typeorm';
 
-import { WithDate, resolveWithDate } from './date-objects';
+import { WithDate, resolveWithDate } from './date';
 import { WithId } from './id-range.dto';
 
 export function constructFirstFromId<T extends WithId>(
