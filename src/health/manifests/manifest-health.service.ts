@@ -17,11 +17,11 @@ import { TagImplicationEntity } from 'src/tag-implication/tag-implication.entity
 import { TicketEntity } from 'src/ticket/ticket.entity';
 import { Between, Repository } from 'typeorm';
 
-import { ManifestHealth } from './health.dto';
-import { generateManifestSlices } from './health.utils';
+import { ManifestHealth } from './manifest-health.dto';
+import { generateManifestSlices } from './manifest-health.utils';
 
 @Injectable()
-export class HealthService {
+export class ManifestHealthService {
   constructor(
     @InjectRepository(ManifestEntity)
     private readonly manifestRepository: Repository<ManifestEntity>,
@@ -64,7 +64,7 @@ export class HealthService {
   };
 
   @Cacheable({
-    prefix: 'health',
+    prefix: 'manifest-health',
     ttl: 15 * 60 * 1000,
     dependencies: [
       ManifestEntity,
@@ -81,7 +81,7 @@ export class HealthService {
       PermitEntity,
     ],
   })
-  async manifest(pages?: PaginationParams): Promise<ManifestHealth[]> {
+  async manifests(pages?: PaginationParams): Promise<ManifestHealth[]> {
     const health: ManifestHealth[] = [];
     pages = new PaginationParams({
       limit: 5, // Ignore global default page size, as these items are very expensive to fetch

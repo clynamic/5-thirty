@@ -1,4 +1,4 @@
-import { ManifestSlice } from './health.dto';
+import { ManifestSlice } from './manifest-health.dto';
 
 export interface ManifestSliceProps {
   allIds: { id: number }[];
