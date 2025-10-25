@@ -95,12 +95,11 @@ export class JobService {
   }
 
   list(pages?: PaginationParams): JobInfo[] {
+    const offset = PaginationParams.calculateOffset(pages);
+    const limit = pages?.limit ?? PaginationParams.DEFAULT_PAGE_SIZE;
     return this.jobs
       .map((job) => job.info)
       .sort((a, b) => b.id - a.id)
-      .slice(
-        PaginationParams.calculateOffset(pages),
-        pages?.limit ?? PaginationParams.DEFAULT_PAGE_SIZE,
-      );
+      .slice(offset, offset + limit);
   }
 }
