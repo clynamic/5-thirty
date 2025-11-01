@@ -5,6 +5,7 @@ import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 @Entity(ItemType.postEvents)
 @Index(['action', 'createdAt'])
 @Index(['creatorId', 'action', 'createdAt'])
+@Index(['postId', 'action', 'createdAt'])
 export class PostEventEntity extends LabelLink {
   constructor(partial: Partial<PostEventEntity>) {
     super();

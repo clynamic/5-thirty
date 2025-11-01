@@ -34,6 +34,10 @@ export class PostMetricService {
     return sub(startOfMonth(range.startDate), { months: 2 });
   }
 
+  private inRange(column: string) {
+    return `${column} >= :after AND ${column} < :before`;
+  }
+
   @Cacheable({
     prefix: 'post',
     ttl: 5 * 60 * 1000,
@@ -54,14 +58,21 @@ export class PostMetricService {
       .leftJoin(
         PostEventEntity,
         'approval_event',
-        "post_version.post_id = approval_event.post_id AND approval_event.action = 'approved'",
+        `post_version.post_id = approval_event.post_id AND approval_event.action = 'approved' AND ${this.inRange('approval_event.created_at')}`,
+        { after: cutOff, before: range.endDate },
       )
       .leftJoin(
         PostEventEntity,
         'deletion_event',
-        "post_version.post_id = deletion_event.post_id AND deletion_event.action = 'deleted'",
+        `post_version.post_id = deletion_event.post_id AND deletion_event.action = 'deleted' AND ${this.inRange('deletion_event.created_at')}`,
+        { after: cutOff, before: range.endDate },
       )
-      .leftJoin(PermitEntity, 'permit', 'post_version.post_id = permit.id')
+      .leftJoin(
+        PermitEntity,
+        'permit',
+        `post_version.post_id = permit.id AND ${this.inRange('permit.created_at')}`,
+        { after: cutOff, before: range.endDate },
+      )
       .where('post_version.version = 1')
       .andWhere('post_version.updated_at >= :cutOff', { cutOff })
       .andWhere(
@@ -124,14 +135,21 @@ export class PostMetricService {
       .leftJoin(
         PostEventEntity,
         'approval_event',
-        "post_version.post_id = approval_event.post_id AND approval_event.action = 'approved'",
+        `post_version.post_id = approval_event.post_id AND approval_event.action = 'approved' AND ${this.inRange('approval_event.created_at')}`,
+        { after: cutOff, before: range.endDate },
       )
       .leftJoin(
         PostEventEntity,
         'deletion_event',
-        "post_version.post_id = deletion_event.post_id AND deletion_event.action = 'deleted'",
+        `post_version.post_id = deletion_event.post_id AND deletion_event.action = 'deleted' AND ${this.inRange('deletion_event.created_at')}`,
+        { after: cutOff, before: range.endDate },
       )
-      .leftJoin(PermitEntity, 'permit', 'post_version.post_id = permit.id')
+      .leftJoin(
+        PermitEntity,
+        'permit',
+        `post_version.post_id = permit.id AND ${this.inRange('permit.created_at')}`,
+        { after: cutOff, before: range.endDate },
+      )
       .where('post_version.version = 1')
       .andWhere('post_version.updated_at >= :cutOff', { cutOff })
       .andWhere({ updatedAt: LessThan(range.endDate) })
