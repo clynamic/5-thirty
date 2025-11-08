@@ -6,28 +6,28 @@ import { AuthService } from 'src/auth/auth.service';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
 import { ItemType } from 'src/label/label.entity';
+import { PostEntity } from 'src/post/post.entity';
 import { UserSyncService } from 'src/user/sync/user-sync.service';
 
-import { PostEntity } from '../post.entity';
-import { PostSyncService } from './post-sync.service';
+import { AvatarSyncService } from './avatar-sync.service';
 
 @Injectable()
-export class PostSyncWorker {
+export class AvatarSyncWorker {
   constructor(
     private readonly jobService: JobService,
     private readonly authService: AuthService,
-    private readonly postSyncService: PostSyncService,
+    private readonly avatarSyncService: AvatarSyncService,
     private readonly userSyncService: UserSyncService,
   ) {}
 
-  private readonly logger = new Logger(PostSyncWorker.name);
+  private readonly logger = new Logger(AvatarSyncWorker.name);
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async fetchAvatars() {
     this.jobService.add(
       new Job({
-        title: 'Post Avatars Sync',
-        key: `/${ItemType.posts}/avatars`,
+        title: 'User Avatars Sync',
+        key: `/avatars`,
         timeout: 1000 * 60 * 5,
         execute: async ({ cancelToken }) => {
           const axiosConfig = this.authService.getServerAxiosConfig();
@@ -39,10 +39,10 @@ export class PostSyncWorker {
           this.logger.log(`Found ${avatars.length} avatar ids`);
 
           const notStoredIds =
-            await this.postSyncService.findNotStored(avatars);
+            await this.avatarSyncService.findNotStored(avatars);
 
           postsMany(notStoredIds, axiosConfig, async (result) => {
-            await this.postSyncService.create(
+            await this.avatarSyncService.create(
               result.map((post) => PostEntity.fromPost(post)),
             );
 

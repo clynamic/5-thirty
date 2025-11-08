@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Invalidates } from 'src/app/browser.module';
+import { PostEntity } from 'src/post/post.entity';
 import { In, Repository } from 'typeorm';
 
-import { PostEntity } from '../post.entity';
-
 @Injectable()
-export class PostSyncService {
+export class AvatarSyncService {
   constructor(
     @InjectRepository(PostEntity)
     private readonly postRepository: Repository<PostEntity>,
