@@ -8,36 +8,36 @@
 import type { GetPostEventsSearchAction } from './getPostEventsSearchAction';
 
 export type GetPostEventsParams = {
-  /**
-   * The page number to retrieve
-   */
-  page?: number;
-  /**
-   * The number of post events to retrieve per page
-   */
-  limit?: number;
-  /**
-   * Filter by post ID
-   */
-  'search[post_id]'?: number;
-  /**
-   * Filter by the creator's username
-   */
-  'search[creator_name]'?: string;
-  /**
-   * Filter by the creator's ID
-   */
-  'search[creator_id]'?: number;
-  /**
-   * Filter by the action performed
-   */
-  'search[action]'?: GetPostEventsSearchAction;
-  /**
-   * Filter by the creation date of the event
-   */
-  'search[created_at]'?: string;
-  /**
-   * Filter by event ID
-   */
-  'search[id]'?: string;
+/**
+ * The page number to retrieve
+ */
+page?: number;
+/**
+ * The number of post events to retrieve per page
+ */
+limit?: number;
+/**
+ * Filter by post ID
+ */
+'search[post_id]'?: number;
+/**
+ * Filter by the creator's username
+ */
+'search[creator_name]'?: string;
+/**
+ * Filter by the creator's ID
+ */
+'search[creator_id]'?: number;
+/**
+ * Filter by the action performed
+ */
+'search[action]'?: GetPostEventsSearchAction;
+/**
+ * Filter by the creation date of the event
+ */
+'search[created_at]'?: string;
+/**
+ * Filter by event ID
+ */
+'search[id]'?: string;
 };

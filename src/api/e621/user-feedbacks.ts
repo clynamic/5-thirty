@@ -5,40 +5,41 @@
  * An API for accessing user information and other resources on e621 and e926.
  * OpenAPI spec version: 1.0.0
  */
-import type { GetUserFeedbacksParams, UserFeedback } from './model';
+import type {
+  GetUserFeedbacksParams,
+  UserFeedback
+} from './model'
 import { makeRequest } from '../http/axios';
+
+
 
 type SecondParameter<T extends (...args: any) => any> = Parameters<T>[1];
 
-/**
+
+  /**
  * Returns a list of user feedbacks based on search criteria.
  * @summary Get a list of user feedbacks
  */
 export const userFeedbacks = (
-  params?: GetUserFeedbacksParams,
-  options?: SecondParameter<typeof makeRequest>,
-) => {
-  return makeRequest<UserFeedback[]>(
-    { url: `/user_feedbacks.json`, method: 'GET', params },
-    options,
-  );
-};
-/**
+    params?: GetUserFeedbacksParams,
+ options?: SecondParameter<typeof makeRequest>,) => {
+      return makeRequest<UserFeedback[]>(
+      {url: `/user_feedbacks.json`, method: 'GET',
+        params
+    },
+      options);
+    }
+  /**
  * Returns detailed information about a specific user feedback identified by its ID.
  * @summary Get a user feedback by ID
  */
 export const userFeedback = (
-  id: number,
-  options?: SecondParameter<typeof makeRequest>,
-) => {
-  return makeRequest<UserFeedback>(
-    { url: `/user_feedbacks/${id}.json`, method: 'GET' },
-    options,
-  );
-};
-export type UserFeedbacksResult = NonNullable<
-  Awaited<ReturnType<typeof userFeedbacks>>
->;
-export type UserFeedbackResult = NonNullable<
-  Awaited<ReturnType<typeof userFeedback>>
->;
+    id: number,
+ options?: SecondParameter<typeof makeRequest>,) => {
+      return makeRequest<UserFeedback>(
+      {url: `/user_feedbacks/${id}.json`, method: 'GET'
+    },
+      options);
+    }
+  export type UserFeedbacksResult = NonNullable<Awaited<ReturnType<typeof userFeedbacks>>>
+export type UserFeedbackResult = NonNullable<Awaited<ReturnType<typeof userFeedback>>>

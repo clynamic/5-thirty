@@ -7,11 +7,12 @@
  */
 
 export enum GetTagImplicationsSearchStatus {
-  Approved = 'Approved',
-  Active = 'Active',
-  Pending = 'Pending',
-  Deleted = 'Deleted',
-  Retired = 'Retired',
-  Processing = 'Processing',
-  Queued = 'Queued',
+  Approved= 'Approved',
+  Active= 'Active',
+  Pending= 'Pending',
+  Deleted= 'Deleted',
+  Retired= 'Retired',
+  Processing= 'Processing',
+  Queued= 'Queued',
+
 }

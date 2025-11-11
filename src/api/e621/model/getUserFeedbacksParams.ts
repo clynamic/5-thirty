@@ -9,28 +9,28 @@ import type { GetUserFeedbacksSearchCategory } from './getUserFeedbacksSearchCat
 import type { GetUserFeedbacksSearchDeleted } from './getUserFeedbacksSearchDeleted';
 
 export type GetUserFeedbacksParams = {
-  /**
-   * The page number to retrieve
-   */
-  page?: number;
-  /**
-   * The number of feedbacks to retrieve per page
-   */
-  limit?: number;
-  /**
-   * Filter by feedback category
-   */
-  'search[category]'?: GetUserFeedbacksSearchCategory;
-  /**
-   * Filter by deletion status of the feedback
-   */
-  'search[deleted]'?: GetUserFeedbacksSearchDeleted;
-  /**
-   * Filter by the creation date of the feedback
-   */
-  'search[created_at]'?: string;
-  /**
-   * Filter by the last update date of the feedback
-   */
-  'search[updated_at]'?: string;
+/**
+ * The page number to retrieve
+ */
+page?: number;
+/**
+ * The number of feedbacks to retrieve per page
+ */
+limit?: number;
+/**
+ * Filter by feedback category
+ */
+'search[category]'?: GetUserFeedbacksSearchCategory;
+/**
+ * Filter by deletion status of the feedback
+ */
+'search[deleted]'?: GetUserFeedbacksSearchDeleted;
+/**
+ * Filter by the creation date of the feedback
+ */
+'search[created_at]'?: string;
+/**
+ * Filter by the last update date of the feedback
+ */
+'search[updated_at]'?: string;
 };

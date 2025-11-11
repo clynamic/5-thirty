@@ -5,40 +5,41 @@
  * An API for accessing user information and other resources on e621 and e926.
  * OpenAPI spec version: 1.0.0
  */
-import type { BulkUpdateRequest, GetBulkUpdateRequestsParams } from './model';
+import type {
+  BulkUpdateRequest,
+  GetBulkUpdateRequestsParams
+} from './model'
 import { makeRequest } from '../http/axios';
+
+
 
 type SecondParameter<T extends (...args: any) => any> = Parameters<T>[1];
 
-/**
+
+  /**
  * Returns a list of bulk update requests filtered by various criteria.
  * @summary Get a list of bulk update requests
  */
 export const bulkUpdateRequests = (
-  params?: GetBulkUpdateRequestsParams,
-  options?: SecondParameter<typeof makeRequest>,
-) => {
-  return makeRequest<BulkUpdateRequest[]>(
-    { url: `/bulk_update_requests.json`, method: 'GET', params },
-    options,
-  );
-};
-/**
+    params?: GetBulkUpdateRequestsParams,
+ options?: SecondParameter<typeof makeRequest>,) => {
+      return makeRequest<BulkUpdateRequest[]>(
+      {url: `/bulk_update_requests.json`, method: 'GET',
+        params
+    },
+      options);
+    }
+  /**
  * Returns detailed information about a specific bulk update request identified by its ID.
  * @summary Get a bulk update request by ID
  */
 export const bulkUpdateRequest = (
-  id: number,
-  options?: SecondParameter<typeof makeRequest>,
-) => {
-  return makeRequest<BulkUpdateRequest>(
-    { url: `/bulk_update_requests/${id}.json`, method: 'GET' },
-    options,
-  );
-};
-export type BulkUpdateRequestsResult = NonNullable<
-  Awaited<ReturnType<typeof bulkUpdateRequests>>
->;
-export type BulkUpdateRequestResult = NonNullable<
-  Awaited<ReturnType<typeof bulkUpdateRequest>>
->;
+    id: number,
+ options?: SecondParameter<typeof makeRequest>,) => {
+      return makeRequest<BulkUpdateRequest>(
+      {url: `/bulk_update_requests/${id}.json`, method: 'GET'
+    },
+      options);
+    }
+  export type BulkUpdateRequestsResult = NonNullable<Awaited<ReturnType<typeof bulkUpdateRequests>>>
+export type BulkUpdateRequestResult = NonNullable<Awaited<ReturnType<typeof bulkUpdateRequest>>>

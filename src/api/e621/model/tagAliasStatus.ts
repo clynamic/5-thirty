@@ -10,11 +10,12 @@
  * The current status of the tag alias
  */
 export enum TagAliasStatus {
-  approved = 'approved',
-  active = 'active',
-  pending = 'pending',
-  deleted = 'deleted',
-  retired = 'retired',
-  processing = 'processing',
-  queued = 'queued',
+  approved= 'approved',
+  active= 'active',
+  pending= 'pending',
+  deleted= 'deleted',
+  retired= 'retired',
+  processing= 'processing',
+  queued= 'queued',
+
 }

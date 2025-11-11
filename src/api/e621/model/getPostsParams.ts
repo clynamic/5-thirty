@@ -7,16 +7,16 @@
  */
 
 export type GetPostsParams = {
-  /**
-   * The page number for pagination
-   */
-  page?: number;
-  /**
-   * The number of posts to retrieve per page
-   */
-  limit?: number;
-  /**
-   * Filter posts by tags
-   */
-  tags?: string;
+/**
+ * The page number for pagination
+ */
+page?: number;
+/**
+ * The number of posts to retrieve per page
+ */
+limit?: number;
+/**
+ * Filter posts by tags
+ */
+tags?: string;
 };

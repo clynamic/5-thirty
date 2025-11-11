@@ -5,36 +5,41 @@
  * An API for accessing user information and other resources on e621 and e926.
  * OpenAPI spec version: 1.0.0
  */
-import type { GetPostsParams, Post } from './model';
+import type {
+  GetPostsParams,
+  Post
+} from './model'
 import { makeRequest } from '../http/axios';
+
+
 
 type SecondParameter<T extends (...args: any) => any> = Parameters<T>[1];
 
-/**
+
+  /**
  * Returns a list of posts filtered by tags.
  * @summary Get a list of posts
  */
 export const posts = (
-  params?: GetPostsParams,
-  options?: SecondParameter<typeof makeRequest>,
-) => {
-  return makeRequest<Post[]>(
-    { url: `/posts.json`, method: 'GET', params },
-    options,
-  );
-};
-/**
+    params?: GetPostsParams,
+ options?: SecondParameter<typeof makeRequest>,) => {
+      return makeRequest<Post[]>(
+      {url: `/posts.json`, method: 'GET',
+        params
+    },
+      options);
+    }
+  /**
  * Returns detailed information about a specific post identified by its ID.
  * @summary Get a post by ID
  */
 export const post = (
-  id: number,
-  options?: SecondParameter<typeof makeRequest>,
-) => {
-  return makeRequest<Post>(
-    { url: `/posts/${id}.json`, method: 'GET' },
-    options,
-  );
-};
-export type PostsResult = NonNullable<Awaited<ReturnType<typeof posts>>>;
-export type PostResult = NonNullable<Awaited<ReturnType<typeof post>>>;
+    id: number,
+ options?: SecondParameter<typeof makeRequest>,) => {
+      return makeRequest<Post>(
+      {url: `/posts/${id}.json`, method: 'GET'
+    },
+      options);
+    }
+  export type PostsResult = NonNullable<Awaited<ReturnType<typeof posts>>>
+export type PostResult = NonNullable<Awaited<ReturnType<typeof post>>>

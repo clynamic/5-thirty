@@ -10,7 +10,8 @@
  * The category of the feedback (e.g., negative, positive, neutral)
  */
 export enum UserFeedbackCategory {
-  negative = 'negative',
-  positive = 'positive',
-  neutral = 'neutral',
+  negative= 'negative',
+  positive= 'positive',
+  neutral= 'neutral',
+
 }

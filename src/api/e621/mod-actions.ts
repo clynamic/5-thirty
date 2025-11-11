@@ -5,40 +5,41 @@
  * An API for accessing user information and other resources on e621 and e926.
  * OpenAPI spec version: 1.0.0
  */
-import type { GetModActionsParams, ModAction } from './model';
+import type {
+  GetModActionsParams,
+  ModAction
+} from './model'
 import { makeRequest } from '../http/axios';
+
+
 
 type SecondParameter<T extends (...args: any) => any> = Parameters<T>[1];
 
-/**
+
+  /**
  * Returns a list of moderation actions based on search criteria.
  * @summary Get a list of moderation actions
  */
 export const modActions = (
-  params?: GetModActionsParams,
-  options?: SecondParameter<typeof makeRequest>,
-) => {
-  return makeRequest<ModAction[]>(
-    { url: `/mod_actions.json`, method: 'GET', params },
-    options,
-  );
-};
-/**
+    params?: GetModActionsParams,
+ options?: SecondParameter<typeof makeRequest>,) => {
+      return makeRequest<ModAction[]>(
+      {url: `/mod_actions.json`, method: 'GET',
+        params
+    },
+      options);
+    }
+  /**
  * Returns detailed information about a specific moderation action identified by its ID.
  * @summary Get a moderation action by ID
  */
 export const modAction = (
-  id: number,
-  options?: SecondParameter<typeof makeRequest>,
-) => {
-  return makeRequest<ModAction>(
-    { url: `/mod_actions/${id}.json`, method: 'GET' },
-    options,
-  );
-};
-export type ModActionsResult = NonNullable<
-  Awaited<ReturnType<typeof modActions>>
->;
-export type ModActionResult = NonNullable<
-  Awaited<ReturnType<typeof modAction>>
->;
+    id: number,
+ options?: SecondParameter<typeof makeRequest>,) => {
+      return makeRequest<ModAction>(
+      {url: `/mod_actions/${id}.json`, method: 'GET'
+    },
+      options);
+    }
+  export type ModActionsResult = NonNullable<Awaited<ReturnType<typeof modActions>>>
+export type ModActionResult = NonNullable<Awaited<ReturnType<typeof modAction>>>

@@ -8,36 +8,36 @@
 import type { GetUploadsSearchStatus } from './getUploadsSearchStatus';
 
 export type GetUploadsParams = {
-  /**
-   * The page number to retrieve
-   */
-  page?: number;
-  /**
-   * The number of uploads to retrieve per page
-   */
-  limit?: number;
-  /**
-   * Filter uploads by uploader's username
-   */
-  'search[uploader_name]'?: string;
-  /**
-   * Filter uploads by post tags
-   */
-  'search[post_tags_match]'?: string;
-  /**
-   * Filter uploads by source
-   */
-  'search[source_matches]'?: string;
-  /**
-   * Filter uploads by status
-   */
-  'search[status]'?: GetUploadsSearchStatus;
-  /**
-   * Filter by the creation date of the upload
-   */
-  'search[created_at]'?: string;
-  /**
-   * Filter by the last update date of the upload
-   */
-  'search[updated_at]'?: string;
+/**
+ * The page number to retrieve
+ */
+page?: number;
+/**
+ * The number of uploads to retrieve per page
+ */
+limit?: number;
+/**
+ * Filter uploads by uploader's username
+ */
+'search[uploader_name]'?: string;
+/**
+ * Filter uploads by post tags
+ */
+'search[post_tags_match]'?: string;
+/**
+ * Filter uploads by source
+ */
+'search[source_matches]'?: string;
+/**
+ * Filter uploads by status
+ */
+'search[status]'?: GetUploadsSearchStatus;
+/**
+ * Filter by the creation date of the upload
+ */
+'search[created_at]'?: string;
+/**
+ * Filter by the last update date of the upload
+ */
+'search[updated_at]'?: string;
 };

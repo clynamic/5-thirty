@@ -262,7 +262,19 @@ paths:
           description: Filter by the type of the ticket (e.g., user, comment, post)
           schema:
             type: string
-            enum: [user, comment, forum, blip, wiki, pool, set, post, dmail]
+            enum:
+              [
+                user,
+                comment,
+                forum,
+                blip,
+                wiki,
+                pool,
+                set,
+                post,
+                dmail,
+                replacement,
+              ]
         - name: search[status]
           in: query
           required: false
@@ -2031,7 +2043,19 @@ components:
           description: The post ID associated with the ticket
         qtype:
           type: string
-          enum: [user, comment, forum, blip, wiki, pool, set, post, dmail]
+          enum:
+            [
+              user,
+              comment,
+              forum,
+              blip,
+              wiki,
+              pool,
+              set,
+              post,
+              dmail,
+              replacement,
+            ]
           description: The type of ticket (e.g., comment, user, post)
         status:
           type: string

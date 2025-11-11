@@ -9,4 +9,4 @@
 /**
  * Additional details or parameters related to the moderation action
  */
-export type ModActionValues = { [key: string]: string };
+export type ModActionValues = {[key: string]: string};

@@ -7,8 +7,9 @@
  */
 
 export enum GetPostReplacementsSearchStatus {
-  pending = 'pending',
-  rejected = 'rejected',
-  approved = 'approved',
-  promoted = 'promoted',
+  pending= 'pending',
+  rejected= 'rejected',
+  approved= 'approved',
+  promoted= 'promoted',
+
 }

@@ -7,7 +7,8 @@
  */
 
 export enum GetPostVersionsSearchUploads {
-  only = 'only',
-  included = 'included',
-  excluded = 'excluded',
+  only= 'only',
+  included= 'included',
+  excluded= 'excluded',
+
 }

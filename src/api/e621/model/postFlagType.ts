@@ -10,6 +10,7 @@
  * The type of the flag (e.g., flag or deletion)
  */
 export enum PostFlagType {
-  flag = 'flag',
-  deletion = 'deletion',
+  flag= 'flag',
+  deletion= 'deletion',
+
 }

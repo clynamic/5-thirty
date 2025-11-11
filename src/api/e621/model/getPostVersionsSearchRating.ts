@@ -7,7 +7,8 @@
  */
 
 export enum GetPostVersionsSearchRating {
-  s = 's',
-  q = 'q',
-  e = 'e',
+  s= 's',
+  q= 'q',
+  e= 'e',
+
 }

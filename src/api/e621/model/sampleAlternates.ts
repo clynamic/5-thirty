@@ -9,15 +9,13 @@
 /**
  * Alternate versions of the sample, such as different resolutions
  */
-export type SampleAlternates = {
-  [key: string]: {
-    /** The height of the alternate version in pixels */
-    height?: number;
-    /** The type of the alternate file (e.g., 720p, original) */
-    type?: string;
-    /** The URLs for the alternate version */
-    urls?: string[];
-    /** The width of the alternate version in pixels */
-    width?: number;
-  };
-};
+export type SampleAlternates = {[key: string]: {
+  /** The height of the alternate version in pixels */
+  height?: number;
+  /** The type of the alternate file (e.g., 720p, original) */
+  type?: string;
+  /** The URLs for the alternate version */
+  urls?: string[];
+  /** The width of the alternate version in pixels */
+  width?: number;
+}};

@@ -8,52 +8,52 @@
 import type { GetPostFlagsSearchType } from './getPostFlagsSearchType';
 
 export type GetPostFlagsParams = {
-  /**
-   * The page number to retrieve
-   */
-  page?: number;
-  /**
-   * The number of post flags to retrieve per page
-   */
-  limit?: number;
-  /**
-   * Filter post flags by matching reason text
-   */
-  'search[reason_matches]'?: string;
-  /**
-   * Filter post flags by matching post tags
-   */
-  'search[post_tags_match]'?: string;
-  /**
-   * Filter post flags by post ID
-   */
-  'search[post_id]'?: number;
-  /**
-   * Filter post flags by type (e.g., flag or deletion)
-   */
-  'search[type]'?: GetPostFlagsSearchType;
-  /**
-   * Filter post flags by resolution status
-   */
-  'search[is_resolved]'?: boolean;
-  /**
-   * Filter post flags by the creator's username
-   */
-  'search[creator_name]'?: string;
-  /**
-   * Filter post flags by creator ID
-   */
-  'search[creator_id]'?: number;
-  /**
-   * Filter post flags by creation date
-   */
-  'search[created_at]'?: string;
-  /**
-   * Filter post flags by last update date
-   */
-  'search[updated_at]'?: string;
-  /**
-   * Filter post flags by flag ID
-   */
-  'search[id]'?: string;
+/**
+ * The page number to retrieve
+ */
+page?: number;
+/**
+ * The number of post flags to retrieve per page
+ */
+limit?: number;
+/**
+ * Filter post flags by matching reason text
+ */
+'search[reason_matches]'?: string;
+/**
+ * Filter post flags by matching post tags
+ */
+'search[post_tags_match]'?: string;
+/**
+ * Filter post flags by post ID
+ */
+'search[post_id]'?: number;
+/**
+ * Filter post flags by type (e.g., flag or deletion)
+ */
+'search[type]'?: GetPostFlagsSearchType;
+/**
+ * Filter post flags by resolution status
+ */
+'search[is_resolved]'?: boolean;
+/**
+ * Filter post flags by the creator's username
+ */
+'search[creator_name]'?: string;
+/**
+ * Filter post flags by creator ID
+ */
+'search[creator_id]'?: number;
+/**
+ * Filter post flags by creation date
+ */
+'search[created_at]'?: string;
+/**
+ * Filter post flags by last update date
+ */
+'search[updated_at]'?: string;
+/**
+ * Filter post flags by flag ID
+ */
+'search[id]'?: string;
 };

@@ -10,9 +10,10 @@
  * The current status of the replacement
  */
 export enum PostReplacementStatus {
-  original = 'original',
-  pending = 'pending',
-  rejected = 'rejected',
-  approved = 'approved',
-  promoted = 'promoted',
+  original= 'original',
+  pending= 'pending',
+  rejected= 'rejected',
+  approved= 'approved',
+  promoted= 'promoted',
+
 }

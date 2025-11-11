@@ -7,9 +7,10 @@
  */
 
 export enum GetUsersSearchOrder {
-  date = 'date',
-  name = 'name',
-  post_upload_count = 'post_upload_count',
-  note_count = 'note_count',
-  post_update_count = 'post_update_count',
+  date= 'date',
+  name= 'name',
+  post_upload_count= 'post_upload_count',
+  note_count= 'note_count',
+  post_update_count= 'post_update_count',
+
 }

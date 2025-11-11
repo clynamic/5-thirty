@@ -10,13 +10,15 @@
  * The type of ticket (e.g., comment, user, post)
  */
 export enum TicketQtype {
-  user = 'user',
-  comment = 'comment',
-  forum = 'forum',
-  blip = 'blip',
-  wiki = 'wiki',
-  pool = 'pool',
-  set = 'set',
-  post = 'post',
-  dmail = 'dmail',
+  user= 'user',
+  comment= 'comment',
+  forum= 'forum',
+  blip= 'blip',
+  wiki= 'wiki',
+  pool= 'pool',
+  set= 'set',
+  post= 'post',
+  dmail= 'dmail',
+  replacement= 'replacement',
+
 }

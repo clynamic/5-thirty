@@ -10,7 +10,8 @@
  * The current status of the request
  */
 export enum BulkUpdateRequestStatus {
-  pending = 'pending',
-  approved = 'approved',
-  rejected = 'rejected',
+  pending= 'pending',
+  approved= 'approved',
+  rejected= 'rejected',
+
 }

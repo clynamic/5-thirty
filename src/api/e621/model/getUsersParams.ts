@@ -8,52 +8,52 @@
 import type { GetUsersSearchOrder } from './getUsersSearchOrder';
 
 export type GetUsersParams = {
-  /**
-   * The page number to retrieve
-   */
-  page?: number;
-  /**
-   * The number of users to retrieve per page
-   */
-  limit?: number;
-  /**
-   * Filter by user ID
-   */
-  'search[id]'?: string;
-  /**
-   * Filter by username
-   */
-  'search[name]'?: string;
-  /**
-   * Filter by user's "About" section
-   */
-  'search[about]'?: string;
-  /**
-   * Filter by avatar ID
-   */
-  'search[avatar_id]'?: number;
-  /**
-   * Filter by user's access level
-   */
-  'search[level]'?: number;
-  /**
-   * Filter by minimum access level
-   */
-  'search[min_level]'?: number;
-  /**
-   * Filter by maximum access level
-   */
-  'search[max_level]'?: number;
-  /**
-   * Filter by upload permissions
-   */
-  'search[can_upload_free]'?: boolean;
-  /**
-   * Filter by post approval permissions
-   */
-  'search[can_approve_posts]'?: boolean;
-  /**
-   * Order the results by a specific field
-   */
-  'search[order]'?: GetUsersSearchOrder;
+/**
+ * The page number to retrieve
+ */
+page?: number;
+/**
+ * The number of users to retrieve per page
+ */
+limit?: number;
+/**
+ * Filter by user ID
+ */
+'search[id]'?: string;
+/**
+ * Filter by username
+ */
+'search[name]'?: string;
+/**
+ * Filter by user's "About" section
+ */
+'search[about]'?: string;
+/**
+ * Filter by avatar ID
+ */
+'search[avatar_id]'?: number;
+/**
+ * Filter by user's access level
+ */
+'search[level]'?: number;
+/**
+ * Filter by minimum access level
+ */
+'search[min_level]'?: number;
+/**
+ * Filter by maximum access level
+ */
+'search[max_level]'?: number;
+/**
+ * Filter by upload permissions
+ */
+'search[can_upload_free]'?: boolean;
+/**
+ * Filter by post approval permissions
+ */
+'search[can_approve_posts]'?: boolean;
+/**
+ * Order the results by a specific field
+ */
+'search[order]'?: GetUsersSearchOrder;
 };

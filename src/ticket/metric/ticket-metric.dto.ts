@@ -56,6 +56,7 @@ export class TicketTypeSummary {
   set: number;
   post: number;
   dmail: number;
+  replacement: number;
 }
 
 export class TicketCreatedSeriesQuery {

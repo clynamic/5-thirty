@@ -7,9 +7,10 @@
  */
 
 export enum GetUploadsSearchStatus {
-  completed = 'completed',
-  processing = 'processing',
-  pending = 'pending',
-  duplicate = 'duplicate',
-  error = 'error',
+  completed= 'completed',
+  processing= 'processing',
+  pending= 'pending',
+  duplicate= 'duplicate',
+  error= 'error',
+
 }

@@ -10,7 +10,8 @@
  * The current status of the ticket
  */
 export enum TicketStatus {
-  pending = 'pending',
-  approved = 'approved',
-  partial = 'partial',
+  pending= 'pending',
+  approved= 'approved',
+  partial= 'partial',
+
 }

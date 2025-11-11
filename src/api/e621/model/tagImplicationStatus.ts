@@ -10,11 +10,12 @@
  * The current status of the tag implication
  */
 export enum TagImplicationStatus {
-  approved = 'approved',
-  active = 'active',
-  pending = 'pending',
-  deleted = 'deleted',
-  retired = 'retired',
-  processing = 'processing',
-  queued = 'queued',
+  approved= 'approved',
+  active= 'active',
+  pending= 'pending',
+  deleted= 'deleted',
+  retired= 'retired',
+  processing= 'processing',
+  queued= 'queued',
+
 }

@@ -7,13 +7,15 @@
  */
 
 export enum GetTicketsSearchQtype {
-  user = 'user',
-  comment = 'comment',
-  forum = 'forum',
-  blip = 'blip',
-  wiki = 'wiki',
-  pool = 'pool',
-  set = 'set',
-  post = 'post',
-  dmail = 'dmail',
+  user= 'user',
+  comment= 'comment',
+  forum= 'forum',
+  blip= 'blip',
+  wiki= 'wiki',
+  pool= 'pool',
+  set= 'set',
+  post= 'post',
+  dmail= 'dmail',
+  replacement= 'replacement',
+
 }

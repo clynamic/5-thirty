@@ -10,7 +10,8 @@
  * The rating of the upload (e.g., safe, questionable, explicit)
  */
 export enum UploadRating {
-  s = 's',
-  q = 'q',
-  e = 'e',
+  s= 's',
+  q= 'q',
+  e= 'e',
+
 }

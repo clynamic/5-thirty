@@ -5,24 +5,28 @@
  * An API for accessing user information and other resources on e621 and e926.
  * OpenAPI spec version: 1.0.0
  */
-import type { GetPostEventsParams, PostEvent } from './model';
+import type {
+  GetPostEventsParams,
+  PostEvent
+} from './model'
 import { makeRequest } from '../http/axios';
+
+
 
 type SecondParameter<T extends (...args: any) => any> = Parameters<T>[1];
 
-/**
+
+  /**
  * Returns a list of post events filtered by various criteria.
  * @summary Get a list of post events
  */
 export const postEvents = (
-  params?: GetPostEventsParams,
-  options?: SecondParameter<typeof makeRequest>,
-) => {
-  return makeRequest<PostEvent[]>(
-    { url: `/post_events.json`, method: 'GET', params },
-    options,
-  );
-};
-export type PostEventsResult = NonNullable<
-  Awaited<ReturnType<typeof postEvents>>
->;
+    params?: GetPostEventsParams,
+ options?: SecondParameter<typeof makeRequest>,) => {
+      return makeRequest<PostEvent[]>(
+      {url: `/post_events.json`, method: 'GET',
+        params
+    },
+      options);
+    }
+  export type PostEventsResult = NonNullable<Awaited<ReturnType<typeof postEvents>>>

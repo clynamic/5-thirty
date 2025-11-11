@@ -7,7 +7,8 @@
  */
 
 export enum GetBulkUpdateRequestsSearchStatus {
-  pending = 'pending',
-  approved = 'approved',
-  rejected = 'rejected',
+  pending= 'pending',
+  approved= 'approved',
+  rejected= 'rejected',
+
 }

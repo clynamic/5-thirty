@@ -7,7 +7,8 @@
  */
 
 export enum GetUserFeedbacksSearchCategory {
-  negative = 'negative',
-  positive = 'positive',
-  neutral = 'neutral',
+  negative= 'negative',
+  positive= 'positive',
+  neutral= 'neutral',
+
 }

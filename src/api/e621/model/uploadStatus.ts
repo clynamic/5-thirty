@@ -10,9 +10,10 @@
  * The current status of the upload
  */
 export enum UploadStatus {
-  completed = 'completed',
-  processing = 'processing',
-  pending = 'pending',
-  duplicate = 'duplicate',
-  error = 'error',
+  completed= 'completed',
+  processing= 'processing',
+  pending= 'pending',
+  duplicate= 'duplicate',
+  error= 'error',
+
 }

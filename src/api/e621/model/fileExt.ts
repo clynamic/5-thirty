@@ -10,7 +10,8 @@
  * The file extension (e.g., jpg, png, webm)
  */
 export enum FileExt {
-  jpg = 'jpg',
-  png = 'png',
-  webm = 'webm',
+  jpg= 'jpg',
+  png= 'png',
+  webm= 'webm',
+
 }

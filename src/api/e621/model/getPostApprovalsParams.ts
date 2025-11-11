@@ -7,32 +7,32 @@
  */
 
 export type GetPostApprovalsParams = {
-  /**
-   * The page number to retrieve
-   */
-  page?: number;
-  /**
-   * The number of approvals to retrieve per page
-   */
-  limit?: number;
-  /**
-   * Filter approvals by approver username
-   */
-  'search[user_name]'?: number;
-  /**
-   * Filter approvals by matching post tagss
-   */
-  'search[post_tags_match]'?: number;
-  /**
-   * Filter by the creation date of the approval
-   */
-  'search[created_at]'?: string;
-  /**
-   * Filter by the last update date of the approval
-   */
-  'search[updated_at]'?: string;
-  /**
-   * Filter by approval ID
-   */
-  'search[id]'?: string;
+/**
+ * The page number to retrieve
+ */
+page?: number;
+/**
+ * The number of approvals to retrieve per page
+ */
+limit?: number;
+/**
+ * Filter approvals by approver username
+ */
+'search[user_name]'?: number;
+/**
+ * Filter approvals by matching post tagss
+ */
+'search[post_tags_match]'?: number;
+/**
+ * Filter by the creation date of the approval
+ */
+'search[created_at]'?: string;
+/**
+ * Filter by the last update date of the approval
+ */
+'search[updated_at]'?: string;
+/**
+ * Filter by approval ID
+ */
+'search[id]'?: string;
 };

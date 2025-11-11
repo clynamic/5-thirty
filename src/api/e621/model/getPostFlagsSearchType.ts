@@ -7,6 +7,7 @@
  */
 
 export enum GetPostFlagsSearchType {
-  flag = 'flag',
-  deletion = 'deletion',
+  flag= 'flag',
+  deletion= 'deletion',
+
 }

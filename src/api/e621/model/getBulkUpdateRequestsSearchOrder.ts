@@ -7,8 +7,9 @@
  */
 
 export enum GetBulkUpdateRequestsSearchOrder {
-  status_desc = 'status_desc',
-  updated_at_desc = 'updated_at_desc',
-  id_desc = 'id_desc',
-  id_asc = 'id_asc',
+  status_desc= 'status_desc',
+  updated_at_desc= 'updated_at_desc',
+  id_desc= 'id_desc',
+  id_asc= 'id_asc',
+
 }

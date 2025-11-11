@@ -7,9 +7,10 @@
  */
 
 export enum GetTicketsSearchStatus {
-  pending = 'pending',
-  pending_unclaimed = 'pending_unclaimed',
-  pending_claimed = 'pending_claimed',
-  approved = 'approved',
-  partial = 'partial',
+  pending= 'pending',
+  pending_unclaimed= 'pending_unclaimed',
+  pending_claimed= 'pending_claimed',
+  approved= 'approved',
+  partial= 'partial',
+
 }

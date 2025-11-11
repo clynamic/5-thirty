@@ -10,7 +10,8 @@
  * The rating of the post (e.g., safe, questionable, explicit)
  */
 export enum PostVersionRating {
-  s = 's',
-  q = 'q',
-  e = 'e',
+  s= 's',
+  q= 'q',
+  e= 'e',
+
 }
