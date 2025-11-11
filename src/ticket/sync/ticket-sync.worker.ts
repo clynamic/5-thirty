@@ -84,13 +84,16 @@ export class TicketSyncWorker {
               results.push(...result);
 
               const stored = await this.ticketSyncService.save(
-                result.map(
-                  (ticket) =>
-                    new TicketEntity({
-                      ...convertKeysToCamelCase(ticket),
-                      label: new TicketLabelEntity(ticket),
-                    }),
-                ),
+                result
+                  // TODO: Tickets with a destroyed Resource return null IDs (malformed)
+                  .filter((ticket) => ticket.id != null)
+                  .map(
+                    (ticket) =>
+                      new TicketEntity({
+                        ...convertKeysToCamelCase(ticket),
+                        label: new TicketLabelEntity(ticket),
+                      }),
+                  ),
               );
 
               logOrderResult(this.logger, ItemType.tickets, stored);
@@ -176,17 +179,21 @@ export class TicketSyncWorker {
               );
 
               const updated = await this.ticketSyncService.countUpdated(
-                result.map(convertKeysToCamelCase),
+                result
+                  .filter((ticket) => ticket.id != null)
+                  .map(convertKeysToCamelCase),
               );
 
               await this.ticketSyncService.save(
-                result.map(
-                  (ticket) =>
-                    new TicketEntity({
-                      ...convertKeysToCamelCase(ticket),
-                      label: new TicketLabelEntity(ticket),
-                    }),
-                ),
+                result
+                  .filter((ticket) => ticket.id != null)
+                  .map(
+                    (ticket) =>
+                      new TicketEntity({
+                        ...convertKeysToCamelCase(ticket),
+                        label: new TicketLabelEntity(ticket),
+                      }),
+                  ),
               );
 
               this.logger.log(`Found ${updated} updated tickets`);
