@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { GetTagAliasesSearchOrder, TagAlias, tagAliases } from 'src/api';
 import { MAX_API_LIMIT } from 'src/api/http/params';
 import { AuthService } from 'src/auth/auth.service';
@@ -33,7 +32,7 @@ export class TagAliasSyncWorker {
   private readonly logger = new Logger(TagAliasSyncWorker.name);
   private readonly type = ItemType.tagAliases;
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  // @Cron(CronExpression.EVERY_5_MINUTES)
   async runOrders() {
     this.jobService.add(
       new Job({
@@ -107,7 +106,7 @@ export class TagAliasSyncWorker {
     );
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  // @Cron(CronExpression.EVERY_5_MINUTES)
   async runRefresh() {
     this.jobService.add(
       new Job({

@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   GetTagImplicationsSearchOrder,
   TagImplication,
@@ -40,7 +39,7 @@ export class TagImplicationSyncWorker {
   private readonly logger = new Logger(TagImplicationSyncWorker.name);
   private readonly type = ItemType.tagImplications;
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  // @Cron(CronExpression.EVERY_5_MINUTES)
   async runOrders() {
     this.jobService.add(
       new Job({
@@ -114,7 +113,7 @@ export class TagImplicationSyncWorker {
     );
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  // @Cron(CronExpression.EVERY_5_MINUTES)
   async runRefresh() {
     this.jobService.add(
       new Job({

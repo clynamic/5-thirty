@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   BulkUpdateRequest,
   GetBulkUpdateRequestsSearchOrder,
@@ -40,7 +39,7 @@ export class BulkUpdateRequestSyncWorker {
   private readonly logger = new Logger(BulkUpdateRequestSyncWorker.name);
   private readonly type = ItemType.bulkUpdateRequests;
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  // @Cron(CronExpression.EVERY_5_MINUTES)
   async runOrders() {
     this.jobService.add(
       new Job({
@@ -119,7 +118,7 @@ export class BulkUpdateRequestSyncWorker {
     );
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  // @Cron(CronExpression.EVERY_5_MINUTES)
   async runRefresh() {
     this.jobService.add(
       new Job({
