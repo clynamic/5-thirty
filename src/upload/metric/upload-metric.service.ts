@@ -6,32 +6,62 @@ import {
   PaginationParams,
   PartialDateRange,
   SeriesCountPoint,
+  TimeScale,
   convertKeysToCamelCase,
+  expandInto,
   generateSeriesCountPoints,
+  generateSeriesTileCountPoints,
 } from 'src/common';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
+import { UploadTilesEntity } from 'src/upload/tiles/upload-tiles.entity';
 import { Repository } from 'typeorm';
 
-import {
-  PostUploadSeriesQuery,
-  PostUploaderSummary,
-} from './upload-metric.dto';
+import { PostUploaderSummary } from './upload-metric.dto';
 
 @Injectable()
 export class UploadMetricService {
   constructor(
     @InjectRepository(PostVersionEntity)
     private readonly postVersionRepository: Repository<PostVersionEntity>,
+    @InjectRepository(UploadTilesEntity)
+    private readonly uploadTilesRepository: Repository<UploadTilesEntity>,
   ) {}
+
+  @Cacheable({
+    prefix: 'upload',
+    ttl: 10 * 60 * 1000,
+    dependencies: [UploadTilesEntity],
+    disable: true,
+  })
+  async count(range?: PartialDateRange): Promise<SeriesCountPoint[]> {
+    range = DateRange.fill(range);
+
+    const tiles = await this.uploadTilesRepository.find({
+      where: {
+        time: range.find(),
+      },
+      order: {
+        time: 'ASC',
+      },
+    });
+
+    return generateSeriesTileCountPoints(
+      tiles.map((tile) => new DateRange(expandInto(tile.time, TimeScale.Hour))),
+      tiles.map((tile) => tile.count),
+      range,
+    );
+  }
+
+  // TODO: Tile by uploader?
 
   @Cacheable({
     prefix: 'upload',
     ttl: 10 * 60 * 1000,
     dependencies: [PostVersionEntity],
   })
-  async count(
+  async countUploader(
+    uploaderId: number,
     range?: PartialDateRange,
-    query?: PostUploadSeriesQuery,
   ): Promise<SeriesCountPoint[]> {
     range = DateRange.fill(range);
 
@@ -40,7 +70,7 @@ export class UploadMetricService {
       where: {
         version: 1, // only uploads
         updatedAt: range.find(),
-        ...query?.where(),
+        updaterId: uploaderId,
       },
     });
 

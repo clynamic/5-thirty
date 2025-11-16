@@ -1,13 +1,17 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
+import { UploadTilesEntity } from 'src/upload/tiles/upload-tiles.entity';
 import { UserHeadModule } from 'src/user/head/user-head.module';
 
 import { UploadMetricController } from './upload-metric.controller';
 import { UploadMetricService } from './upload-metric.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PostVersionEntity]), UserHeadModule],
+  imports: [
+    TypeOrmModule.forFeature([PostVersionEntity, UploadTilesEntity]),
+    UserHeadModule,
+  ],
   controllers: [UploadMetricController],
   providers: [UploadMetricService],
 })
