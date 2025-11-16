@@ -49,7 +49,11 @@ export class UploadMetricController {
     @Query() range?: PartialDateRange,
     @Query() query?: PostUploadSeriesQuery,
   ): Promise<SeriesCountPoint[]> {
-    return this.uploadMetricService.count(range, query);
+    if (query?.uploaderId) {
+      return this.uploadMetricService.countUploader(query.uploaderId, range);
+    }
+
+    return this.uploadMetricService.count(range);
   }
 
   @Get('uploader/summary')

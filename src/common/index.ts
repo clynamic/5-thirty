@@ -10,4 +10,5 @@ export * from './raw';
 export * from './repository';
 export * from './request-context';
 export * from './seed';
+export * from './tile';
 export * from './timezone';
