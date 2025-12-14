@@ -278,3 +278,17 @@ export const generateSeriesTileCountPoints = (
       }),
   );
 };
+
+export const generateSeriesLastTileCountPoints = (
+  dates: DatePoint[],
+  counts: number[],
+  range: PartialDateRange,
+): SeriesCountPoint[] => {
+  return generateSeriesPoints(counts, dates, range).map(
+    (e) =>
+      new SeriesCountPoint({
+        date: e.date,
+        value: e.value.length > 0 ? e.value[e.value.length - 1]! : 0,
+      }),
+  );
+};
