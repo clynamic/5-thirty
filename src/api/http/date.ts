@@ -45,8 +45,12 @@ export const timezoneInjectorInterceptor = (
   if (config.params) {
     const hasSearchCreatedAt = 'search[created_at]' in config.params;
     const hasSearchUpdatedAt = 'search[updated_at]' in config.params;
+    const hasDateInTags =
+      'tags' in config.params &&
+      typeof config.params.tags === 'string' &&
+      config.params.tags.includes('date:');
 
-    if (hasSearchCreatedAt || hasSearchUpdatedAt) {
+    if (hasSearchCreatedAt || hasSearchUpdatedAt || hasDateInTags) {
       config.params.time_zone = 'UTC';
     }
   }
