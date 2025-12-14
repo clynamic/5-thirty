@@ -6,14 +6,23 @@ import { SeriesCountPoint, SeriesPoint } from '../chart.dto';
 import { scaleToDuration } from './date-fns';
 import { DateRange, PartialDateRange, TimeScale } from './date-range.dto';
 
-const binarySearchClosestBucket = (arr: Date[], date: Date): number => {
+const binarySearchClosestBucket = (
+  arr: Date[],
+  date: Date,
+  strict = false,
+): number => {
   let left = 0;
   let right = arr.length - 1;
   while (left <= right) {
     const mid = Math.floor((left + right) / 2);
-    if (arr[mid]! <= date && (mid === arr.length - 1 || arr[mid + 1]! > date)) {
+    const matches = strict ? arr[mid]! < date : arr[mid]! <= date;
+    const nextCheck = strict ? arr[mid + 1]! >= date : arr[mid + 1]! > date;
+
+    if (matches && (mid === arr.length - 1 || nextCheck)) {
       return mid;
-    } else if (arr[mid]! < date) {
+    }
+
+    if (arr[mid]! < date) {
       left = mid + 1;
     } else {
       right = mid - 1;
@@ -55,7 +64,7 @@ export const assignDateBuckets = <T>(
       'endDate' in entry
     ) {
       const startIndex = binarySearchClosestBucket(buckets, entry.startDate);
-      const endIndex = binarySearchClosestBucket(buckets, entry.endDate);
+      const endIndex = binarySearchClosestBucket(buckets, entry.endDate, true);
 
       if (startIndex === -1 || endIndex === -1) {
         throw new Error(
