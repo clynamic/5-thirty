@@ -6,7 +6,12 @@ import {
   WithId,
 } from 'src/common';
 import { ItemType } from 'src/label/label.entity';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('manifests')
 export class ManifestEntity {
@@ -32,6 +37,9 @@ export class ManifestEntity {
       endDate: this.endDate,
     });
   }
+
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updatedAt: Date;
 
   @Column({ type: 'timestamptz', nullable: true })
   refreshedAt?: Date;
