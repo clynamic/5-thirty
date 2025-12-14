@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Cacheable } from 'src/app/browser.module';
 import { DateRange, PaginationParams, TileService, TileType } from 'src/common';
 import { ManifestEntity } from 'src/manifest/manifest.entity';
+import { PostPendingTilesEntity } from 'src/post/tiles/post-pending-tiles.entity';
+import { PostPendingTilesService } from 'src/post/tiles/post-pending-tiles.service';
 import { UploadTilesEntity } from 'src/upload/tiles/upload-tiles.entity';
 import { UploadTilesService } from 'src/upload/tiles/upload-tiles.service';
 
@@ -10,16 +12,20 @@ import { generateTileSlices } from './tile-health.utils';
 
 @Injectable()
 export class TileHealthService {
-  constructor(private readonly uploadTilesService: UploadTilesService) {}
+  constructor(
+    private readonly uploadTilesService: UploadTilesService,
+    private readonly postPendingTilesService: PostPendingTilesService,
+  ) {}
 
   private tileServices: Partial<Record<TileType, TileService>> = {
     [TileType.uploadHourly]: this.uploadTilesService,
+    [TileType.postPendingHourly]: this.postPendingTilesService,
   };
 
   @Cacheable({
     prefix: 'tile-health',
     ttl: 15 * 60 * 1000,
-    dependencies: [ManifestEntity, UploadTilesEntity],
+    dependencies: [ManifestEntity, UploadTilesEntity, PostPendingTilesEntity],
   })
   async tiles(pages?: PaginationParams): Promise<TileHealth[]> {
     const health: TileHealth[] = [];

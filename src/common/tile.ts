@@ -5,6 +5,7 @@ import { DateRange, TimeScale, startOf } from './date';
 
 export enum TileType {
   uploadHourly = 'upload_hourly',
+  postPendingHourly = 'post_pending_hourly',
 }
 
 export interface TileService {
@@ -107,6 +108,31 @@ export const groupTimesIntoRanges = (times: Date[]): DateRange[] => {
   );
 
   return ranges;
+};
+
+export const chunkDateRange = (
+  range: DateRange,
+  maxHours: number,
+): DateRange[] => {
+  const chunks: DateRange[] = [];
+  let current = range.startDate;
+
+  while (current < range.endDate) {
+    const chunkEnd = add(current, { hours: maxHours });
+    const actualEnd = min([chunkEnd, range.endDate]);
+
+    chunks.push(
+      new DateRange({
+        startDate: current,
+        endDate: actualEnd,
+        scale: TimeScale.Hour,
+      }),
+    );
+
+    current = actualEnd;
+  }
+
+  return chunks;
 };
 
 export interface WithTileTime {
