@@ -7,23 +7,20 @@ import {
   PartialDateRange,
   SeriesCountPoint,
   TimeScale,
-  convertKeysToCamelCase,
   expandInto,
   generateSeriesLastTileCountPoints,
 } from 'src/common';
-import { PermitEntity } from 'src/permit/permit.entity';
-import { PostVersionEntity } from 'src/post-version/post-version.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
-import { PostEventEntity } from '../../post-event/post-event.entity';
+import { PostLifecycleEntity } from '../lifecycle/post-lifecycle.entity';
 import { PostPendingTilesEntity } from '../tiles/post-pending-tiles.entity';
 import { PostStatusSummary } from './post-metric.dto';
 
 @Injectable()
 export class PostMetricService {
   constructor(
-    @InjectRepository(PostVersionEntity)
-    private readonly postVersionRepository: Repository<PostVersionEntity>,
+    @InjectRepository(PostLifecycleEntity)
+    private readonly lifecycleRepository: Repository<PostLifecycleEntity>,
     @InjectRepository(PostPendingTilesEntity)
     private readonly postPendingTilesRepository: Repository<PostPendingTilesEntity>,
   ) {}
@@ -44,7 +41,7 @@ export class PostMetricService {
   @Cacheable({
     prefix: 'post',
     ttl: 5 * 60 * 1000,
-    dependencies: [PostVersionEntity, PostEventEntity, PermitEntity],
+    dependencies: [PostLifecycleEntity, PostPendingTilesEntity],
   })
   async statusSummary(
     partialRange?: PartialDateRange,
@@ -52,69 +49,36 @@ export class PostMetricService {
     const range = DateRange.fill(partialRange);
     const cutOff = this.pendingCutoffDate(range);
 
-    const posts = await this.postVersionRepository
-      .createQueryBuilder('post_version')
-      .select('post_version.post_id', 'post_id')
-      .addSelect('MAX(approval_event.created_at)', 'approval_date')
-      .addSelect('MAX(deletion_event.created_at)', 'deletion_date')
-      .addSelect('MAX(permit.created_at)', 'permit_date')
-      .leftJoin(
-        PostEventEntity,
-        'approval_event',
-        `post_version.post_id = approval_event.post_id AND approval_event.action = 'approved' AND ${this.inRange('approval_event.created_at')}`,
-        { after: cutOff, before: range.endDate },
-      )
-      .leftJoin(
-        PostEventEntity,
-        'deletion_event',
-        `post_version.post_id = deletion_event.post_id AND deletion_event.action = 'deleted' AND ${this.inRange('deletion_event.created_at')}`,
-        { after: cutOff, before: range.endDate },
-      )
-      .leftJoin(
-        PermitEntity,
-        'permit',
-        `post_version.post_id = permit.id AND ${this.inRange('permit.created_at')}`,
-        { after: cutOff, before: range.endDate },
-      )
-      .where('post_version.version = 1')
-      .andWhere('post_version.updated_at >= :cutOff', { cutOff })
-      .andWhere(
-        new Brackets((qb) => {
-          qb.where({ updatedAt: range.find() }).orWhere(
-            new Brackets((subQb) => {
-              subQb
-                .where('approval_event.created_at IS NULL')
-                .andWhere('deletion_event.created_at IS NULL')
-                .andWhere('permit.id IS NULL')
-                .andWhere('post_version.updated_at < :end', {
-                  end: range.endDate,
-                });
-            }),
-          );
-        }),
-      )
-      .groupBy('post_version.post_id')
-      .getRawMany<{
-        post_id: number;
-        approval_date: Date | null;
-        deletion_date: Date | null;
-        permit_date: Date | null;
-      }>()
-      .then((results) => results.map(convertKeysToCamelCase));
-
-    const approved = posts.filter((result) => result.approvalDate).length;
-    const deleted = posts.filter((result) => result.deletionDate).length;
-    const permitted = posts.filter((result) => result.permitDate).length;
-    const pending = posts.filter(
-      (result) =>
-        !result.approvalDate && !result.deletionDate && !result.permitDate,
-    ).length;
+    const result = await this.lifecycleRepository.query(
+      `
+      SELECT
+        COUNT(*) FILTER (WHERE approved_at >= $1 AND approved_at < $2) as approved,
+        COUNT(*) FILTER (WHERE deleted_at >= $1 AND deleted_at < $2) as deleted,
+        COUNT(*) FILTER (WHERE permitted_at >= $1 AND permitted_at < $2) as permitted,
+        COUNT(*) FILTER (WHERE
+          (approved_at IS NULL OR approved_at >= $2)
+          AND (deleted_at IS NULL OR deleted_at >= $2)
+          AND (permitted_at IS NULL OR permitted_at >= $2)
+        ) as pending
+      FROM post_lifecycle
+      WHERE uploaded_at >= $1
+        AND (
+          (uploaded_at >= $3 AND uploaded_at < $2)
+          OR (uploaded_at < $2
+              AND (approved_at IS NULL OR approved_at >= $2)
+              AND (deleted_at IS NULL OR deleted_at >= $2)
+              AND (permitted_at IS NULL OR permitted_at >= $2)
+          )
+        )
+      `,
+      [cutOff, range.endDate, range.startDate],
+    );
 
     return new PostStatusSummary({
-      approved,
-      deleted,
-      permitted,
-      pending,
+      approved: parseInt(result[0]?.approved || '0'),
+      deleted: parseInt(result[0]?.deleted || '0'),
+      permitted: parseInt(result[0]?.permitted || '0'),
+      pending: parseInt(result[0]?.pending || '0'),
     });
   }
 
