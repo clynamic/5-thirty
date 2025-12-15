@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
+import { FunkyCronExpression } from 'src/common';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
 
@@ -15,7 +16,7 @@ export class UploadTilesWorker {
 
   private readonly logger = new Logger(UploadTilesWorker.name);
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(FunkyCronExpression.EVERY_3_MINUTES)
   async runTiling() {
     this.jobService.add(
       new Job({
