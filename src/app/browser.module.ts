@@ -136,15 +136,9 @@ export function Cacheable<TArgs extends any[], TReturn>(
         });
       }
 
-      if (options?.disable) {
+      if (options?.disable || true) {
         return originalMethod.apply(this, args);
       }
-
-      return cacheManager.wrap(
-        cacheKey,
-        () => originalMethod.apply(this, args),
-        options?.ttl,
-      );
     };
 
     return descriptor;
