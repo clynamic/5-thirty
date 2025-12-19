@@ -253,6 +253,22 @@ export class ManifestUtils {
     }
   }
 
+  private static getBottomDate(
+    order: Order,
+    items: OrderResult[],
+    bottom: boolean,
+  ): Date | undefined {
+    if (bottom) {
+      return order.lowerDate;
+    } else {
+      const itemDate = resolveWithDate(findLowestDate(items));
+      if (!itemDate) {
+        return undefined;
+      }
+      return isBefore(itemDate, order.lowerDate) ? order.lowerDate : itemDate;
+    }
+  }
+
   private static handleNoItems(order: Order): ManifestOrderRewrite {
     return {
       discard: [],
@@ -342,6 +358,7 @@ export class ManifestUtils {
     order: Order,
     items: OrderResult[],
     top: boolean,
+    bottom: boolean,
   ): ManifestOrderRewrite {
     // Step 1: Bucket items by month
     const oldestDate = findLowestDate(items)!;
@@ -412,18 +429,21 @@ export class ManifestUtils {
     const oldestBucketDate = bucketDates[bucketDates.length - 1]!;
     const oldestBucketItems = buckets[oldestBucketDate.getTime()]!;
 
-    // Adjust oldest manifest to use actual item start date (not month boundary)
-    const oldestManifestActualStartDate = resolveWithDate(
-      findLowestDate(oldestBucketItems)!,
-    );
-
-    const newUpperBoundary = save.pop()!;
-    newUpperBoundary.startDate = oldestManifestActualStartDate;
+    const newUpper = save.pop()!;
+    newUpper.startDate = ManifestUtils.getBottomDate(
+      order,
+      oldestBucketItems,
+      bottom,
+    )!;
 
     return {
       discard,
-      save, // All intermediate complete months
-      order: new Order({ ...order, upper: newUpperBoundary }), // Oldest becomes new boundary
+      save,
+      order: new Order({
+        ...order,
+        upper: newUpper,
+        ...(bottom ? { lower: newUpper } : {}),
+      }),
     };
   }
 
@@ -433,7 +453,7 @@ export class ManifestUtils {
     items: OrderResult[],
     top: boolean,
   ): ManifestOrderRewrite {
-    return this.splitIntoMonthlyManifests(type, order, items, top);
+    return this.splitIntoMonthlyManifests(type, order, items, top, false);
   }
 
   private static handleCreateNewUpper(
@@ -442,7 +462,7 @@ export class ManifestUtils {
     items: OrderResult[],
     top: boolean,
   ): ManifestOrderRewrite {
-    return this.splitIntoMonthlyManifests(type, order, items, top);
+    return this.splitIntoMonthlyManifests(type, order, items, top, false);
   }
 
   private static handleExhaustedMergeBoundaries(
@@ -467,15 +487,7 @@ export class ManifestUtils {
     order: Order,
     items: OrderResult[],
   ): ManifestOrderRewrite {
-    const extended = new ManifestEntity({
-      ...(order.upper as ManifestEntity),
-    }).extend('start', order.lower as Date, findLowestId(items)?.id);
-
-    return {
-      discard: [],
-      save: [],
-      order: new Order({ ...order, upper: extended }),
-    };
+    return this.splitIntoMonthlyManifests(type, order, items, false, true);
   }
 
   private static handleExhaustedExtendLowerToDateBoundary(

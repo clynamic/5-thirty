@@ -640,6 +640,71 @@ describe('ManifestUtils', () => {
       expect(instruction.order.lower).toBe(order.lower);
     });
 
+    it('should split into monthly manifests when exhausted and extending upper to date boundary', () => {
+      const upperManifest = new ManifestEntity({
+        id: 1,
+        startDate: new Date('2023-03-15'),
+        endDate: new Date('2023-04-01'),
+        type: ItemType.posts,
+        lowerId: 400,
+        upperId: 500,
+      });
+
+      const order = new Order({
+        lower: new Date('2023-01-01'),
+        upper: upperManifest,
+      });
+
+      const itemsAcrossMonths = [
+        { id: 300, updatedAt: new Date('2023-03-05') },
+        { id: 200, updatedAt: new Date('2023-02-10') },
+        { id: 100, updatedAt: new Date('2023-01-15') },
+      ];
+
+      const instruction = ManifestUtils.computeSaveResults({
+        type: ItemType.posts,
+        order,
+        items: itemsAcrossMonths,
+        bottom: true,
+        top: false,
+      });
+
+      // Should not discard anything
+      expect(instruction.discard).toEqual([]);
+
+      // Should save February and merged March
+      expect(instruction.save).toBeDefined();
+      expect(instruction.save!.length).toBe(2);
+
+      // Merged March manifest
+      const marchManifest = instruction.save!.find(
+        (m) => m.startDate.getMonth() === 2,
+      );
+      expect(marchManifest).toBeDefined();
+      expect(marchManifest!.startDate).toEqual(new Date('2023-03-01'));
+      expect(marchManifest!.endDate).toEqual(new Date('2023-04-01'));
+      expect(marchManifest!.lowerId).toBe(300);
+      expect(marchManifest!.upperId).toBe(500);
+
+      // February manifest
+      const febManifest = instruction.save!.find(
+        (m) => m.startDate.getMonth() === 1,
+      );
+      expect(febManifest).toBeDefined();
+      expect(febManifest!.startDate).toEqual(new Date('2023-02-01'));
+      expect(febManifest!.endDate).toEqual(new Date('2023-03-01'));
+      expect(febManifest!.lowerId).toBe(200);
+      expect(febManifest!.upperId).toBe(200);
+
+      // January manifest becomes new lower boundary
+      expect(instruction.order.lower).toBeInstanceOf(ManifestEntity);
+      const newLower = instruction.order.lower as ManifestEntity;
+      expect(newLower.startDate).toEqual(new Date('2023-01-01'));
+      expect(newLower.endDate).toEqual(new Date('2023-02-01'));
+      expect(newLower.lowerId).toBe(100);
+      expect(newLower.upperId).toBe(100);
+    });
+
     it('should merge manifests when exhausted and both boundaries are manifests', () => {
       const lowerManifest = new ManifestEntity({
         id: 1,

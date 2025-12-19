@@ -136,14 +136,14 @@ export class ManifestService {
   async updateOrder(order: Order, update: Partial<Order>): Promise<Order> {
     return new Order({
       ...order,
-      lower:
-        update.lower instanceof ManifestEntity
-          ? await this.save(update.lower)
-          : update.lower,
       upper:
         update.upper instanceof ManifestEntity
           ? await this.save(update.upper)
           : update.upper,
+      lower:
+        update.lower instanceof ManifestEntity
+          ? await this.save(update.lower)
+          : update.lower,
     });
   }
 
