@@ -1,5 +1,6 @@
 import {
   Duration,
+  add,
   endOfDay,
   endOfDecade,
   endOfHour,
@@ -150,3 +151,11 @@ export function convertKeysToDate<
     return acc;
   }, {} as any);
 }
+
+export const expandInto = (date: Date, scale: TimeScale) => {
+  const startDate = startOf(scale, date);
+  return {
+    startDate,
+    endDate: add(startDate, { [scaleToDuration(scale)]: 1 }),
+  };
+};

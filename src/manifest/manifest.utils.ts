@@ -1,11 +1,17 @@
-import { isAfter, isBefore, isEqual } from 'date-fns';
+import { isAfter, isBefore, isEqual, isSameMonth } from 'date-fns';
 import {
   DateRange,
+  TimeScale,
+  assignDateBuckets,
+  createTimeBuckets,
+  endOf,
+  expandInto,
   findHighestDate,
   findHighestId,
   findLowestDate,
   findLowestId,
   resolveWithDate,
+  startOf,
 } from 'src/common';
 import { ItemType } from 'src/label/label.entity';
 
@@ -19,9 +25,15 @@ import {
 } from './manifest.entity';
 
 export interface ManifestRewrite {
-  /** Input manifests that should be removed from storage */
+  /**
+   * Input manifests that should be removed from storage.
+   * May not contain manifests which are in save.
+   */
   discard: ManifestEntity[];
-  /** New manifests that should be saved to storage. */
+  /**
+   * New manifests that should be saved to storage.
+   * May not contain manifests which are in discard.
+   */
   save: ManifestEntity[];
 }
 
@@ -249,23 +261,147 @@ export class ManifestUtils {
     };
   }
 
+  /*
+  // MONTHLY: Split items into monthly manifests, save all but last,
+  // then extend or create upper boundary with the oldest monthly manifest
+
+  const oldestDate = findLowestDate(items)!;
+  const newestDate = findHighestDate(items)!;
+
+  const buckets = this.createMonthlyBucketsWithItems(
+    items,
+    resolveWithDate(oldestDate),
+    resolveWithDate(newestDate),
+  );
+
+  const bucketDates = Object.keys(buckets)
+    .map((k) => new Date(+k))
+    .sort((a, b) => b.getTime() - a.getTime());
+
+  const allManifests: ManifestEntity[] = [];
+
+  for (const bucketDate of bucketDates) {
+    const bucketItems = buckets[bucketDate.getTime()]!;
+
+    if (bucketItems.length > 0) {
+      const { startDate, endDate } = expandInto(
+        bucketDate,
+        TimeScale.Month,
+      );
+      const manifest = new ManifestEntity({
+        type: type,
+        lowerId: findLowestId(bucketItems)!.id,
+        upperId: findHighestId(bucketItems)!.id,
+        startDate,
+        endDate,
+      });
+      allManifests.push(manifest);
+    }
+  }
+
+  let save: ManifestEntity[] = [];
+  let discard: ManifestEntity[] = [];
+
+  if (order.upper instanceof ManifestEntity) {
+    // existing upper boundary, merge newest manifest if same month
+    const newestManifest = allManifests[0]!;
+    const upperManifest = order.upper;
+
+    if (isSameMonth(newestManifest.startDate, upperManifest.startDate)) {
+      newestManifest.endDate = upperManifest.startDate;
+      const mergeResult = this.computeMerge(newestManifest, upperManifest);
+      save = [mergeResult.save[0]!, ...allManifests.slice(1)];
+      discard = mergeResult.discard;
+    } else {
+      save = allManifests;
+    }
+  } else {
+    // no existing upper boundary
+    save = allManifests;
+  }
+
+  const oldestBucketDate = bucketDates[bucketDates.length - 1]!;
+  const oldestBucketItems = buckets[oldestBucketDate.getTime()]!;
+
+  const oldestManifestActualStartDate = resolveWithDate(
+    findLowestDate(oldestBucketItems)!,
+  );
+
+  const newUpperBoundary = save.pop()!;
+  newUpperBoundary.startDate = oldestManifestActualStartDate;
+
+  return {
+    discard,
+    save,
+    order: new Order({ ...order, upper: newUpperBoundary }),
+  };
+   */
+
   private static handleExtendExistingUpper(
     type: ItemType,
     order: Order,
     items: OrderResult[],
   ): ManifestOrderRewrite {
-    const extended = new ManifestEntity({
-      ...(order.upper as ManifestEntity),
-    }).extend(
-      'start',
-      resolveWithDate(findLowestDate(items)!),
-      findLowestId(items)!.id,
+    const oldestDate = findLowestDate(items)!;
+    const newestDate = findHighestDate(items)!;
+
+    const buckets = this.createMonthlyBucketsWithItems(
+      items,
+      resolveWithDate(oldestDate),
+      resolveWithDate(newestDate),
     );
 
+    const bucketDates = Object.keys(buckets)
+      .map((k) => new Date(+k))
+      .sort((a, b) => b.getTime() - a.getTime());
+
+    const allManifests: ManifestEntity[] = [];
+
+    for (const bucketDate of bucketDates) {
+      const bucketItems = buckets[bucketDate.getTime()]!;
+
+      if (bucketItems.length > 0) {
+        const { startDate, endDate } = expandInto(bucketDate, TimeScale.Month);
+        const manifest = new ManifestEntity({
+          type: type,
+          lowerId: findLowestId(bucketItems)!.id,
+          upperId: findHighestId(bucketItems)!.id,
+          startDate,
+          endDate,
+        });
+        allManifests.push(manifest);
+      }
+    }
+
+    let save: ManifestEntity[] = [];
+    let discard: ManifestEntity[] = [];
+
+    const newestManifest = allManifests[0]!;
+    const upperManifest = order.upper as ManifestEntity;
+
+    if (isSameMonth(newestManifest.startDate, upperManifest.startDate)) {
+      newestManifest.endDate = upperManifest.startDate;
+      const mergeResult = this.computeMerge(newestManifest, upperManifest);
+      save = [mergeResult.save[0]!, ...allManifests.slice(1)];
+      discard = mergeResult.discard;
+    } else {
+      save = allManifests;
+    }
+
+    const oldestBucketDate = bucketDates[bucketDates.length - 1]!;
+    const oldestBucketItems = buckets[oldestBucketDate.getTime()]!;
+
+    const oldestManifestActualStartDate = resolveWithDate(
+      findLowestDate(oldestBucketItems)!,
+    );
+
+    const newUpperBoundary = save.pop()!;
+    newUpperBoundary.startDate = oldestManifestActualStartDate;
+
     return {
-      discard: [],
-      save: [],
-      order: new Order({ ...order, upper: extended }),
+      discard,
+      save,
+      order: new Order({ ...order, upper: newUpperBoundary }),
     };
   }
 
@@ -525,5 +661,35 @@ export class ManifestUtils {
       discard,
       save,
     };
+  }
+
+  static createMonthlyBucketsWithItems(
+    items: OrderResult[],
+    startDate: Date,
+    endDate: Date,
+  ): Record<number, OrderResult[]> {
+    if (items.length === 0) {
+      return {};
+    }
+
+    // For monthly buckets, we need to start from the beginning of the first month
+    // and end at the end of the last month to ensure all items are covered
+    const monthStartDate = startOf(TimeScale.Month, startDate);
+    const monthEndDate = endOf(TimeScale.Month, endDate);
+
+    const dateRange = new DateRange({
+      startDate: monthStartDate,
+      endDate: monthEndDate,
+      scale: TimeScale.Month,
+      timezone: 'UTC',
+    });
+
+    const buckets = createTimeBuckets(dateRange);
+
+    const datePoints = items.map((item) => resolveWithDate(item));
+
+    const assignments = assignDateBuckets(datePoints, buckets, items);
+
+    return assignments;
   }
 }
