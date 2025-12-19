@@ -240,6 +240,139 @@ export class ManifestUtils {
     }
   }
 
+  private static handleNoItems(order: Order): ManifestOrderUpdate {
+    return {
+      discard: [],
+      order: order,
+    };
+  }
+
+  private static handleExtendExistingUpper(
+    type: ItemType,
+    order: Order,
+    items: OrderResult[],
+  ): ManifestOrderUpdate {
+    const extended = new ManifestEntity({
+      ...(order.upper as ManifestEntity),
+    }).extend(
+      'start',
+      resolveWithDate(findLowestDate(items)!),
+      findLowestId(items)!.id,
+    );
+
+    return {
+      discard: [],
+      order: new Order({ ...order, upper: extended }),
+    };
+  }
+
+  private static handleCreateNewUpper(
+    type: ItemType,
+    order: Order,
+    items: OrderResult[],
+    top: boolean,
+  ): ManifestOrderUpdate {
+    const result = new ManifestEntity({
+      type: type,
+      lowerId: findLowestId(items)!.id,
+      upperId: findHighestId(items)!.id,
+      startDate: resolveWithDate(findLowestDate(items)!),
+      endDate: ManifestUtils.getTopDate(order, items, top)!,
+    });
+
+    return {
+      discard: [],
+      order: new Order({ ...order, upper: result }),
+    };
+  }
+
+  private static handleExhaustedMergeBoundaries(
+    order: Order,
+  ): ManifestOrderUpdate {
+    const mergeResult = this.computeMerge(
+      order.lower as ManifestEntity,
+      order.upper as ManifestEntity,
+    );
+    return {
+      discard: mergeResult.discard,
+      order: new Order({
+        lower: mergeResult.results[0]!,
+        upper: mergeResult.results[0]!,
+      }),
+    };
+  }
+
+  private static handleExhaustedExtendUpperToDateBoundary(
+    type: ItemType,
+    order: Order,
+    items: OrderResult[],
+  ): ManifestOrderUpdate {
+    const extended = new ManifestEntity({
+      ...(order.upper as ManifestEntity),
+    }).extend('start', order.lower as Date, findLowestId(items)?.id);
+
+    return {
+      discard: [],
+      order: new Order({ ...order, upper: extended }),
+    };
+  }
+
+  private static handleExhaustedExtendLowerToDateBoundary(
+    type: ItemType,
+    order: Order,
+    items: OrderResult[],
+    top: boolean,
+  ): ManifestOrderUpdate {
+    const extended = new ManifestEntity({
+      ...(order.lower as ManifestEntity),
+    }).extend(
+      'end',
+      ManifestUtils.getTopDate(order, items, top),
+      findHighestId(items)?.id,
+    );
+
+    return {
+      discard: [],
+      order: new Order({ ...order, lower: extended }),
+    };
+  }
+
+  private static handleExhaustedCreateBoundary(
+    type: ItemType,
+    order: Order,
+    items: OrderResult[],
+    top: boolean,
+  ): ManifestOrderUpdate {
+    const result = new ManifestEntity({
+      type: type,
+      lowerId: findLowestId(items)?.id,
+      upperId: findHighestId(items)?.id,
+      startDate: order.lower as Date,
+      endDate: ManifestUtils.getTopDate(order, items, top),
+    });
+
+    return {
+      discard: [],
+      order: new Order({ ...order, upper: result }),
+    };
+  }
+
+  private static handleExhaustedCreateEmptyBoundary(
+    type: ItemType,
+    order: Order,
+  ): ManifestOrderUpdate {
+    const result = new ManifestEntity({
+      type: type,
+      startDate: order.lower as Date,
+      endDate: order.upperDate,
+    });
+
+    return {
+      discard: [],
+      order: new Order({ ...order, upper: result }),
+    };
+  }
+
   /**
    * Compute manifest and order updates based on fetched items.
    * The logic assumes that items are fetched in descending order (newest to oldest).
@@ -252,98 +385,37 @@ export class ManifestUtils {
 
     if (!bottom) {
       if (items.length === 0) {
-        // continue without changes
-        return {
-          discard: [],
-          order: order,
-        };
+        return this.handleNoItems(order);
       }
 
       if (order.upper instanceof ManifestEntity) {
-        // existing upper boundary, extend downwards
-        const extended = new ManifestEntity({ ...order.upper }).extend(
-          'start',
-          resolveWithDate(findLowestDate(items)!),
-          findLowestId(items)!.id,
-        );
-        return {
-          discard: [],
-          order: new Order({ ...order, upper: extended }),
-        };
+        return this.handleExtendExistingUpper(type, order, items);
       } else {
-        // no upper boundary, create new upper boundary
-        const result = new ManifestEntity({
-          type: type,
-          lowerId: findLowestId(items)!.id,
-          upperId: findHighestId(items)!.id,
-          startDate: resolveWithDate(findLowestDate(items)!),
-          endDate: ManifestUtils.getTopDate(order, items, top)!,
-        });
-        return {
-          discard: [],
-          order: new Order({ ...order, upper: result }),
-        };
+        return this.handleCreateNewUpper(type, order, items, top);
       }
     } else {
       if (order.upper instanceof ManifestEntity) {
         if (order.lower instanceof ManifestEntity) {
-          // gap is exhausted, close by merging
-          const mergeResult = this.computeMerge(order.lower, order.upper);
-          return {
-            discard: mergeResult.discard,
-            order: new Order({
-              lower: mergeResult.results[0]!,
-              upper: mergeResult.results[0]!,
-            }),
-          };
+          return this.handleExhaustedMergeBoundaries(order);
         } else {
-          // lower is date, extend upper downwards to include it
-          const extended = new ManifestEntity({ ...order.upper }).extend(
-            'start',
-            order.lower,
-            findLowestId(items)?.id,
+          return this.handleExhaustedExtendUpperToDateBoundary(
+            type,
+            order,
+            items,
           );
-          return {
-            discard: [],
-            order: new Order({ ...order, upper: extended }),
-          };
         }
       } else if (order.lower instanceof ManifestEntity) {
-        // upper is date, extend lower upwards
-        const extended = new ManifestEntity({ ...order.lower }).extend(
-          'end',
-          ManifestUtils.getTopDate(order, items, top),
-          findHighestId(items)?.id,
+        return this.handleExhaustedExtendLowerToDateBoundary(
+          type,
+          order,
+          items,
+          top,
         );
-        return {
-          discard: [],
-          order: new Order({ ...order, lower: extended }),
-        };
       } else {
-        // both are dates, create new boundary
         if (items.length > 0) {
-          const result = new ManifestEntity({
-            type: type,
-            lowerId: findLowestId(items)?.id,
-            upperId: findHighestId(items)?.id,
-            startDate: order.lower,
-            endDate: ManifestUtils.getTopDate(order, items, top),
-          });
-          return {
-            discard: [],
-            order: new Order({ ...order, upper: result }),
-          };
+          return this.handleExhaustedCreateBoundary(type, order, items, top);
         } else {
-          // create empty manifest to close the gap
-          const result = new ManifestEntity({
-            type: type,
-            startDate: order.lower,
-            endDate: order.upperDate,
-          });
-          return {
-            discard: [],
-            order: new Order({ ...order, upper: result }),
-          };
+          return this.handleExhaustedCreateEmptyBoundary(type, order);
         }
       }
     }
