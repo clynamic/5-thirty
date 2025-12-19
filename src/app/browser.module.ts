@@ -136,7 +136,7 @@ export function Cacheable<TArgs extends any[], TReturn>(
         });
       }
 
-      if (options?.disable || true) {
+      if (options?.disable || true /* TODO: Remove this after testing */) {
         return originalMethod.apply(this, args);
       }
     };
