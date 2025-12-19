@@ -561,6 +561,62 @@ describe('ManifestUtils', () => {
       expect(newUpper.upperId).toBe(100);
     });
 
+    it('should split into monthly manifests when creating new upper across month boundaries', () => {
+      const order = new Order({
+        lower: new Date('2023-01-01'),
+        upper: new Date('2023-04-01'),
+      });
+
+      const itemsAcrossMonths = [
+        { id: 300, updatedAt: new Date('2023-03-20') },
+        { id: 200, updatedAt: new Date('2023-02-10') },
+        { id: 100, updatedAt: new Date('2023-01-15') },
+      ];
+
+      const instruction = ManifestUtils.computeSaveResults({
+        type: ItemType.posts,
+        order,
+        items: itemsAcrossMonths,
+        bottom: false,
+        top: false,
+      });
+
+      // Should not discard anything (no existing manifest)
+      expect(instruction.discard).toEqual([]);
+
+      // Should save March and February (complete months)
+      expect(instruction.save).toBeDefined();
+      expect(instruction.save!.length).toBe(2);
+
+      // March manifest (newest, uses actual item date since top=false)
+      const marchManifest = instruction.save!.find(
+        (m) => m.startDate.getMonth() === 2,
+      );
+      expect(marchManifest).toBeDefined();
+      expect(marchManifest!.startDate).toEqual(new Date('2023-03-01'));
+      expect(marchManifest!.endDate).toEqual(new Date('2023-03-20'));
+      expect(marchManifest!.lowerId).toBe(300);
+      expect(marchManifest!.upperId).toBe(300);
+
+      // February manifest (complete month)
+      const febManifest = instruction.save!.find(
+        (m) => m.startDate.getMonth() === 1,
+      );
+      expect(febManifest).toBeDefined();
+      expect(febManifest!.startDate).toEqual(new Date('2023-02-01'));
+      expect(febManifest!.endDate).toEqual(new Date('2023-03-01'));
+      expect(febManifest!.lowerId).toBe(200);
+      expect(febManifest!.upperId).toBe(200);
+
+      // January manifest becomes new upper boundary (not exhausted, uses actual item date)
+      expect(instruction.order.upper).toBeInstanceOf(ManifestEntity);
+      const newUpper = instruction.order.upper as ManifestEntity;
+      expect(newUpper.startDate).toEqual(new Date('2023-01-15'));
+      expect(newUpper.endDate).toEqual(new Date('2023-02-01'));
+      expect(newUpper.lowerId).toBe(100);
+      expect(newUpper.upperId).toBe(100);
+    });
+
     it('should create new manifest when upper is Date and not exhausted', () => {
       const order = new Order({
         lower: new Date('2023-01-01'),

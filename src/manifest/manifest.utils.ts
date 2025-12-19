@@ -337,11 +337,13 @@ export class ManifestUtils {
   };
    */
 
-  private static handleExtendExistingUpper(
+  private static splitIntoMonthlyManifests(
     type: ItemType,
     order: Order,
     items: OrderResult[],
+    top: boolean,
   ): ManifestOrderRewrite {
+    // Step 1: Bucket items by month
     const oldestDate = findLowestDate(items)!;
     const newestDate = findHighestDate(items)!;
 
@@ -353,8 +355,9 @@ export class ManifestUtils {
 
     const bucketDates = Object.keys(buckets)
       .map((k) => new Date(+k))
-      .sort((a, b) => b.getTime() - a.getTime());
+      .sort((a, b) => b.getTime() - a.getTime()); // Newest first
 
+    // Step 2: Create manifests with full month boundaries for each bucket
     const allManifests: ManifestEntity[] = [];
 
     for (const bucketDate of bucketDates) {
@@ -373,24 +376,43 @@ export class ManifestUtils {
       }
     }
 
+    // Step 3: Handle existing upper manifest (if any)
     let save: ManifestEntity[] = [];
     let discard: ManifestEntity[] = [];
 
-    const newestManifest = allManifests[0]!;
-    const upperManifest = order.upper as ManifestEntity;
+    if (order.upper instanceof ManifestEntity) {
+      const newestManifest = allManifests[0]!;
+      const upperManifest = order.upper;
 
-    if (isSameMonth(newestManifest.startDate, upperManifest.startDate)) {
-      newestManifest.endDate = upperManifest.startDate;
-      const mergeResult = this.computeMerge(newestManifest, upperManifest);
-      save = [mergeResult.save[0]!, ...allManifests.slice(1)];
-      discard = mergeResult.discard;
+      if (isSameMonth(newestManifest.startDate, upperManifest.startDate)) {
+        // Merge with existing upper in same month
+        newestManifest.endDate = upperManifest.startDate;
+        const mergeResult = this.computeMerge(newestManifest, upperManifest);
+        save = [mergeResult.save[0]!, ...allManifests.slice(1)];
+        discard = mergeResult.discard;
+      } else {
+        // Different months, no merge needed
+        save = allManifests;
+      }
     } else {
+      // No existing upper manifest - adjust newest manifest's end date
+      // Uses getTopDate to determine proper boundary (actual item date or order boundary)
+      const newestManifest = allManifests[0]!;
+      const newestBucketDate = bucketDates[0]!;
+      const newestBucketItems = buckets[newestBucketDate.getTime()]!;
+      newestManifest.endDate = ManifestUtils.getTopDate(
+        order,
+        newestBucketItems,
+        top,
+      )!;
       save = allManifests;
     }
 
+    // Step 4: Pop oldest manifest to become new upper boundary
     const oldestBucketDate = bucketDates[bucketDates.length - 1]!;
     const oldestBucketItems = buckets[oldestBucketDate.getTime()]!;
 
+    // Adjust oldest manifest to use actual item start date (not month boundary)
     const oldestManifestActualStartDate = resolveWithDate(
       findLowestDate(oldestBucketItems)!,
     );
@@ -400,9 +422,18 @@ export class ManifestUtils {
 
     return {
       discard,
-      save,
-      order: new Order({ ...order, upper: newUpperBoundary }),
+      save, // All intermediate complete months
+      order: new Order({ ...order, upper: newUpperBoundary }), // Oldest becomes new boundary
     };
+  }
+
+  private static handleExtendExistingUpper(
+    type: ItemType,
+    order: Order,
+    items: OrderResult[],
+    top: boolean,
+  ): ManifestOrderRewrite {
+    return this.splitIntoMonthlyManifests(type, order, items, top);
   }
 
   private static handleCreateNewUpper(
@@ -411,19 +442,7 @@ export class ManifestUtils {
     items: OrderResult[],
     top: boolean,
   ): ManifestOrderRewrite {
-    const result = new ManifestEntity({
-      type: type,
-      lowerId: findLowestId(items)!.id,
-      upperId: findHighestId(items)!.id,
-      startDate: resolveWithDate(findLowestDate(items)!),
-      endDate: ManifestUtils.getTopDate(order, items, top)!,
-    });
-
-    return {
-      discard: [],
-      save: [],
-      order: new Order({ ...order, upper: result }),
-    };
+    return this.splitIntoMonthlyManifests(type, order, items, top);
   }
 
   private static handleExhaustedMergeBoundaries(
@@ -534,7 +553,7 @@ export class ManifestUtils {
       }
 
       if (order.upper instanceof ManifestEntity) {
-        return this.handleExtendExistingUpper(type, order, items);
+        return this.handleExtendExistingUpper(type, order, items, top);
       } else {
         return this.handleCreateNewUpper(type, order, items, top);
       }
