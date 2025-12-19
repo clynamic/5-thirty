@@ -155,6 +155,6 @@ export class ManifestService {
 
   async rewrite(instruction: ManifestRewrite): Promise<ManifestEntity[]> {
     await this.remove(instruction.discard);
-    return this.save(instruction.results);
+    return this.save(instruction.save);
   }
 }

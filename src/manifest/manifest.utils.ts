@@ -21,16 +21,17 @@ import {
 export interface ManifestRewrite {
   /** Input manifests that should be removed from storage */
   discard: ManifestEntity[];
-  /** Output manifests that should be saved/updated */
-  results: ManifestEntity[];
+  /** New manifests that should be saved to storage. */
+  save: ManifestEntity[];
 }
 
-export interface ManifestOrderUpdate {
-  /** Input manifests that should be removed from storage */
-  discard: ManifestEntity[];
-  /** Updated order with new boundaries */
+export type ManifestOrderRewrite = ManifestRewrite & {
+  /**
+   * Updated order with new boundaries.
+   * May not contain manifests which are inside discard or save.
+   */
   order: Order;
-}
+};
 
 export class ManifestUtils {
   /**
@@ -200,7 +201,7 @@ export class ManifestUtils {
       result.extendWith(upper, 'end');
       return {
         discard: [],
-        results: [result],
+        save: [result],
       };
     } else if (!upper.id || (lower.id && lower.id < upper.id)) {
       // Keep lower: either upper has no ID, or lower has a smaller ID
@@ -208,7 +209,7 @@ export class ManifestUtils {
       result.extendWith(upper, 'end');
       return {
         discard: upper.id ? [upper] : [],
-        results: [result],
+        save: [result],
       };
     } else {
       // Keep upper: upper has a smaller ID than lower (or lower has no ID)
@@ -216,7 +217,7 @@ export class ManifestUtils {
       result.extendWith(lower, 'start');
       return {
         discard: lower.id ? [lower] : [], // Don't discard if lower has no ID
-        results: [result],
+        save: [result],
       };
     }
   }
@@ -240,10 +241,11 @@ export class ManifestUtils {
     }
   }
 
-  private static handleNoItems(order: Order): ManifestOrderUpdate {
+  private static handleNoItems(order: Order): ManifestOrderRewrite {
     return {
       discard: [],
-      order: order,
+      save: [],
+      order,
     };
   }
 
@@ -251,7 +253,7 @@ export class ManifestUtils {
     type: ItemType,
     order: Order,
     items: OrderResult[],
-  ): ManifestOrderUpdate {
+  ): ManifestOrderRewrite {
     const extended = new ManifestEntity({
       ...(order.upper as ManifestEntity),
     }).extend(
@@ -262,6 +264,7 @@ export class ManifestUtils {
 
     return {
       discard: [],
+      save: [],
       order: new Order({ ...order, upper: extended }),
     };
   }
@@ -271,7 +274,7 @@ export class ManifestUtils {
     order: Order,
     items: OrderResult[],
     top: boolean,
-  ): ManifestOrderUpdate {
+  ): ManifestOrderRewrite {
     const result = new ManifestEntity({
       type: type,
       lowerId: findLowestId(items)!.id,
@@ -282,22 +285,24 @@ export class ManifestUtils {
 
     return {
       discard: [],
+      save: [],
       order: new Order({ ...order, upper: result }),
     };
   }
 
   private static handleExhaustedMergeBoundaries(
     order: Order,
-  ): ManifestOrderUpdate {
+  ): ManifestOrderRewrite {
     const mergeResult = this.computeMerge(
       order.lower as ManifestEntity,
       order.upper as ManifestEntity,
     );
     return {
       discard: mergeResult.discard,
+      save: [],
       order: new Order({
-        lower: mergeResult.results[0]!,
-        upper: mergeResult.results[0]!,
+        lower: mergeResult.save![0]!,
+        upper: mergeResult.save![0]!,
       }),
     };
   }
@@ -306,13 +311,14 @@ export class ManifestUtils {
     type: ItemType,
     order: Order,
     items: OrderResult[],
-  ): ManifestOrderUpdate {
+  ): ManifestOrderRewrite {
     const extended = new ManifestEntity({
       ...(order.upper as ManifestEntity),
     }).extend('start', order.lower as Date, findLowestId(items)?.id);
 
     return {
       discard: [],
+      save: [],
       order: new Order({ ...order, upper: extended }),
     };
   }
@@ -322,7 +328,7 @@ export class ManifestUtils {
     order: Order,
     items: OrderResult[],
     top: boolean,
-  ): ManifestOrderUpdate {
+  ): ManifestOrderRewrite {
     const extended = new ManifestEntity({
       ...(order.lower as ManifestEntity),
     }).extend(
@@ -333,6 +339,7 @@ export class ManifestUtils {
 
     return {
       discard: [],
+      save: [],
       order: new Order({ ...order, lower: extended }),
     };
   }
@@ -342,7 +349,7 @@ export class ManifestUtils {
     order: Order,
     items: OrderResult[],
     top: boolean,
-  ): ManifestOrderUpdate {
+  ): ManifestOrderRewrite {
     const result = new ManifestEntity({
       type: type,
       lowerId: findLowestId(items)?.id,
@@ -353,6 +360,7 @@ export class ManifestUtils {
 
     return {
       discard: [],
+      save: [],
       order: new Order({ ...order, upper: result }),
     };
   }
@@ -360,7 +368,7 @@ export class ManifestUtils {
   private static handleExhaustedCreateEmptyBoundary(
     type: ItemType,
     order: Order,
-  ): ManifestOrderUpdate {
+  ): ManifestOrderRewrite {
     const result = new ManifestEntity({
       type: type,
       startDate: order.lower as Date,
@@ -369,6 +377,7 @@ export class ManifestUtils {
 
     return {
       discard: [],
+      save: [],
       order: new Order({ ...order, upper: result }),
     };
   }
@@ -380,8 +389,8 @@ export class ManifestUtils {
    * or extending an existing upper boundary downwards.
    * If this is not the case, you are doing something wrong, and this code needs to be modified.
    */
-  static computeSaveResults(results: OrderResults): ManifestOrderUpdate {
-    const { type, order, items, bottom, top } = results;
+  static computeSaveResults(save: OrderResults): ManifestOrderRewrite {
+    const { type, order, items, bottom, top } = save;
 
     if (!bottom) {
       if (items.length === 0) {
@@ -483,7 +492,7 @@ export class ManifestUtils {
    */
   static computeMergeInRange(manifests: ManifestEntity[]): ManifestRewrite {
     if (manifests.length === 0) {
-      return { discard: [], results: [] };
+      return { discard: [], save: [] };
     }
 
     const sorted = [...manifests].sort(
@@ -491,7 +500,7 @@ export class ManifestUtils {
     );
 
     const discard: ManifestEntity[] = [];
-    const results: ManifestEntity[] = [];
+    const save: ManifestEntity[] = [];
 
     let current = sorted[0]!;
 
@@ -500,21 +509,21 @@ export class ManifestUtils {
 
       if (this.shouldMergeManifests(current, next)) {
         const mergeInstruction = this.computeMerge(current, next);
-        discard.push(...mergeInstruction.discard);
-        current = mergeInstruction.results[0]!;
+        discard.push(...(mergeInstruction.discard ?? []));
+        current = mergeInstruction.save![0]!;
       } else {
         // No merge possible, finalize current and move to next
-        results.push(current);
+        save.push(current);
         current = next;
       }
     }
 
     // Add the final current manifest
-    results.push(current);
+    save.push(current);
 
     return {
       discard,
-      results,
+      save,
     };
   }
 }

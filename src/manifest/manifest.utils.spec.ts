@@ -362,9 +362,9 @@ describe('ManifestUtils', () => {
 
       const instruction = ManifestUtils.computeMerge(lower, upper);
 
-      expect(instruction.results).toHaveLength(1);
-      expect(instruction.results[0]!.id).toBe(1);
-      expect(instruction.results[0]!.endDate).toEqual(new Date('2023-01-05'));
+      expect(instruction.save).toHaveLength(1);
+      expect(instruction.save[0]!.id).toBe(1);
+      expect(instruction.save[0]!.endDate).toEqual(new Date('2023-01-05'));
       expect(instruction.discard).toEqual([upper]);
     });
 
@@ -385,9 +385,9 @@ describe('ManifestUtils', () => {
 
       const instruction = ManifestUtils.computeMerge(lower, upper);
 
-      expect(instruction.results).toHaveLength(1);
-      expect(instruction.results[0]!.id).toBe(1);
-      expect(instruction.results[0]!.startDate).toEqual(new Date('2023-01-01'));
+      expect(instruction.save).toHaveLength(1);
+      expect(instruction.save[0]!.id).toBe(1);
+      expect(instruction.save[0]!.startDate).toEqual(new Date('2023-01-01'));
       expect(instruction.discard).toEqual([lower]);
     });
 
@@ -408,10 +408,10 @@ describe('ManifestUtils', () => {
 
       const instruction = ManifestUtils.computeMerge(lower, upper);
 
-      expect(instruction.results).toHaveLength(1);
-      expect(instruction.results[0]!.id).toBe(5);
-      expect(instruction.results[0]!.startDate).toEqual(new Date('2023-01-01'));
-      expect(instruction.results[0]!.endDate).toEqual(new Date('2023-01-05'));
+      expect(instruction.save).toHaveLength(1);
+      expect(instruction.save[0]!.id).toBe(5);
+      expect(instruction.save[0]!.startDate).toEqual(new Date('2023-01-01'));
+      expect(instruction.save[0]!.endDate).toEqual(new Date('2023-01-05'));
       expect(instruction.discard).toEqual([]);
     });
 
@@ -431,8 +431,8 @@ describe('ManifestUtils', () => {
 
       const instruction = ManifestUtils.computeMerge(withId, withoutId);
 
-      expect(instruction.results).toHaveLength(1);
-      expect(instruction.results[0]!.id).toBe(1);
+      expect(instruction.save).toHaveLength(1);
+      expect(instruction.save[0]!.id).toBe(1);
       expect(instruction.discard).toEqual([]);
     });
 
@@ -452,10 +452,10 @@ describe('ManifestUtils', () => {
 
       const instruction = ManifestUtils.computeMerge(withoutId, withId);
 
-      expect(instruction.results).toHaveLength(1);
-      expect(instruction.results[0]!.id).toBe(1); // Keeps the ID from withId
-      expect(instruction.results[0]!.startDate).toEqual(new Date('2023-01-01')); // Extended to cover withoutId
-      expect(instruction.results[0]!.endDate).toEqual(new Date('2023-01-05'));
+      expect(instruction.save).toHaveLength(1);
+      expect(instruction.save[0]!.id).toBe(1); // Keeps the ID from withId
+      expect(instruction.save[0]!.startDate).toEqual(new Date('2023-01-01')); // Extended to cover withoutId
+      expect(instruction.save[0]!.endDate).toEqual(new Date('2023-01-05'));
       expect(instruction.discard).toEqual([]); // Don't discard the manifest without ID
     });
   });
@@ -740,7 +740,7 @@ describe('ManifestUtils', () => {
       const instruction = ManifestUtils.computeMergeInRange([]);
 
       expect(instruction.discard).toEqual([]);
-      expect(instruction.results).toEqual([]);
+      expect(instruction.save).toEqual([]);
     });
 
     it('should return single manifest unchanged when no merges needed', () => {
@@ -754,7 +754,7 @@ describe('ManifestUtils', () => {
       const instruction = ManifestUtils.computeMergeInRange([manifest]);
 
       expect(instruction.discard).toEqual([]);
-      expect(instruction.results).toEqual([manifest]);
+      expect(instruction.save).toEqual([manifest]);
     });
 
     it('should merge two contiguous manifests', () => {
@@ -779,9 +779,9 @@ describe('ManifestUtils', () => {
 
       expect(instruction.discard).toHaveLength(1);
       expect(instruction.discard).toContain(manifest2); // Only higher ID is discarded
-      expect(instruction.results).toHaveLength(1);
-      expect(instruction.results[0]!.startDate).toEqual(new Date('2023-01-01'));
-      expect(instruction.results[0]!.endDate).toEqual(new Date('2023-01-05'));
+      expect(instruction.save).toHaveLength(1);
+      expect(instruction.save[0]!.startDate).toEqual(new Date('2023-01-01'));
+      expect(instruction.save[0]!.endDate).toEqual(new Date('2023-01-05'));
     });
 
     it('should handle multiple separate groups of merges', () => {
@@ -824,11 +824,11 @@ describe('ManifestUtils', () => {
       expect(instruction.discard).toContain(group1b);
       expect(instruction.discard).toContain(group2b);
 
-      expect(instruction.results).toHaveLength(2);
-      expect(instruction.results[0]!.startDate).toEqual(new Date('2023-01-01'));
-      expect(instruction.results[0]!.endDate).toEqual(new Date('2023-01-05'));
-      expect(instruction.results[1]!.startDate).toEqual(new Date('2023-01-10'));
-      expect(instruction.results[1]!.endDate).toEqual(new Date('2023-01-14'));
+      expect(instruction.save).toHaveLength(2);
+      expect(instruction.save[0]!.startDate).toEqual(new Date('2023-01-01'));
+      expect(instruction.save[0]!.endDate).toEqual(new Date('2023-01-05'));
+      expect(instruction.save[1]!.startDate).toEqual(new Date('2023-01-10'));
+      expect(instruction.save[1]!.endDate).toEqual(new Date('2023-01-14'));
     });
 
     it('should handle multiple overlapping intervals', () => {
@@ -862,10 +862,10 @@ describe('ManifestUtils', () => {
       expect(instruction.discard).toHaveLength(2);
       expect(instruction.discard).toContain(manifest2);
       expect(instruction.discard).toContain(manifest3);
-      expect(instruction.results).toHaveLength(1);
-      expect(instruction.results[0]!.id).toBe(1); // Lowest ID is kept
-      expect(instruction.results[0]!.startDate).toEqual(new Date('2023-01-01'));
-      expect(instruction.results[0]!.endDate).toEqual(new Date('2023-01-10'));
+      expect(instruction.save).toHaveLength(1);
+      expect(instruction.save[0]!.id).toBe(1); // Lowest ID is kept
+      expect(instruction.save[0]!.startDate).toEqual(new Date('2023-01-01'));
+      expect(instruction.save[0]!.endDate).toEqual(new Date('2023-01-10'));
     });
   });
 });
