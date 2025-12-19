@@ -393,28 +393,22 @@ export class ManifestUtils {
       }
     }
 
-    // Step 3: Handle existing upper manifest (if any)
-    let save: ManifestEntity[] = [];
+    // Step 3: Handle boundary merging based on what boundaries exist
+    let save: ManifestEntity[] = allManifests;
     let discard: ManifestEntity[] = [];
 
     if (order.upper instanceof ManifestEntity) {
-      const newestManifest = allManifests[0]!;
+      const newestManifest = save[0]!;
       const upperManifest = order.upper;
 
       if (isSameMonth(newestManifest.startDate, upperManifest.startDate)) {
-        // Merge with existing upper in same month
         newestManifest.endDate = upperManifest.startDate;
         const mergeResult = this.computeMerge(newestManifest, upperManifest);
-        save = [mergeResult.save[0]!, ...allManifests.slice(1)];
-        discard = mergeResult.discard;
-      } else {
-        // Different months, no merge needed
-        save = allManifests;
+        save = [mergeResult.save[0]!, ...save.slice(1)];
+        discard = [...discard, ...mergeResult.discard];
       }
     } else {
-      // No existing upper manifest - adjust newest manifest's end date
-      // Uses getTopDate to determine proper boundary (actual item date or order boundary)
-      const newestManifest = allManifests[0]!;
+      const newestManifest = save[0]!;
       const newestBucketDate = bucketDates[0]!;
       const newestBucketItems = buckets[newestBucketDate.getTime()]!;
       newestManifest.endDate = ManifestUtils.getTopDate(
@@ -422,28 +416,51 @@ export class ManifestUtils {
         newestBucketItems,
         top,
       )!;
-      save = allManifests;
     }
 
-    // Step 4: Pop oldest manifest to become new upper boundary
-    const oldestBucketDate = bucketDates[bucketDates.length - 1]!;
-    const oldestBucketItems = buckets[oldestBucketDate.getTime()]!;
+    if (order.lower instanceof ManifestEntity) {
+      const oldestManifest = save[save.length - 1]!;
+      const lowerManifest = order.lower;
 
-    const newUpper = save.pop()!;
-    newUpper.startDate = ManifestUtils.getBottomDate(
-      order,
-      oldestBucketItems,
-      bottom,
-    )!;
+      if (isSameMonth(oldestManifest.startDate, lowerManifest.startDate)) {
+        oldestManifest.startDate = lowerManifest.endDate;
+        const mergeResult = this.computeMerge(lowerManifest, oldestManifest);
+        save = [...save.slice(0, -1), mergeResult.save[0]!];
+        discard = [...discard, ...mergeResult.discard];
+      }
+    }
+
+    // Step 4: Determine final boundaries
+    let newLower: ManifestEntity | Date = order.lower;
+    let newUpper: ManifestEntity | Date = order.upper;
+
+    const bothBoundariesExist =
+      order.upper instanceof ManifestEntity &&
+      order.lower instanceof ManifestEntity;
+
+    if (bothBoundariesExist) {
+      newUpper = save.shift()!;
+      newLower = save.length > 0 ? save.pop()! : newUpper;
+    } else if (save.length > 0) {
+      const oldestBucketDate = bucketDates[bucketDates.length - 1]!;
+      const oldestBucketItems = buckets[oldestBucketDate.getTime()]!;
+
+      newUpper = save.pop()!;
+      newUpper.startDate = ManifestUtils.getBottomDate(
+        order,
+        oldestBucketItems,
+        bottom,
+      )!;
+
+      if (bottom) {
+        newLower = newUpper;
+      }
+    }
 
     return {
       discard,
       save,
-      order: new Order({
-        ...order,
-        upper: newUpper,
-        ...(bottom ? { lower: newUpper } : {}),
-      }),
+      order: new Order({ lower: newLower, upper: newUpper }),
     };
   }
 
@@ -466,28 +483,21 @@ export class ManifestUtils {
   }
 
   private static handleExhaustedMergeBoundaries(
+    type: ItemType,
     order: Order,
+    items: OrderResult[],
+    top: boolean,
   ): ManifestOrderRewrite {
-    const mergeResult = this.computeMerge(
-      order.lower as ManifestEntity,
-      order.upper as ManifestEntity,
-    );
-    return {
-      discard: mergeResult.discard,
-      save: [],
-      order: new Order({
-        lower: mergeResult.save![0]!,
-        upper: mergeResult.save![0]!,
-      }),
-    };
+    return this.splitIntoMonthlyManifests(type, order, items, top, true);
   }
 
   private static handleExhaustedExtendUpperToDateBoundary(
     type: ItemType,
     order: Order,
     items: OrderResult[],
+    top: boolean,
   ): ManifestOrderRewrite {
-    return this.splitIntoMonthlyManifests(type, order, items, false, true);
+    return this.splitIntoMonthlyManifests(type, order, items, top, true);
   }
 
   private static handleExhaustedExtendLowerToDateBoundary(
@@ -572,12 +582,13 @@ export class ManifestUtils {
     } else {
       if (order.upper instanceof ManifestEntity) {
         if (order.lower instanceof ManifestEntity) {
-          return this.handleExhaustedMergeBoundaries(order);
+          return this.handleExhaustedMergeBoundaries(type, order, items, top);
         } else {
           return this.handleExhaustedExtendUpperToDateBoundary(
             type,
             order,
             items,
+            top,
           );
         }
       } else if (order.lower instanceof ManifestEntity) {
