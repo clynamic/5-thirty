@@ -61,9 +61,11 @@ export const getTilingRanges = (
   for (const manifest of manifests) {
     const type = manifest.type ?? 'default';
     const start = startOf(TimeScale.Hour, manifest.dateRange.startDate);
-    const end = add(startOf(TimeScale.Hour, manifest.dateRange.endDate), {
-      hours: 1,
-    });
+    const endFloor = startOf(TimeScale.Hour, manifest.dateRange.endDate);
+    const end =
+      endFloor.getTime() === manifest.dateRange.endDate.getTime()
+        ? endFloor
+        : add(endFloor, { hours: 1 });
 
     events.push({ time: start, type, delta: 1, updatedAt: manifest.updatedAt });
     events.push({ time: end, type, delta: -1, updatedAt: manifest.updatedAt });
@@ -72,7 +74,9 @@ export const getTilingRanges = (
   events.sort((a, b) => {
     const diff = a.time.getTime() - b.time.getTime();
     if (diff !== 0) return diff;
-    return b.delta - a.delta;
+    // We want splits in ranges, to make them manageable.
+    // To return one continuous range, this could be flipped.
+    return a.delta - b.delta;
   });
 
   const depths = new Map<string, number>();

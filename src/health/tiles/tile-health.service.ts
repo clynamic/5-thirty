@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Cacheable } from 'src/app/browser.module';
 import {
-  DateRange,
   PaginationParams,
   PartialDateRange,
   TileService,
@@ -52,44 +51,35 @@ export class TileHealthService {
       const ranges = await service.getRanges();
       if (ranges.length === 0) continue;
 
-      const startDate = new Date(
-        Math.min(...ranges.map((r) => r.dateRange.startDate.getTime())),
-      );
-      const endDate = new Date(
-        Math.max(...ranges.map((r) => r.dateRange.endDate.getTime())),
-      );
+      for (const range of ranges) {
+        const { startDate, endDate } = range.dateRange;
 
-      const fullRange = new DateRange({
-        startDate,
-        endDate,
-        scale: ranges[0]!.dateRange.scale,
-      });
+        const totalHours = Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60),
+        );
+        const expected = Math.ceil(totalHours / service.interval);
 
-      const totalHours = Math.ceil(
-        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60),
-      );
-      const expected = Math.ceil(totalHours / service.interval);
+        const missingTimes = await service.findMissing(range);
+        const actual = expected - missingTimes.length;
 
-      const missingTimes = await service.findMissing({ dateRange: fullRange });
-      const actual = expected - missingTimes.length;
-
-      const slices = generateTileSlices({
-        allTimes: missingTimes.map((time) => ({ time })),
-        startDate,
-        endDate,
-        intervalHours: service.interval,
-      });
-
-      health.push(
-        new TileHealth({
-          type: tileType,
+        const slices = generateTileSlices({
+          allTimes: missingTimes.map((time) => ({ time })),
           startDate,
           endDate,
-          expected,
-          actual,
-          slices,
-        }),
-      );
+          intervalHours: service.interval,
+        });
+
+        health.push(
+          new TileHealth({
+            type: tileType,
+            startDate,
+            endDate,
+            expected,
+            actual,
+            slices,
+          }),
+        );
+      }
     }
 
     return health;
