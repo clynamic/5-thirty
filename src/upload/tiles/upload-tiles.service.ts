@@ -29,11 +29,13 @@ export class UploadTilesService implements TileService {
   ) {}
 
   async getRanges(): Promise<TilingRange[]> {
+    const types = [ItemType.postVersions];
+
     const manifests = await this.manifestRepository.find({
-      where: { type: ItemType.postVersions },
+      where: types.map((type) => ({ type })),
     });
 
-    return getTilingRanges(manifests);
+    return getTilingRanges(manifests, types);
   }
 
   @Invalidates(UploadTilesEntity)

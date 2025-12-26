@@ -1,4 +1,4 @@
-import { add, isEqual, max, min } from 'date-fns';
+import { add, isEqual, min } from 'date-fns';
 import { Repository } from 'typeorm';
 
 import { DateRange, TimeScale, startOf } from './date';
@@ -40,38 +40,76 @@ export interface TilingRange {
    * The minimum updatedAt timestamp for the tiles in this range.
    */
   updatedAt?: Date;
+
+  /**
+   * Type identifier for this range. Undefined when not applicable.
+   */
+  type?: string;
 }
 
 export const getTilingRanges = (
   manifests: Array<TilingRange>,
+  types: string[],
 ): TilingRange[] => {
-  if (manifests.length === 0) return [];
+  const events: Array<{
+    time: Date;
+    type: string;
+    delta: number;
+    updatedAt?: Date;
+  }> = [];
 
-  const ranges = manifests.map((m) => ({
-    start: startOf(TimeScale.Hour, m.dateRange.startDate),
-    end: add(startOf(TimeScale.Hour, m.dateRange.endDate), { hours: 1 }),
-    updatedAt: m.updatedAt,
-  }));
+  for (const manifest of manifests) {
+    const type = manifest.type ?? 'default';
+    const start = startOf(TimeScale.Hour, manifest.dateRange.startDate);
+    const end = add(startOf(TimeScale.Hour, manifest.dateRange.endDate), {
+      hours: 1,
+    });
 
-  const overallStart = max(ranges.map((r) => r.start));
-  const overallEnd = min(ranges.map((r) => r.end));
+    events.push({ time: start, type, delta: 1, updatedAt: manifest.updatedAt });
+    events.push({ time: end, type, delta: -1, updatedAt: manifest.updatedAt });
+  }
 
-  if (overallStart >= overallEnd) return [];
+  events.sort((a, b) => {
+    const diff = a.time.getTime() - b.time.getTime();
+    if (diff !== 0) return diff;
+    return b.delta - a.delta;
+  });
 
-  const updatedAt = ranges.every((r) => r.updatedAt !== undefined)
-    ? max(ranges.map((r) => r.updatedAt!))
-    : undefined;
+  const depths = new Map<string, number>();
 
-  return [
-    {
-      dateRange: new DateRange({
-        startDate: overallStart,
-        endDate: overallEnd,
-        scale: TimeScale.Hour,
-      }),
-      updatedAt,
-    },
-  ];
+  const ranges: TilingRange[] = [];
+  let start: Date | null = null;
+  let updated: Date | undefined = undefined;
+
+  for (const event of events) {
+    const prevDepth = depths.get(event.type) ?? 0;
+    const newDepth = prevDepth + event.delta;
+    depths.set(event.type, newDepth);
+
+    const active = types.every((type) => (depths.get(type) ?? 0) > 0);
+
+    if (active) {
+      if (start === null) {
+        start = event.time;
+      }
+      if (event.updatedAt && (!updated || event.updatedAt > updated)) {
+        updated = event.updatedAt;
+      }
+    } else if (start !== null) {
+      ranges.push({
+        dateRange: new DateRange({
+          startDate: start,
+          endDate: event.time,
+          scale: TimeScale.Hour,
+        }),
+        updatedAt: updated,
+      });
+      start = null;
+      updated = undefined;
+    }
+  }
+
+  return ranges;
 };
 
 export const groupTimesIntoRanges = (times: Date[]): DateRange[] => {

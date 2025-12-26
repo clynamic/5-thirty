@@ -39,15 +39,17 @@ export class PostPendingTilesService implements TileService {
   }
 
   async getRanges(): Promise<TilingRange[]> {
+    const types = [
+      ItemType.postVersions,
+      ItemType.postEvents,
+      ItemType.permits,
+    ];
+
     const manifests = await this.manifestRepository.find({
-      where: [
-        { type: ItemType.postVersions },
-        { type: ItemType.postEvents },
-        { type: ItemType.permits },
-      ],
+      where: types.map((type) => ({ type })),
     });
 
-    return getTilingRanges(manifests);
+    return getTilingRanges(manifests, types);
   }
 
   @Invalidates(PostPendingTilesEntity)
