@@ -47,8 +47,21 @@ export const logErrorInterceptor = (error: AxiosError) => {
     logger.log(
       `[${config.method?.toUpperCase() ?? '???'}] <- ${url.href} : ${status}`,
     );
+  } else if (error instanceof AxiosError && error.config) {
+    const { config } = error;
+    const url = new URL(config.url ?? '', config.baseURL);
+
+    if (config.params) {
+      const searchParams = new URLSearchParams(config.params);
+      url.search = searchParams.toString();
+    }
+
+    const status = error.code || 'UNKNOWN';
+    logger.error(
+      `[${config.method?.toUpperCase() ?? '???'}] x- ${url.href} : ${status}`,
+    );
   } else {
-    logger.log(`Error: ${error.message}`);
+    logger.error(`Request failed: ${error.message}`);
   }
   return Promise.reject(error);
 };

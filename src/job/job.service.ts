@@ -70,9 +70,13 @@ export class JobService {
           if (error instanceof JobCancelError) {
             this.logger.warn(`[#${job.id}] [${job.title}] was cancelled.`);
           } else if (error instanceof Error) {
+            const errorMessage = error.message || 'Unknown error';
+            const errorName = error.name || 'Error';
+            const stackTrace = error.stack?.split('\n').slice(0, 5).join('\n');
+
             this.logger.error(
-              `[#${job.id}] [${job.title}] failed: ${error.message}`,
-              error.stack,
+              `[#${job.id}] [${job.title}] failed: ${errorName}: ${errorMessage}`,
+              stackTrace,
             );
           }
         }
