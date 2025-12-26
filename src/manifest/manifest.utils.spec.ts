@@ -270,6 +270,107 @@ describe('ManifestUtils', () => {
     });
   });
 
+  describe('computeAvailability', () => {
+    const range = new DateRange({
+      startDate: new Date('2023-01-01'),
+      endDate: new Date('2023-01-10'),
+    });
+
+    it('should return 0 availability when no manifests exist', () => {
+      const availability = ManifestUtils.computeAvailability(
+        [],
+        range,
+        [ItemType.posts],
+        new Date('2023-01-05'),
+      );
+
+      expect(availability[ItemType.posts]).toBe(0);
+    });
+
+    it('should return 1 availability when no orders exist (fully covered)', () => {
+      const manifests = [
+        new ManifestEntity({
+          startDate: new Date('2022-12-25'),
+          endDate: new Date('2023-01-15'),
+          type: ItemType.posts,
+        }),
+      ];
+
+      const availability = ManifestUtils.computeAvailability(
+        manifests,
+        range,
+        [ItemType.posts],
+        new Date('2023-01-05'),
+      );
+
+      expect(availability[ItemType.posts]).toBe(1);
+    });
+
+    it('should return 1 availability for future ranges', () => {
+      const manifests = [
+        new ManifestEntity({
+          startDate: new Date('2023-01-03'),
+          endDate: new Date('2023-01-07'),
+          type: ItemType.posts,
+        }),
+      ];
+
+      const availability = ManifestUtils.computeAvailability(
+        manifests,
+        range,
+        [ItemType.posts],
+        new Date('2022-12-31'),
+      );
+
+      expect(availability[ItemType.posts]).toBe(1);
+    });
+
+    it('should calculate partial availability based on gaps', () => {
+      const manifests = [
+        new ManifestEntity({
+          startDate: new Date('2023-01-03'),
+          endDate: new Date('2023-01-05'),
+          type: ItemType.posts,
+        }),
+      ];
+
+      const availability = ManifestUtils.computeAvailability(
+        manifests,
+        range,
+        [ItemType.posts],
+        new Date('2023-01-06'),
+      );
+
+      expect(availability[ItemType.posts]).toEqual(0.4);
+    });
+
+    it('should handle multiple item types separately', () => {
+      const manifests = [
+        new ManifestEntity({
+          startDate: new Date('2023-01-01'),
+          endDate: new Date('2023-01-10'),
+          type: ItemType.posts,
+        }),
+        new ManifestEntity({
+          startDate: new Date('2023-01-06'),
+          endDate: new Date('2023-01-08'),
+          type: ItemType.users,
+        }),
+      ];
+
+      const availability = ManifestUtils.computeAvailability(
+        manifests,
+        range,
+        [ItemType.posts, ItemType.users],
+        new Date('2023-01-05'),
+      );
+
+      expect(availability[ItemType.posts]).toBe(1);
+      expect(availability[ItemType.users]).toBeGreaterThan(0);
+      expect(availability[ItemType.users]).toBeLessThan(1);
+    });
+  });
+
   describe('shouldMergeManifests', () => {
     it('should return true for overlapping manifests', () => {
       const manifest1 = new ManifestEntity({
@@ -457,6 +558,192 @@ describe('ManifestUtils', () => {
       expect(instruction.save[0]!.startDate).toEqual(new Date('2023-01-01')); // Extended to cover withoutId
       expect(instruction.save[0]!.endDate).toEqual(new Date('2023-01-05'));
       expect(instruction.discard).toEqual([]); // Don't discard the manifest without ID
+    });
+  });
+
+  describe('computeMergeInRange', () => {
+    it('should return empty instruction for no manifests', () => {
+      const instruction = ManifestUtils.computeMergeInRange([]);
+
+      expect(instruction.discard).toEqual([]);
+      expect(instruction.save).toEqual([]);
+    });
+
+    it('should return single manifest unchanged when no merges needed', () => {
+      const manifest = new ManifestEntity({
+        id: 1,
+        startDate: new Date('2023-01-01'),
+        endDate: new Date('2023-01-03'),
+        type: ItemType.posts,
+      });
+
+      const instruction = ManifestUtils.computeMergeInRange([manifest]);
+
+      expect(instruction.discard).toEqual([]);
+      expect(instruction.save).toEqual([manifest]);
+    });
+
+    it('should merge two contiguous manifests', () => {
+      const manifest1 = new ManifestEntity({
+        id: 1,
+        startDate: new Date('2023-01-01'),
+        endDate: new Date('2023-01-03'),
+        type: ItemType.posts,
+      });
+
+      const manifest2 = new ManifestEntity({
+        id: 2,
+        startDate: new Date('2023-01-03'),
+        endDate: new Date('2023-01-05'),
+        type: ItemType.posts,
+      });
+
+      const instruction = ManifestUtils.computeMergeInRange([
+        manifest2,
+        manifest1,
+      ]); // Test sorting
+
+      expect(instruction.discard).toHaveLength(1);
+      expect(instruction.discard).toContain(manifest2); // Only higher ID is discarded
+      expect(instruction.save).toHaveLength(1);
+      expect(instruction.save[0]!.startDate).toEqual(new Date('2023-01-01'));
+      expect(instruction.save[0]!.endDate).toEqual(new Date('2023-01-05'));
+    });
+
+    it('should handle multiple separate groups of merges', () => {
+      const group1a = new ManifestEntity({
+        id: 1,
+        startDate: new Date('2023-01-01'),
+        endDate: new Date('2023-01-03'),
+        type: ItemType.posts,
+      });
+
+      const group1b = new ManifestEntity({
+        id: 2,
+        startDate: new Date('2023-01-03'),
+        endDate: new Date('2023-01-05'),
+        type: ItemType.posts,
+      });
+
+      const group2a = new ManifestEntity({
+        id: 3,
+        startDate: new Date('2023-01-10'),
+        endDate: new Date('2023-01-12'),
+        type: ItemType.posts,
+      });
+
+      const group2b = new ManifestEntity({
+        id: 4,
+        startDate: new Date('2023-01-12'),
+        endDate: new Date('2023-01-14'),
+        type: ItemType.posts,
+      });
+
+      const instruction = ManifestUtils.computeMergeInRange([
+        group2b,
+        group1a,
+        group2a,
+        group1b,
+      ]);
+
+      expect(instruction.discard).toHaveLength(2);
+      expect(instruction.discard).toContain(group1b);
+      expect(instruction.discard).toContain(group2b);
+
+      expect(instruction.save).toHaveLength(2);
+      expect(instruction.save[0]!.startDate).toEqual(new Date('2023-01-01'));
+      expect(instruction.save[0]!.endDate).toEqual(new Date('2023-01-05'));
+      expect(instruction.save[1]!.startDate).toEqual(new Date('2023-01-10'));
+      expect(instruction.save[1]!.endDate).toEqual(new Date('2023-01-14'));
+    });
+
+    it('should handle multiple overlapping intervals', () => {
+      const manifest1 = new ManifestEntity({
+        id: 1,
+        startDate: new Date('2023-01-01'),
+        endDate: new Date('2023-01-05'),
+        type: ItemType.posts,
+      });
+
+      const manifest2 = new ManifestEntity({
+        id: 2,
+        startDate: new Date('2023-01-03'),
+        endDate: new Date('2023-01-07'),
+        type: ItemType.posts,
+      });
+
+      const manifest3 = new ManifestEntity({
+        id: 3,
+        startDate: new Date('2023-01-06'),
+        endDate: new Date('2023-01-10'),
+        type: ItemType.posts,
+      });
+
+      const instruction = ManifestUtils.computeMergeInRange([
+        manifest3,
+        manifest1,
+        manifest2,
+      ]);
+
+      expect(instruction.discard).toHaveLength(2);
+      expect(instruction.discard).toContain(manifest2);
+      expect(instruction.discard).toContain(manifest3);
+      expect(instruction.save).toHaveLength(1);
+      expect(instruction.save[0]!.id).toBe(1); // Lowest ID is kept
+      expect(instruction.save[0]!.startDate).toEqual(new Date('2023-01-01'));
+      expect(instruction.save[0]!.endDate).toEqual(new Date('2023-01-10'));
+    });
+
+    it('should not merge manifests from different months even if contiguous', () => {
+      const januaryManifest = new ManifestEntity({
+        id: 1,
+        startDate: new Date('2023-01-01'),
+        endDate: new Date('2023-02-01'),
+        type: ItemType.posts,
+      });
+
+      const februaryManifest = new ManifestEntity({
+        id: 2,
+        startDate: new Date('2023-02-01'),
+        endDate: new Date('2023-03-01'),
+        type: ItemType.posts,
+      });
+
+      const instruction = ManifestUtils.computeMergeInRange([
+        januaryManifest,
+        februaryManifest,
+      ]);
+
+      expect(instruction.discard).toHaveLength(0);
+      expect(instruction.save).toHaveLength(2);
+      expect(instruction.save[0]).toEqual(januaryManifest);
+      expect(instruction.save[1]).toEqual(februaryManifest);
+    });
+
+    it('should not merge manifests in the same month with a gap between them', () => {
+      const manifest1 = new ManifestEntity({
+        id: 1,
+        startDate: new Date('2023-01-01'),
+        endDate: new Date('2023-01-10'),
+        type: ItemType.posts,
+      });
+
+      const manifest2 = new ManifestEntity({
+        id: 2,
+        startDate: new Date('2023-01-20'),
+        endDate: new Date('2023-01-31'),
+        type: ItemType.posts,
+      });
+
+      const instruction = ManifestUtils.computeMergeInRange([
+        manifest1,
+        manifest2,
+      ]);
+
+      expect(instruction.discard).toHaveLength(0);
+      expect(instruction.save).toHaveLength(2);
+      expect(instruction.save[0]).toEqual(manifest1);
+      expect(instruction.save[1]).toEqual(manifest2);
     });
   });
 
@@ -1079,293 +1366,6 @@ describe('ManifestUtils', () => {
       // Lower boundary is Date (promotion principle)
       expect(instruction.order.lower).toBeInstanceOf(Date);
       expect(instruction.order.lower).toEqual(new Date('2023-01-01'));
-    });
-  });
-
-  describe('computeAvailability', () => {
-    const range = new DateRange({
-      startDate: new Date('2023-01-01'),
-      endDate: new Date('2023-01-10'),
-    });
-
-    it('should return 0 availability when no manifests exist', () => {
-      const availability = ManifestUtils.computeAvailability(
-        [],
-        range,
-        [ItemType.posts],
-        new Date('2023-01-05'),
-      );
-
-      expect(availability[ItemType.posts]).toBe(0);
-    });
-
-    it('should return 1 availability when no orders exist (fully covered)', () => {
-      const manifests = [
-        new ManifestEntity({
-          startDate: new Date('2022-12-25'),
-          endDate: new Date('2023-01-15'),
-          type: ItemType.posts,
-        }),
-      ];
-
-      const availability = ManifestUtils.computeAvailability(
-        manifests,
-        range,
-        [ItemType.posts],
-        new Date('2023-01-05'),
-      );
-
-      expect(availability[ItemType.posts]).toBe(1);
-    });
-
-    it('should return 1 availability for future ranges', () => {
-      const manifests = [
-        new ManifestEntity({
-          startDate: new Date('2023-01-03'),
-          endDate: new Date('2023-01-07'),
-          type: ItemType.posts,
-        }),
-      ];
-
-      const availability = ManifestUtils.computeAvailability(
-        manifests,
-        range,
-        [ItemType.posts],
-        new Date('2022-12-31'),
-      );
-
-      expect(availability[ItemType.posts]).toBe(1);
-    });
-
-    it('should calculate partial availability based on gaps', () => {
-      const manifests = [
-        new ManifestEntity({
-          startDate: new Date('2023-01-03'),
-          endDate: new Date('2023-01-05'),
-          type: ItemType.posts,
-        }),
-      ];
-
-      const availability = ManifestUtils.computeAvailability(
-        manifests,
-        range,
-        [ItemType.posts],
-        new Date('2023-01-06'),
-      );
-
-      expect(availability[ItemType.posts]).toEqual(0.4);
-    });
-
-    it('should handle multiple item types separately', () => {
-      const manifests = [
-        new ManifestEntity({
-          startDate: new Date('2023-01-01'),
-          endDate: new Date('2023-01-10'),
-          type: ItemType.posts,
-        }),
-        new ManifestEntity({
-          startDate: new Date('2023-01-06'),
-          endDate: new Date('2023-01-08'),
-          type: ItemType.users,
-        }),
-      ];
-
-      const availability = ManifestUtils.computeAvailability(
-        manifests,
-        range,
-        [ItemType.posts, ItemType.users],
-        new Date('2023-01-05'),
-      );
-
-      expect(availability[ItemType.posts]).toBe(1);
-      expect(availability[ItemType.users]).toBeGreaterThan(0);
-      expect(availability[ItemType.users]).toBeLessThan(1);
-    });
-  });
-
-  describe('computeMergeInRange', () => {
-    it('should return empty instruction for no manifests', () => {
-      const instruction = ManifestUtils.computeMergeInRange([]);
-
-      expect(instruction.discard).toEqual([]);
-      expect(instruction.save).toEqual([]);
-    });
-
-    it('should return single manifest unchanged when no merges needed', () => {
-      const manifest = new ManifestEntity({
-        id: 1,
-        startDate: new Date('2023-01-01'),
-        endDate: new Date('2023-01-03'),
-        type: ItemType.posts,
-      });
-
-      const instruction = ManifestUtils.computeMergeInRange([manifest]);
-
-      expect(instruction.discard).toEqual([]);
-      expect(instruction.save).toEqual([manifest]);
-    });
-
-    it('should merge two contiguous manifests', () => {
-      const manifest1 = new ManifestEntity({
-        id: 1,
-        startDate: new Date('2023-01-01'),
-        endDate: new Date('2023-01-03'),
-        type: ItemType.posts,
-      });
-
-      const manifest2 = new ManifestEntity({
-        id: 2,
-        startDate: new Date('2023-01-03'),
-        endDate: new Date('2023-01-05'),
-        type: ItemType.posts,
-      });
-
-      const instruction = ManifestUtils.computeMergeInRange([
-        manifest2,
-        manifest1,
-      ]); // Test sorting
-
-      expect(instruction.discard).toHaveLength(1);
-      expect(instruction.discard).toContain(manifest2); // Only higher ID is discarded
-      expect(instruction.save).toHaveLength(1);
-      expect(instruction.save[0]!.startDate).toEqual(new Date('2023-01-01'));
-      expect(instruction.save[0]!.endDate).toEqual(new Date('2023-01-05'));
-    });
-
-    it('should handle multiple separate groups of merges', () => {
-      const group1a = new ManifestEntity({
-        id: 1,
-        startDate: new Date('2023-01-01'),
-        endDate: new Date('2023-01-03'),
-        type: ItemType.posts,
-      });
-
-      const group1b = new ManifestEntity({
-        id: 2,
-        startDate: new Date('2023-01-03'),
-        endDate: new Date('2023-01-05'),
-        type: ItemType.posts,
-      });
-
-      const group2a = new ManifestEntity({
-        id: 3,
-        startDate: new Date('2023-01-10'),
-        endDate: new Date('2023-01-12'),
-        type: ItemType.posts,
-      });
-
-      const group2b = new ManifestEntity({
-        id: 4,
-        startDate: new Date('2023-01-12'),
-        endDate: new Date('2023-01-14'),
-        type: ItemType.posts,
-      });
-
-      const instruction = ManifestUtils.computeMergeInRange([
-        group2b,
-        group1a,
-        group2a,
-        group1b,
-      ]);
-
-      expect(instruction.discard).toHaveLength(2);
-      expect(instruction.discard).toContain(group1b);
-      expect(instruction.discard).toContain(group2b);
-
-      expect(instruction.save).toHaveLength(2);
-      expect(instruction.save[0]!.startDate).toEqual(new Date('2023-01-01'));
-      expect(instruction.save[0]!.endDate).toEqual(new Date('2023-01-05'));
-      expect(instruction.save[1]!.startDate).toEqual(new Date('2023-01-10'));
-      expect(instruction.save[1]!.endDate).toEqual(new Date('2023-01-14'));
-    });
-
-    it('should handle multiple overlapping intervals', () => {
-      const manifest1 = new ManifestEntity({
-        id: 1,
-        startDate: new Date('2023-01-01'),
-        endDate: new Date('2023-01-05'),
-        type: ItemType.posts,
-      });
-
-      const manifest2 = new ManifestEntity({
-        id: 2,
-        startDate: new Date('2023-01-03'),
-        endDate: new Date('2023-01-07'),
-        type: ItemType.posts,
-      });
-
-      const manifest3 = new ManifestEntity({
-        id: 3,
-        startDate: new Date('2023-01-06'),
-        endDate: new Date('2023-01-10'),
-        type: ItemType.posts,
-      });
-
-      const instruction = ManifestUtils.computeMergeInRange([
-        manifest3,
-        manifest1,
-        manifest2,
-      ]);
-
-      expect(instruction.discard).toHaveLength(2);
-      expect(instruction.discard).toContain(manifest2);
-      expect(instruction.discard).toContain(manifest3);
-      expect(instruction.save).toHaveLength(1);
-      expect(instruction.save[0]!.id).toBe(1); // Lowest ID is kept
-      expect(instruction.save[0]!.startDate).toEqual(new Date('2023-01-01'));
-      expect(instruction.save[0]!.endDate).toEqual(new Date('2023-01-10'));
-    });
-
-    it('should not merge manifests from different months even if contiguous', () => {
-      const januaryManifest = new ManifestEntity({
-        id: 1,
-        startDate: new Date('2023-01-01'),
-        endDate: new Date('2023-02-01'),
-        type: ItemType.posts,
-      });
-
-      const februaryManifest = new ManifestEntity({
-        id: 2,
-        startDate: new Date('2023-02-01'),
-        endDate: new Date('2023-03-01'),
-        type: ItemType.posts,
-      });
-
-      const instruction = ManifestUtils.computeMergeInRange([
-        januaryManifest,
-        februaryManifest,
-      ]);
-
-      expect(instruction.discard).toHaveLength(0);
-      expect(instruction.save).toHaveLength(2);
-      expect(instruction.save[0]).toEqual(januaryManifest);
-      expect(instruction.save[1]).toEqual(februaryManifest);
-    });
-
-    it('should not merge manifests in the same month with a gap between them', () => {
-      const manifest1 = new ManifestEntity({
-        id: 1,
-        startDate: new Date('2023-01-01'),
-        endDate: new Date('2023-01-10'),
-        type: ItemType.posts,
-      });
-
-      const manifest2 = new ManifestEntity({
-        id: 2,
-        startDate: new Date('2023-01-20'),
-        endDate: new Date('2023-01-31'),
-        type: ItemType.posts,
-      });
-
-      const instruction = ManifestUtils.computeMergeInRange([
-        manifest1,
-        manifest2,
-      ]);
-
-      expect(instruction.discard).toHaveLength(0);
-      expect(instruction.save).toHaveLength(2);
-      expect(instruction.save[0]).toEqual(manifest1);
-      expect(instruction.save[1]).toEqual(manifest2);
     });
   });
 });
