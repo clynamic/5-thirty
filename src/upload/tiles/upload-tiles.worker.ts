@@ -22,6 +22,7 @@ export class UploadTilesWorker {
       new Job({
         title: 'Post Uploads Tiling',
         key: `/uploads/tiles`,
+        queue: 'tiling',
         timeout: 1000 * 60 * 5,
         execute: async ({ cancelToken }) => {
           const ranges = await this.uploadTilesService.getRanges();

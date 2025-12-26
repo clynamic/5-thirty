@@ -22,6 +22,7 @@ export class PostPendingTilesWorker {
       new Job({
         title: 'Post Pending Tiling',
         key: `/posts/pending/tiles`,
+        queue: 'tiling',
         timeout: 1000 * 60 * 5,
         execute: async ({ cancelToken }) => {
           const ranges = await this.postPendingTilesService.getRanges();
