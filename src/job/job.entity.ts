@@ -55,6 +55,11 @@ export interface JobOptions<MetadataType = undefined> {
   key?: string;
 
   /**
+   * The queue for this job. Jobs within a queue are processed sequentially.
+   */
+  queue?: string;
+
+  /**
    * The metadata for this job.
    * Can contain any arbitrary data that the job needs to run.
    */
@@ -82,6 +87,7 @@ export class Job<MetadataType = undefined> {
     this.id = Job.idCounter++;
     this.title = options.title || `Untitled Job`;
     this.key = options.key;
+    this.queue = options.queue || 'default';
     this.metadata = options.metadata;
     this.cancelToken = options.cancelToken || new JobCancelToken();
     this.timeout = options.timeout;
@@ -108,6 +114,11 @@ export class Job<MetadataType = undefined> {
    * Jobs with no key are unique and will always run.
    */
   readonly key?: string;
+
+  /**
+   * The queue for this job. Jobs within a queue are processed sequentially.
+   */
+  readonly queue: string;
 
   /**
    * The metadata for this job.

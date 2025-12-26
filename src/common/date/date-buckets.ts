@@ -264,3 +264,31 @@ export const generateSeriesRecordPoints = <R extends Record<string, number>>(
     ),
   }));
 };
+
+export const generateSeriesTileCountPoints = (
+  dates: DatePoint[],
+  counts: number[],
+  range: PartialDateRange,
+): SeriesCountPoint[] => {
+  return generateSeriesPoints(counts, dates, range).map(
+    (e) =>
+      new SeriesCountPoint({
+        date: e.date,
+        value: e.value.reduce((sum, count) => sum + count, 0),
+      }),
+  );
+};
+
+export const generateSeriesLastTileCountPoints = (
+  dates: DatePoint[],
+  counts: number[],
+  range: PartialDateRange,
+): SeriesCountPoint[] => {
+  return generateSeriesPoints(counts, dates, range).map(
+    (e) =>
+      new SeriesCountPoint({
+        date: e.date,
+        value: e.value.length > 0 ? e.value[e.value.length - 1]! : 0,
+      }),
+  );
+};

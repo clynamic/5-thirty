@@ -1,21 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { max, min, startOfMonth, sub } from 'date-fns';
+import { startOfMonth, sub } from 'date-fns';
 import { Cacheable } from 'src/app/browser.module';
 import {
   DateRange,
   PartialDateRange,
   SeriesCountPoint,
-  collapseTimeScaleDuration,
+  TimeScale,
   convertKeysToCamelCase,
-  convertKeysToDate,
-  generateSeriesCountPoints,
+  expandInto,
+  generateSeriesLastTileCountPoints,
 } from 'src/common';
 import { PermitEntity } from 'src/permit/permit.entity';
 import { PostVersionEntity } from 'src/post-version/post-version.entity';
-import { Brackets, LessThan, Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 
 import { PostEventEntity } from '../../post-event/post-event.entity';
+import { PostPendingTilesEntity } from '../tiles/post-pending-tiles.entity';
 import { PostStatusSummary } from './post-metric.dto';
 
 @Injectable()
@@ -23,6 +24,8 @@ export class PostMetricService {
   constructor(
     @InjectRepository(PostVersionEntity)
     private readonly postVersionRepository: Repository<PostVersionEntity>,
+    @InjectRepository(PostPendingTilesEntity)
+    private readonly postPendingTilesRepository: Repository<PostPendingTilesEntity>,
   ) {}
 
   /**
@@ -118,96 +121,27 @@ export class PostMetricService {
   @Cacheable({
     prefix: 'post',
     ttl: 10 * 60 * 1000,
-    dependencies: [PostVersionEntity, PostEventEntity, PermitEntity],
+    dependencies: [PostPendingTilesEntity],
+    disable: true,
   })
   async pendingSeries(
     partialRange?: PartialDateRange,
   ): Promise<SeriesCountPoint[]> {
     const range = DateRange.fill(partialRange);
-    const cutOff = this.pendingCutoffDate(range);
 
-    const posts = await this.postVersionRepository
-      .createQueryBuilder('post_version')
-      .select('post_version.post_id', 'post_id')
-      .addSelect('MAX(post_version.updated_at)', 'updated_at')
-      .addSelect('MIN(approval_event.created_at)', 'approval_date')
-      .addSelect('MIN(deletion_event.created_at)', 'deletion_date')
-      .leftJoin(
-        PostEventEntity,
-        'approval_event',
-        `post_version.post_id = approval_event.post_id AND approval_event.action = 'approved' AND ${this.inRange('approval_event.created_at')}`,
-        { after: cutOff, before: range.endDate },
-      )
-      .leftJoin(
-        PostEventEntity,
-        'deletion_event',
-        `post_version.post_id = deletion_event.post_id AND deletion_event.action = 'deleted' AND ${this.inRange('deletion_event.created_at')}`,
-        { after: cutOff, before: range.endDate },
-      )
-      .leftJoin(
-        PermitEntity,
-        'permit',
-        `post_version.post_id = permit.id AND ${this.inRange('permit.created_at')}`,
-        { after: cutOff, before: range.endDate },
-      )
-      .where('post_version.version = 1')
-      .andWhere('post_version.updated_at >= :cutOff', { cutOff })
-      .andWhere({ updatedAt: LessThan(range.endDate) })
-      .andWhere('permit.id IS NULL')
-      .andWhere(
-        new Brackets((qb) => {
-          qb.where('approval_event.created_at IS NULL').orWhere(
-            'approval_event.created_at > :start',
-            { start: range.startDate },
-          );
-        }),
-      )
-      .andWhere(
-        new Brackets((qb) => {
-          qb.where('deletion_event.created_at IS NULL').orWhere(
-            'deletion_event.created_at > :start',
-            { start: range.startDate },
-          );
-        }),
-      )
-      .groupBy('post_version.post_id')
-      .getRawMany<{
-        post_id: number;
-        updated_at: string;
-        approval_date: string | null;
-        deletion_date: string | null;
-      }>()
-      .then((results) =>
-        results
-          .map(convertKeysToCamelCase)
-          .map((result) =>
-            convertKeysToDate(result, [
-              'updatedAt',
-              'approvalDate',
-              'deletionDate',
-            ]),
-          ),
-      );
+    const tiles = await this.postPendingTilesRepository.find({
+      where: {
+        time: range.find(),
+      },
+      order: {
+        time: 'ASC',
+      },
+    });
 
-    const scale = collapseTimeScaleDuration(range.scale);
-
-    const dates = posts
-      .map((post) => {
-        const startDate = max([post.updatedAt, range.startDate]);
-
-        const handledDate = post.approvalDate ?? post.deletionDate;
-
-        const endDate = min([
-          handledDate ? sub(handledDate, { [scale]: 1 }) : new Date(),
-          range.endDate,
-        ]);
-
-        if (startDate > endDate) return null;
-
-        return new DateRange({ startDate, endDate });
-      })
-      .filter((date): date is DateRange => date !== null);
-
-    return generateSeriesCountPoints(dates, range);
+    return generateSeriesLastTileCountPoints(
+      tiles.map((tile) => new DateRange(expandInto(tile.time, TimeScale.Hour))),
+      tiles.map((tile) => tile.count),
+      range,
+    );
   }
 }
