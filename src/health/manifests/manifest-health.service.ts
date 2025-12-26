@@ -104,24 +104,21 @@ export class ManifestHealthService {
       let allIds: { id: number }[] = [];
       let slices: any[] = [];
 
-      // TODO: make this more performant so I don't have to go bald
-      if (process.env['NODE_ENV'] === 'production') {
-        allIds = await repository.find({
-          select: ['id'],
-          where: {
-            id: Between(manifest.lowerId, manifest.upperId),
-          },
-          order: {
-            id: 'ASC',
-          },
-        });
+      allIds = await repository.find({
+        select: ['id'],
+        where: {
+          id: Between(manifest.lowerId, manifest.upperId),
+        },
+        order: {
+          id: 'ASC',
+        },
+      });
 
-        slices = generateManifestSlices({
-          allIds,
-          lowerId: manifest.lowerId,
-          upperId: manifest.upperId,
-        });
-      }
+      slices = generateManifestSlices({
+        allIds,
+        lowerId: manifest.lowerId,
+        upperId: manifest.upperId,
+      });
 
       health.push(
         new ManifestHealth({

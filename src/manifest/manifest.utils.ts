@@ -1,11 +1,18 @@
-import { isAfter, isBefore, isEqual } from 'date-fns';
+import { add, isAfter, isBefore, isEqual } from 'date-fns';
 import {
   DateRange,
+  TimeScale,
+  assignDateBuckets,
+  createTimeBuckets,
+  expandInto,
   findHighestDate,
   findHighestId,
   findLowestDate,
   findLowestId,
+  isSameOf,
   resolveWithDate,
+  scaleToDuration,
+  startOf,
 } from 'src/common';
 import { ItemType } from 'src/label/label.entity';
 
@@ -18,10 +25,18 @@ import {
   OrderSide,
 } from './manifest.entity';
 
+export const MANIFEST_SPLIT_TIMESCALE = TimeScale.Month;
+
 export interface ManifestRewrite {
-  /** Input manifests that should be removed from storage */
+  /**
+   * Input manifests that should be removed from storage.
+   * May not contain manifests which are in save.
+   */
   discard: ManifestEntity[];
-  /** New manifests that should be saved to storage. */
+  /**
+   * New manifests that should be saved to storage.
+   * May not contain manifests which are in discard.
+   */
   save: ManifestEntity[];
 }
 
@@ -171,7 +186,7 @@ export class ManifestUtils {
   }
 
   /**
-   * Determines if two manifests are adjacent or overlapping.
+   * Determines if two manifests are adjacent or overlapping and in the same time bucket.
    */
   static shouldMergeManifests(
     manifest1: ManifestEntity,
@@ -180,6 +195,12 @@ export class ManifestUtils {
     const [first, second] = isBefore(manifest1.startDate, manifest2.startDate)
       ? [manifest1, manifest2]
       : [manifest2, manifest1];
+
+    if (
+      !isSameOf(MANIFEST_SPLIT_TIMESCALE, first.startDate, second.startDate)
+    ) {
+      return false;
+    }
 
     return (
       this.areBoundariesContiguous(first, second, 'end', 'start') ||
@@ -223,166 +244,6 @@ export class ManifestUtils {
   }
 
   /**
-   * Calculate Manifest end date based on order and fetched items.
-   */
-  private static getTopDate(
-    order: Order,
-    items: OrderResult[],
-    top: boolean,
-  ): Date | undefined {
-    if (top) {
-      return order.upperDate;
-    } else {
-      const itemDate = resolveWithDate(findHighestDate(items));
-      if (!itemDate) {
-        return undefined;
-      }
-      return isAfter(itemDate, order.upperDate) ? order.upperDate : itemDate;
-    }
-  }
-
-  private static handleNoItems(order: Order): ManifestOrderRewrite {
-    return {
-      discard: [],
-      save: [],
-      order,
-    };
-  }
-
-  private static handleExtendExistingUpper(
-    type: ItemType,
-    order: Order,
-    items: OrderResult[],
-  ): ManifestOrderRewrite {
-    const extended = new ManifestEntity({
-      ...(order.upper as ManifestEntity),
-    }).extend(
-      'start',
-      resolveWithDate(findLowestDate(items)!),
-      findLowestId(items)!.id,
-    );
-
-    return {
-      discard: [],
-      save: [],
-      order: new Order({ ...order, upper: extended }),
-    };
-  }
-
-  private static handleCreateNewUpper(
-    type: ItemType,
-    order: Order,
-    items: OrderResult[],
-    top: boolean,
-  ): ManifestOrderRewrite {
-    const result = new ManifestEntity({
-      type: type,
-      lowerId: findLowestId(items)!.id,
-      upperId: findHighestId(items)!.id,
-      startDate: resolveWithDate(findLowestDate(items)!),
-      endDate: ManifestUtils.getTopDate(order, items, top)!,
-    });
-
-    return {
-      discard: [],
-      save: [],
-      order: new Order({ ...order, upper: result }),
-    };
-  }
-
-  private static handleExhaustedMergeBoundaries(
-    order: Order,
-  ): ManifestOrderRewrite {
-    const mergeResult = this.computeMerge(
-      order.lower as ManifestEntity,
-      order.upper as ManifestEntity,
-    );
-    return {
-      discard: mergeResult.discard,
-      save: [],
-      order: new Order({
-        lower: mergeResult.save![0]!,
-        upper: mergeResult.save![0]!,
-      }),
-    };
-  }
-
-  private static handleExhaustedExtendUpperToDateBoundary(
-    type: ItemType,
-    order: Order,
-    items: OrderResult[],
-  ): ManifestOrderRewrite {
-    const extended = new ManifestEntity({
-      ...(order.upper as ManifestEntity),
-    }).extend('start', order.lower as Date, findLowestId(items)?.id);
-
-    return {
-      discard: [],
-      save: [],
-      order: new Order({ ...order, upper: extended }),
-    };
-  }
-
-  private static handleExhaustedExtendLowerToDateBoundary(
-    type: ItemType,
-    order: Order,
-    items: OrderResult[],
-    top: boolean,
-  ): ManifestOrderRewrite {
-    const extended = new ManifestEntity({
-      ...(order.lower as ManifestEntity),
-    }).extend(
-      'end',
-      ManifestUtils.getTopDate(order, items, top),
-      findHighestId(items)?.id,
-    );
-
-    return {
-      discard: [],
-      save: [],
-      order: new Order({ ...order, lower: extended }),
-    };
-  }
-
-  private static handleExhaustedCreateBoundary(
-    type: ItemType,
-    order: Order,
-    items: OrderResult[],
-    top: boolean,
-  ): ManifestOrderRewrite {
-    const result = new ManifestEntity({
-      type: type,
-      lowerId: findLowestId(items)?.id,
-      upperId: findHighestId(items)?.id,
-      startDate: order.lower as Date,
-      endDate: ManifestUtils.getTopDate(order, items, top),
-    });
-
-    return {
-      discard: [],
-      save: [],
-      order: new Order({ ...order, upper: result }),
-    };
-  }
-
-  private static handleExhaustedCreateEmptyBoundary(
-    type: ItemType,
-    order: Order,
-  ): ManifestOrderRewrite {
-    const result = new ManifestEntity({
-      type: type,
-      startDate: order.lower as Date,
-      endDate: order.upperDate,
-    });
-
-    return {
-      discard: [],
-      save: [],
-      order: new Order({ ...order, upper: result }),
-    };
-  }
-
-  /**
    * Compute manifest and order updates based on fetched items.
    * The logic assumes that items are fetched in descending order (newest to oldest).
    * Based on this assumption, orders are always updated by first creating an upper boundary,
@@ -392,42 +253,122 @@ export class ManifestUtils {
   static computeSaveResults(save: OrderResults): ManifestOrderRewrite {
     const { type, order, items, bottom, top } = save;
 
-    if (!bottom) {
-      if (items.length === 0) {
-        return this.handleNoItems(order);
-      }
+    if (!bottom && items.length === 0) {
+      return { discard: [], save: [], order };
+    }
 
-      if (order.upper instanceof ManifestEntity) {
-        return this.handleExtendExistingUpper(type, order, items);
-      } else {
-        return this.handleCreateNewUpper(type, order, items, top);
-      }
-    } else {
-      if (order.upper instanceof ManifestEntity) {
-        if (order.lower instanceof ManifestEntity) {
-          return this.handleExhaustedMergeBoundaries(order);
-        } else {
-          return this.handleExhaustedExtendUpperToDateBoundary(
-            type,
-            order,
-            items,
-          );
-        }
-      } else if (order.lower instanceof ManifestEntity) {
-        return this.handleExhaustedExtendLowerToDateBoundary(
-          type,
-          order,
-          items,
-          top,
-        );
-      } else {
-        if (items.length > 0) {
-          return this.handleExhaustedCreateBoundary(type, order, items, top);
-        } else {
-          return this.handleExhaustedCreateEmptyBoundary(type, order);
-        }
+    const oldestDate =
+      (bottom ? null : resolveWithDate(findLowestDate(items))) ??
+      order.lowerDate;
+    const newestDate =
+      resolveWithDate(findHighestDate(items)) ?? order.upperDate;
+    const buckets = this.createBucketsWithItems(
+      items,
+      oldestDate,
+      newestDate,
+      MANIFEST_SPLIT_TIMESCALE,
+    );
+    const bucketDates = Object.keys(buckets)
+      .map((k) => new Date(+k))
+      .reverse();
+
+    const allManifests: ManifestEntity[] = [];
+    for (const bucketDate of bucketDates) {
+      const bucketItems = buckets[bucketDate.getTime()]!;
+      const { startDate, endDate } = expandInto(
+        bucketDate,
+        MANIFEST_SPLIT_TIMESCALE,
+      );
+      const manifest = new ManifestEntity({
+        type,
+        lowerId: findLowestId(bucketItems)?.id,
+        upperId: findHighestId(bucketItems)?.id,
+        startDate,
+        endDate,
+      });
+      allManifests.push(manifest);
+    }
+
+    let saveManifests: ManifestEntity[] = allManifests;
+    let discard: ManifestEntity[] = [];
+
+    if (order.upper instanceof ManifestEntity) {
+      const newestManifest = saveManifests[0]!;
+      const upperManifest = order.upper;
+
+      if (
+        isSameOf(
+          MANIFEST_SPLIT_TIMESCALE,
+          newestManifest.startDate,
+          upperManifest.startDate,
+        )
+      ) {
+        const mergeResult = this.computeMerge(newestManifest, upperManifest);
+        saveManifests = [mergeResult.save[0]!, ...saveManifests.slice(1)];
+        discard = [...discard, ...mergeResult.discard];
       }
     }
+
+    if (!(order.upper instanceof ManifestEntity)) {
+      const newestManifest = saveManifests[0]!;
+      const newestBucketDate = bucketDates[0]!;
+      const newestBucketItems = buckets[newestBucketDate.getTime()]!;
+
+      if (top) {
+        newestManifest.endDate = order.upperDate;
+      } else {
+        const itemDate = resolveWithDate(findHighestDate(newestBucketItems));
+        newestManifest.endDate = itemDate
+          ? isAfter(itemDate, order.upperDate)
+            ? order.upperDate
+            : itemDate
+          : order.upperDate;
+      }
+    }
+
+    if (order.lower instanceof ManifestEntity && bottom) {
+      const oldestManifest = saveManifests[saveManifests.length - 1]!;
+      const lowerManifest = order.lower;
+
+      if (
+        isSameOf(
+          MANIFEST_SPLIT_TIMESCALE,
+          oldestManifest.startDate,
+          lowerManifest.startDate,
+        )
+      ) {
+        const mergeResult = this.computeMerge(lowerManifest, oldestManifest);
+        saveManifests = [...saveManifests.slice(0, -1), mergeResult.save[0]!];
+        discard = [...discard, ...mergeResult.discard];
+      }
+    }
+
+    const promotedManifest = saveManifests.pop()!;
+
+    if (!(order.lower instanceof ManifestEntity && bottom)) {
+      const oldestBucketDate = bucketDates[bucketDates.length - 1]!;
+      const oldestBucketItems = buckets[oldestBucketDate.getTime()]!;
+
+      if (bottom) {
+        promotedManifest.startDate = order.lowerDate;
+      } else {
+        const itemDate = resolveWithDate(findLowestDate(oldestBucketItems));
+        promotedManifest.startDate = itemDate
+          ? isBefore(itemDate, order.lowerDate)
+            ? order.lowerDate
+            : itemDate
+          : order.lowerDate;
+      }
+    }
+
+    const newUpper = promotedManifest;
+    const newLower = bottom ? newUpper.startDate : order.lower;
+
+    return {
+      discard,
+      save: saveManifests,
+      order: new Order({ lower: newLower, upper: newUpper }),
+    };
   }
 
   /**
@@ -525,5 +466,32 @@ export class ManifestUtils {
       discard,
       save,
     };
+  }
+
+  static createBucketsWithItems(
+    items: OrderResult[],
+    startDate: Date,
+    endDate: Date,
+    scale: TimeScale,
+  ): Record<number, OrderResult[]> {
+    const scaleStartDate = startOf(scale, startDate);
+    const scaleEndDate = add(startOf(scale, endDate), {
+      [scaleToDuration(scale)]: 1,
+    });
+
+    const dateRange = new DateRange({
+      startDate: scaleStartDate,
+      endDate: scaleEndDate,
+      scale,
+      timezone: 'UTC',
+    });
+
+    const buckets = createTimeBuckets(dateRange);
+
+    const datePoints = items.map((item) => resolveWithDate(item));
+
+    const assignments = assignDateBuckets(datePoints, buckets, items);
+
+    return assignments;
   }
 }
