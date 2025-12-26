@@ -126,10 +126,14 @@ export class ManifestService {
   }
 
   async saveResults(results: OrderResults): Promise<Order> {
-    const { discard, order: update } =
-      ManifestUtils.computeSaveResults(results);
+    const {
+      discard,
+      save,
+      order: update,
+    } = ManifestUtils.computeSaveResults(results);
 
     await this.remove(discard);
+    await this.save(save);
     return this.updateOrder(results.order, update);
   }
 
