@@ -5,7 +5,6 @@ import { postsMany } from 'src/api';
 import { AuthService } from 'src/auth/auth.service';
 import { Job } from 'src/job/job.entity';
 import { JobService } from 'src/job/job.service';
-import { ItemType } from 'src/label/label.entity';
 import { PostEntity } from 'src/post/post.entity';
 import { UserSyncService } from 'src/user/sync/user-sync.service';
 
