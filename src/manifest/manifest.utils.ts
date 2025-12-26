@@ -270,7 +270,7 @@ export class ManifestUtils {
     );
     const bucketDates = Object.keys(buckets)
       .map((k) => new Date(+k))
-      .sort((a, b) => b.getTime() - a.getTime());
+      .reverse();
 
     const allManifests: ManifestEntity[] = [];
     for (const bucketDate of bucketDates) {
