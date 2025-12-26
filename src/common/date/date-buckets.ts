@@ -98,7 +98,14 @@ const incrementTimeBucket = (
 export const createTimeBuckets = (range: DateRange): Date[] => {
   const start = range.startDate;
 
-  const end = min([range.endDate, new Date()], range.in());
+  const end = min(
+    [
+      range.endDate,
+      // TODO: This stray undocumented enforcement of current time, that is not parameterized, is probably a bad idea
+      new Date(),
+    ],
+    range.in(),
+  );
 
   const buckets = [];
   for (
