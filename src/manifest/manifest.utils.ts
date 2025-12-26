@@ -1,16 +1,17 @@
-import { isAfter, isBefore, isEqual, isSameMonth } from 'date-fns';
+import { add, isAfter, isBefore, isEqual } from 'date-fns';
 import {
   DateRange,
   TimeScale,
   assignDateBuckets,
   createTimeBuckets,
-  endOf,
   expandInto,
   findHighestDate,
   findHighestId,
   findLowestDate,
   findLowestId,
+  isSameOf,
   resolveWithDate,
+  scaleToDuration,
   startOf,
 } from 'src/common';
 import { ItemType } from 'src/label/label.entity';
@@ -23,6 +24,8 @@ import {
   OrderResults,
   OrderSide,
 } from './manifest.entity';
+
+export const MANIFEST_SPLIT_TIMESCALE = TimeScale.Month;
 
 export interface ManifestRewrite {
   /**
@@ -183,7 +186,7 @@ export class ManifestUtils {
   }
 
   /**
-   * Determines if two manifests are adjacent or overlapping.
+   * Determines if two manifests are adjacent or overlapping and in the same time bucket.
    */
   static shouldMergeManifests(
     manifest1: ManifestEntity,
@@ -192,6 +195,12 @@ export class ManifestUtils {
     const [first, second] = isBefore(manifest1.startDate, manifest2.startDate)
       ? [manifest1, manifest2]
       : [manifest2, manifest1];
+
+    if (
+      !isSameOf(MANIFEST_SPLIT_TIMESCALE, first.startDate, second.startDate)
+    ) {
+      return false;
+    }
 
     return (
       this.areBoundariesContiguous(first, second, 'end', 'start') ||
@@ -253,10 +262,11 @@ export class ManifestUtils {
       order.lowerDate;
     const newestDate =
       resolveWithDate(findHighestDate(items)) ?? order.upperDate;
-    const buckets = this.createMonthlyBucketsWithItems(
+    const buckets = this.createBucketsWithItems(
       items,
       oldestDate,
       newestDate,
+      MANIFEST_SPLIT_TIMESCALE,
     );
     const bucketDates = Object.keys(buckets)
       .map((k) => new Date(+k))
@@ -265,7 +275,10 @@ export class ManifestUtils {
     const allManifests: ManifestEntity[] = [];
     for (const bucketDate of bucketDates) {
       const bucketItems = buckets[bucketDate.getTime()]!;
-      const { startDate, endDate } = expandInto(bucketDate, TimeScale.Month);
+      const { startDate, endDate } = expandInto(
+        bucketDate,
+        MANIFEST_SPLIT_TIMESCALE,
+      );
       const manifest = new ManifestEntity({
         type,
         lowerId: findLowestId(bucketItems)?.id,
@@ -283,7 +296,13 @@ export class ManifestUtils {
       const newestManifest = saveManifests[0]!;
       const upperManifest = order.upper;
 
-      if (isSameMonth(newestManifest.startDate, upperManifest.startDate)) {
+      if (
+        isSameOf(
+          MANIFEST_SPLIT_TIMESCALE,
+          newestManifest.startDate,
+          upperManifest.startDate,
+        )
+      ) {
         const mergeResult = this.computeMerge(newestManifest, upperManifest);
         saveManifests = [mergeResult.save[0]!, ...saveManifests.slice(1)];
         discard = [...discard, ...mergeResult.discard];
@@ -311,7 +330,13 @@ export class ManifestUtils {
       const oldestManifest = saveManifests[saveManifests.length - 1]!;
       const lowerManifest = order.lower;
 
-      if (isSameMonth(oldestManifest.startDate, lowerManifest.startDate)) {
+      if (
+        isSameOf(
+          MANIFEST_SPLIT_TIMESCALE,
+          oldestManifest.startDate,
+          lowerManifest.startDate,
+        )
+      ) {
         const mergeResult = this.computeMerge(lowerManifest, oldestManifest);
         saveManifests = [...saveManifests.slice(0, -1), mergeResult.save[0]!];
         discard = [...discard, ...mergeResult.discard];
@@ -443,20 +468,21 @@ export class ManifestUtils {
     };
   }
 
-  static createMonthlyBucketsWithItems(
+  static createBucketsWithItems(
     items: OrderResult[],
     startDate: Date,
     endDate: Date,
+    scale: TimeScale,
   ): Record<number, OrderResult[]> {
-    // For monthly buckets, we need to start from the beginning of the first month
-    // and end at the end of the last month to ensure all items are covered
-    const monthStartDate = startOf(TimeScale.Month, startDate);
-    const monthEndDate = endOf(TimeScale.Month, endDate);
+    const scaleStartDate = startOf(scale, startDate);
+    const scaleEndDate = add(startOf(scale, endDate), {
+      [scaleToDuration(scale)]: 1,
+    });
 
     const dateRange = new DateRange({
-      startDate: monthStartDate,
-      endDate: monthEndDate,
-      scale: TimeScale.Month,
+      startDate: scaleStartDate,
+      endDate: scaleEndDate,
+      scale,
       timezone: 'UTC',
     });
 

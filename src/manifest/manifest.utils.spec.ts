@@ -1315,5 +1315,57 @@ describe('ManifestUtils', () => {
       expect(instruction.save[0]!.startDate).toEqual(new Date('2023-01-01'));
       expect(instruction.save[0]!.endDate).toEqual(new Date('2023-01-10'));
     });
+
+    it('should not merge manifests from different months even if contiguous', () => {
+      const januaryManifest = new ManifestEntity({
+        id: 1,
+        startDate: new Date('2023-01-01'),
+        endDate: new Date('2023-02-01'),
+        type: ItemType.posts,
+      });
+
+      const februaryManifest = new ManifestEntity({
+        id: 2,
+        startDate: new Date('2023-02-01'),
+        endDate: new Date('2023-03-01'),
+        type: ItemType.posts,
+      });
+
+      const instruction = ManifestUtils.computeMergeInRange([
+        januaryManifest,
+        februaryManifest,
+      ]);
+
+      expect(instruction.discard).toHaveLength(0);
+      expect(instruction.save).toHaveLength(2);
+      expect(instruction.save[0]).toEqual(januaryManifest);
+      expect(instruction.save[1]).toEqual(februaryManifest);
+    });
+
+    it('should not merge manifests in the same month with a gap between them', () => {
+      const manifest1 = new ManifestEntity({
+        id: 1,
+        startDate: new Date('2023-01-01'),
+        endDate: new Date('2023-01-10'),
+        type: ItemType.posts,
+      });
+
+      const manifest2 = new ManifestEntity({
+        id: 2,
+        startDate: new Date('2023-01-20'),
+        endDate: new Date('2023-01-31'),
+        type: ItemType.posts,
+      });
+
+      const instruction = ManifestUtils.computeMergeInRange([
+        manifest1,
+        manifest2,
+      ]);
+
+      expect(instruction.discard).toHaveLength(0);
+      expect(instruction.save).toHaveLength(2);
+      expect(instruction.save[0]).toEqual(manifest1);
+      expect(instruction.save[1]).toEqual(manifest2);
+    });
   });
 });
