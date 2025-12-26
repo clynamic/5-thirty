@@ -180,13 +180,15 @@ export class TicketSyncWorker {
 
               const updated = await this.ticketSyncService.countUpdated(
                 result
-                  .filter((ticket) => ticket.id != null)
+                  // TODO: Tickets with a destroyed Resource return null creator IDs (malformed)
+                  .filter((ticket) => ticket.creator_id != null)
                   .map(convertKeysToCamelCase),
               );
 
               await this.ticketSyncService.save(
                 result
-                  .filter((ticket) => ticket.id != null)
+                  // TODO: Tickets with a destroyed Resource return null creator IDs (malformed)
+                  .filter((ticket) => ticket.creator_id != null)
                   .map(
                     (ticket) =>
                       new TicketEntity({
