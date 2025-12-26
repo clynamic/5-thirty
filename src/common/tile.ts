@@ -1,7 +1,7 @@
 import { add, isEqual, min } from 'date-fns';
 import { Repository } from 'typeorm';
 
-import { DateRange, TimeScale, startOf } from './date';
+import { DateRange, PartialDateRange, TimeScale, startOf } from './date';
 
 export enum TileType {
   uploadHourly = 'upload_hourly',
@@ -25,9 +25,9 @@ export interface TileService {
   findMissing: (range: TilingRange) => Promise<Date[]>;
 
   /**
-   * Wipe all tiles of this type.
+   * Wipe all tiles of this type, or tiles within a date range if specified.
    */
-  wipe: () => Promise<void>;
+  wipe: (range?: PartialDateRange) => Promise<void>;
 }
 
 export interface TilingRange {

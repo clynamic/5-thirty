@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Cacheable } from 'src/app/browser.module';
-import { DateRange, PaginationParams, TileService, TileType } from 'src/common';
+import {
+  DateRange,
+  PaginationParams,
+  PartialDateRange,
+  TileService,
+  TileType,
+} from 'src/common';
 import { ManifestEntity } from 'src/manifest/manifest.entity';
 import { PostPendingTilesEntity } from 'src/post/tiles/post-pending-tiles.entity';
 import { PostPendingTilesService } from 'src/post/tiles/post-pending-tiles.service';
@@ -89,12 +95,15 @@ export class TileHealthService {
     return health;
   }
 
-  async deleteTilesByType(tileType: TileType): Promise<void> {
+  async deleteTilesByType(
+    tileType: TileType,
+    range?: PartialDateRange,
+  ): Promise<void> {
     const service = this.tileServices[tileType];
     if (!service) {
       throw new Error(`No service found for tile type: ${tileType}`);
     }
 
-    await service.wipe();
+    await service.wipe(range);
   }
 }

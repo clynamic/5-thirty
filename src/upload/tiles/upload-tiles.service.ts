@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Invalidates } from 'src/app/browser.module';
 import {
+  PartialDateRange,
   TileService,
   TilingRange,
   findMissingOrStaleTiles,
@@ -87,7 +88,11 @@ export class UploadTilesService implements TileService {
   }
 
   @Invalidates(UploadTilesEntity)
-  async wipe(): Promise<void> {
-    await this.tileRepository.clear();
+  async wipe(range?: PartialDateRange): Promise<void> {
+    if (range?.find()) {
+      await this.tileRepository.delete({ time: range.find() });
+    } else {
+      await this.tileRepository.clear();
+    }
   }
 }
