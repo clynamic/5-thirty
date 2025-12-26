@@ -44,11 +44,12 @@ export class TileHealthController {
     return this.tileHealthService.tiles(pages);
   }
 
-  // This is kind of awkward, being handled in the health controller.
+  // TODO: This is kind of awkward, being handled in the health controller.
+  // TODO: Should accept date range parameter.
   @Delete(':type')
   @ApiOperation({
     summary: 'Delete all tiles of a type',
-    description: 'Delete all tiles of the specified type (admin only)',
+    description: 'Delete all tiles of the specified type',
     operationId: 'deleteTilesByType',
   })
   @ApiParam({
