@@ -14,7 +14,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ServerAdminGuard } from 'src/auth/auth.guard';
-import { TileType } from 'src/common';
+import { PartialDateRange, TileType } from 'src/common';
 import { PaginationParams } from 'src/common/pagination.dto';
 
 import { TileHealth } from './tile-health.dto';
@@ -45,7 +45,6 @@ export class TileHealthController {
   }
 
   // TODO: This is kind of awkward, being handled in the health controller.
-  // TODO: Should accept date range parameter.
   @Delete(':type')
   @ApiOperation({
     summary: 'Delete all tiles of a type',
@@ -72,7 +71,10 @@ export class TileHealthController {
   })
   @UseGuards(ServerAdminGuard)
   @ApiBearerAuth()
-  async deleteTilesByType(@Param('type') type: TileType): Promise<void> {
-    return this.tileHealthService.deleteTilesByType(type);
+  async deleteTilesByType(
+    @Param('type') type: TileType,
+    @Query() range?: PartialDateRange,
+  ): Promise<void> {
+    return this.tileHealthService.deleteTilesByType(type, range);
   }
 }

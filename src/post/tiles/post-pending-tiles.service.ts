@@ -4,6 +4,7 @@ import { startOfMonth, sub } from 'date-fns';
 import { Invalidates } from 'src/app/browser.module';
 import {
   DateRange,
+  PartialDateRange,
   TileService,
   TilingRange,
   chunkDateRange,
@@ -153,7 +154,11 @@ export class PostPendingTilesService implements TileService {
   }
 
   @Invalidates(PostPendingTilesEntity)
-  async wipe(): Promise<void> {
-    await this.tileRepository.clear();
+  async wipe(range?: PartialDateRange): Promise<void> {
+    if (range?.find()) {
+      await this.tileRepository.delete({ time: range.find() });
+    } else {
+      await this.tileRepository.clear();
+    }
   }
 }
