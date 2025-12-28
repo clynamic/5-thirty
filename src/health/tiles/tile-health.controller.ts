@@ -44,7 +44,7 @@ export class TileHealthController {
     return this.tileHealthService.tiles(pages);
   }
 
-  // TODO: This is kind of awkward, being handled in the health controller.
+  // This is kind of awkward, being handled in the health controller.
   @Delete(':type')
   @ApiOperation({
     summary: 'Delete all tiles of a type',
