@@ -119,7 +119,7 @@ export class ManifestUtils {
       );
     }
 
-    return orders;
+    return orders.reverse();
   }
 
   /**

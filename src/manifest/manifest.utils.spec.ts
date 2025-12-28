@@ -152,10 +152,10 @@ describe('ManifestUtils', () => {
       const result = ManifestUtils.computeOrders(manifests, dateRange);
 
       expect(result).toHaveLength(2);
-      expect(result[0]!.lower).toEqual(dateRange.startDate);
-      expect(result[0]!.upper).toEqual(manifests[0]);
-      expect(result[1]!.lower).toEqual(manifests[0]);
-      expect(result[1]!.upper).toEqual(dateRange.endDate);
+      expect(result[0]!.lower).toEqual(manifests[0]);
+      expect(result[0]!.upper).toEqual(dateRange.endDate);
+      expect(result[1]!.lower).toEqual(dateRange.startDate);
+      expect(result[1]!.upper).toEqual(manifests[0]);
     });
 
     it('should merge contiguous manifests', () => {
