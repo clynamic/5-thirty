@@ -57,17 +57,8 @@ export class TileHealthController {
     description: 'The type of tiles to delete',
   })
   @ApiResponse({
-    status: 200,
+    status: 204,
     description: 'Tiles deleted successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        deleted: {
-          type: 'number',
-          description: 'Number of tiles deleted',
-        },
-      },
-    },
   })
   @UseGuards(ServerAdminGuard)
   @ApiBearerAuth()
