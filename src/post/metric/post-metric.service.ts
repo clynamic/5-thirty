@@ -13,7 +13,6 @@ import {
 import { Repository } from 'typeorm';
 
 import { PostLifecycleEntity } from '../lifecycle/post-lifecycle.entity';
-import { PostPendingTilesEntity } from '../tiles/post-pending-tiles.entity';
 import { PostStatusSummary } from './post-metric.dto';
 
 @Injectable()
@@ -21,8 +20,6 @@ export class PostMetricService {
   constructor(
     @InjectRepository(PostLifecycleEntity)
     private readonly lifecycleRepository: Repository<PostLifecycleEntity>,
-    @InjectRepository(PostPendingTilesEntity)
-    private readonly postPendingTilesRepository: Repository<PostPendingTilesEntity>,
   ) {}
 
   /**
@@ -41,7 +38,7 @@ export class PostMetricService {
   @Cacheable({
     prefix: 'post',
     ttl: 5 * 60 * 1000,
-    dependencies: [PostLifecycleEntity, PostPendingTilesEntity],
+    dependencies: [PostLifecycleEntity],
   })
   async statusSummary(
     partialRange?: PartialDateRange,
@@ -84,27 +81,82 @@ export class PostMetricService {
 
   @Cacheable({
     prefix: 'post',
-    ttl: 10 * 60 * 1000,
-    dependencies: [PostPendingTilesEntity],
-    disable: true,
+    ttl: 5 * 60 * 1000,
+    dependencies: [PostLifecycleEntity],
   })
   async pendingSeries(
     partialRange?: PartialDateRange,
   ): Promise<SeriesCountPoint[]> {
     const range = DateRange.fill(partialRange);
+    const cutOff = this.pendingCutoffDate(range);
 
-    const tiles = await this.postPendingTilesRepository.find({
-      where: {
-        time: range.find(),
-      },
-      order: {
-        time: 'ASC',
-      },
-    });
+    const query = `
+      WITH initial_count AS (
+        SELECT COUNT(*) AS count
+        FROM post_lifecycle
+        WHERE uploaded_at >= $3
+          AND uploaded_at < $1
+          AND permitted_at IS NULL
+          AND (approved_at IS NULL OR approved_at >= $1)
+          AND (deleted_at IS NULL OR deleted_at >= $1)
+      ),
+      pending_posts AS (
+        SELECT
+          post_id,
+          date_trunc('hour', uploaded_at) AS upload_hour,
+          COALESCE(
+            date_trunc('hour', LEAST(approved_at, deleted_at)),
+            $2::timestamptz
+          ) AS handled_hour
+        FROM post_lifecycle
+        WHERE uploaded_at >= $3
+          AND uploaded_at < $4
+          AND permitted_at IS NULL
+          AND (approved_at IS NULL OR approved_at > $1)
+          AND (deleted_at IS NULL OR deleted_at > $1)
+      ),
+      events AS (
+        SELECT upload_hour AS hour, 1 AS change
+        FROM pending_posts
+        WHERE upload_hour >= $1
+        UNION ALL
+        SELECT handled_hour AS hour, -1 AS change
+        FROM pending_posts
+        WHERE handled_hour >= $1 AND handled_hour < $2
+      ),
+      event_aggregates AS (
+        SELECT hour, SUM(change) AS change
+        FROM events
+        GROUP BY hour
+      ),
+      hour_series AS (
+        SELECT generate_series(
+          $1::timestamptz,
+          $2::timestamptz - interval '1 hour',
+          interval '1 hour'
+        ) AS hour
+      )
+      SELECT
+        hour_series.hour AS time,
+        (SELECT count FROM initial_count) + COALESCE(
+          SUM(event_aggregates.change) OVER (ORDER BY hour_series.hour ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),
+          0
+        ) AS count
+      FROM hour_series
+      LEFT JOIN event_aggregates ON hour_series.hour = event_aggregates.hour
+      ORDER BY hour_series.hour
+    `;
+
+    const result = (await this.lifecycleRepository.query(query, [
+      range.startDate,
+      range.endDate,
+      cutOff,
+      range.endDate,
+    ])) as Array<{ time: Date; count: string }>;
 
     return generateSeriesLastTileCountPoints(
-      tiles.map((tile) => new DateRange(expandInto(tile.time, TimeScale.Hour))),
-      tiles.map((tile) => tile.count),
+      result.map((row) => new DateRange(expandInto(row.time, TimeScale.Hour))),
+      result.map((row) => parseInt(row.count, 10)),
       range,
     );
   }
