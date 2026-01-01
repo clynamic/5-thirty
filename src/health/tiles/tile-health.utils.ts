@@ -1,7 +1,7 @@
 import { TileSlice } from './tile-health.dto';
 
 export interface TileSliceProps {
-  allTimes: { time: Date }[];
+  missingTimes: { time: Date }[];
   startDate: Date;
   endDate: Date;
   intervalHours?: number;
@@ -9,7 +9,7 @@ export interface TileSliceProps {
 }
 
 export const generateTileSlices = ({
-  allTimes,
+  missingTimes,
   startDate,
   endDate,
   intervalHours = 1,
@@ -39,10 +39,10 @@ export const generateTileSlices = ({
     let unavailable = 0;
 
     while (
-      timeIndex < allTimes.length &&
-      allTimes[timeIndex]!.time < sliceEnd
+      timeIndex < missingTimes.length &&
+      missingTimes[timeIndex]!.time < sliceEnd
     ) {
-      if (allTimes[timeIndex]!.time >= sliceStart) {
+      if (missingTimes[timeIndex]!.time >= sliceStart) {
         unavailable++;
       }
       timeIndex++;

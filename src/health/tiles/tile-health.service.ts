@@ -57,7 +57,7 @@ export class TileHealthService {
         const actual = expected - missingTimes.length;
 
         const slices = generateTileSlices({
-          allTimes: missingTimes.map((time) => ({ time })),
+          missingTimes: missingTimes.map((time) => ({ time })),
           startDate,
           endDate,
           intervalHours: service.interval,
