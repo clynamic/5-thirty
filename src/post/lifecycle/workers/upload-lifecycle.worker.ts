@@ -23,6 +23,7 @@ export class UploadLifecycleWorker {
   ) {}
 
   private readonly logger = new Logger(UploadLifecycleWorker.name);
+  // TODO: Persist this across restarts
   private lastProcessedTime: Date | null = null;
 
   @Cron(FunkyCronExpression.EVERY_3_MINUTES)

@@ -23,6 +23,7 @@ export class PermitLifecycleWorker {
   ) {}
 
   private readonly logger = new Logger(PermitLifecycleWorker.name);
+  // TODO: Persist this across restarts
   private lastProcessedTime: Date | null = null;
 
   @Cron(FunkyCronExpression.EVERY_3_MINUTES)

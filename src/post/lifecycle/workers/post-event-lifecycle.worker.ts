@@ -24,6 +24,7 @@ export class PostEventLifecycleWorker {
   ) {}
 
   private readonly logger = new Logger(PostEventLifecycleWorker.name);
+  // TODO: Persist this across restarts
   private lastProcessedTime: Date | null = null;
 
   @Cron(FunkyCronExpression.EVERY_3_MINUTES)
