@@ -104,13 +104,19 @@ export class PostMetricService {
         SELECT
           post_id,
           date_trunc('hour', uploaded_at) AS upload_hour,
-          COALESCE(
-            date_trunc('hour', LEAST(approved_at, deleted_at)),
-            $2::timestamptz
+          date_trunc(
+            'hour',
+            COALESCE(
+              LEAST(
+                COALESCE(approved_at, $2::timestamptz),
+                COALESCE(deleted_at, $2::timestamptz)
+              ),
+              $2::timestamptz
+            )
           ) AS handled_hour
         FROM post_lifecycle
         WHERE uploaded_at >= $3
-          AND uploaded_at < $4
+          AND uploaded_at < $2
           AND permitted_at IS NULL
           AND (approved_at IS NULL OR approved_at > $1)
           AND (deleted_at IS NULL OR deleted_at > $1)
@@ -151,7 +157,6 @@ export class PostMetricService {
       range.startDate,
       range.endDate,
       cutOff,
-      range.endDate,
     ])) as Array<{ time: Date; count: string }>;
 
     return generateSeriesLastTileCountPoints(
